@@ -3,11 +3,12 @@
 # first pass of manual UI based turntable setup
 # 0.0.4 - fixes output path to go into _prod folder
 # 0.0.5 - adds dropdown for choosing latest workfile vs publish
+# 0.0.8 - adds camera select button
 
 bl_info = {
     "name": "TurnTable Tools",
     "author": "Conrad Dueck",
-    "version": (0, 0, 7),
+    "version": (0, 0, 8),
     "blender": (3, 31, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -30,7 +31,7 @@ chm_assetssubtree = '30_texture/projects/blender'
 chm_assetturntables = '30_texture/projects/blender/turntables'
 thecam_name = "cam.ttCamera"
 turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable.blend"
-vsn = '0.0.7'
+vsn = '0.0.8'
 
 
 def get_selection_bounds(thesel):
@@ -285,6 +286,24 @@ class BUTTON_OT_openTT(bpy.types.Operator):
         open_turntable()
         return{'FINISHED'}
 
+# OPERATOR BUTTON_OT_selectTTcam
+class BUTTON_OT_selectTTcam(bpy.types.Operator):
+    '''Select turntable camera object.'''
+    bl_idname = "ttutils.selectttcam"
+    bl_label = "Select Camera Object"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        try:
+            for o in bpy.context.selected_objects:
+                o.select_set(False)
+            thecam = bpy.data.objects['cam.ttCamera']
+            thecam.select_set(True)
+            bpy.context.view_layer.objects.active = thecam
+        except:
+            print("FAILED TO FIND cam.ttCamera")
+        return{'FINISHED'}
+
 # OPERATOR BUTTON_OT_set_out_filepath
 class BUTTON_OT_set_out_filepath(bpy.types.Operator):
     '''Set Output path.'''
@@ -396,6 +415,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.prop(bpy.context.scene, "ttutils_overscan")
         layout.operator("ttutils.set_cam_loc", text=(BUTTON_OT_set_cam_loc.bl_label))
         layout.operator("ttutils.tilt_cam", text=(BUTTON_OT_tilt_cam.bl_label))
+        layout.operator("ttutils.selectttcam", text=(BUTTON_OT_selectTTcam.bl_label))
         layout.operator("ttutils.set_out_filepath", text=(BUTTON_OT_set_out_filepath.bl_label))
         layout.operator("ttutils.save_ttfile", text=(BUTTON_OT_save_ttfile.bl_label))
         
@@ -405,7 +425,7 @@ classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel,
             BUTTON_OT_set_cam_loc, BUTTON_OT_get_asset, 
             BUTTON_OT_get_asset_list, BUTTON_OT_openTT, 
             BUTTON_OT_set_out_filepath, BUTTON_OT_save_ttfile,
-            BUTTON_OT_tilt_cam]
+            BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam]
 
 def register():
     from bpy.utils import register_class
