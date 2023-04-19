@@ -4,11 +4,12 @@
 # 0.0.4 - fixes output path to go into _prod folder
 # 0.0.5 - adds dropdown for choosing latest workfile vs publish
 # 0.0.8 - adds camera select button
+# 0.0.9 - add button to open asset file; bugfix-list asset fail on missing dir; optopm to force new sessions on file opens
 
 bl_info = {
     "name": "TurnTable Tools",
     "author": "Conrad Dueck",
-    "version": (0, 0, 8),
+    "version": (0, 0, 9),
     "blender": (3, 31, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -16,6 +17,7 @@ bl_info = {
     "wiki_url": "",
     "tracker_url": "",
     "category": "Chums"}
+
 
 # ---    GLOBAL IMPORTS    ----
 import bpy
@@ -31,7 +33,7 @@ chm_assetssubtree = '30_texture/projects/blender'
 chm_assetturntables = '30_texture/projects/blender/turntables'
 thecam_name = "cam.ttCamera"
 turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable.blend"
-vsn = '0.0.8'
+vsn = '0.0.9'
 
 
 def get_selection_bounds(thesel):
@@ -113,17 +115,18 @@ def find_latest_workfile(input_path):
     #print("ENTER find_latest_workfile FUNCTION")
     latest_filepath = ""
     vNo = 0
-    for f in os.listdir(input_path):
-        this_path = os.path.join(input_path, f)
-        if this_path.endswith(".blend") and (this_path[-10] == "v"):
-            #print("this_path: ", this_path)
-            if os.path.isfile(this_path):
-                str_version = (f.split(".")[0][-3:])
-                #print("str_version: ", str_version)
-                this_version = int(str_version)
-                if this_version > vNo:
-                    vNo = this_version
-                    latest_filepath = this_path
+    if os.path.exists(input_path):
+        for f in os.listdir(input_path):
+            this_path = os.path.join(input_path, f)
+            if this_path.endswith(".blend") and (this_path[-10] == "v"):
+                #print("this_path: ", this_path)
+                if os.path.isfile(this_path):
+                    str_version = (f.split(".")[0][-3:])
+                    #print("str_version: ", str_version)
+                    this_version = int(str_version)
+                    if this_version > vNo:
+                        vNo = this_version
+                        latest_filepath = this_path
     return latest_filepath
 
 
@@ -152,6 +155,26 @@ def get_asset(asset_name, asset_stage):
     return 0
 
 
+def open_assetfile(asset_name, asset_stage):
+    chm_assetprefix = {'chr':'characters', 
+                       'env':'environments', 
+                       'prp':'props', 
+                       'prx':'proxies'}
+    the_asset_type = chm_assetprefix[asset_name[:3]]
+    the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,chm_assetssubtree,asset_stage)
+    the_asset_path = find_latest_workfile(the_asset_dir)
+    if bpy.context.scene.ttutils_newblend:
+        mycmd = '\"'
+        mycmd += bpy.app.binary_path
+        mycmd += ('\" \"' + the_asset_path + '\"')
+        os.popen(mycmd)
+    else:
+        bpy.ops.wm.open_mainfile(filepath=the_asset_path)
+    
+
+    return 0
+
+
 def get_asset_list(asset_stage):
     asset_list = []
     for asset_type in chm_assettypes:
@@ -168,7 +191,15 @@ def get_asset_list(asset_stage):
 
 
 def open_turntable():
-    bpy.ops.wm.open_mainfile(filepath=turntable_filepath)
+    if bpy.context.scene.ttutils_newblend:
+        mycmd = '\"'
+        mycmd += bpy.app.binary_path
+        mycmd += ('\" \"' + turntable_filepath + '\"')
+        os.popen(mycmd)
+    else:
+        bpy.ops.wm.open_mainfile(filepath=turntable_filepath)
+    
+
 
 
 def set_output_path(asset_name, asset_stage):
@@ -273,6 +304,12 @@ class ttutilsProperties(bpy.types.PropertyGroup):
           step = 0.5,
           default = 20.0
         )
+    bpy.types.Scene.ttutils_newblend = bpy.props.BoolProperty \
+        (
+          name = "Force New Blender",
+          description = "When opening assets or the turntable file with this enabled will launch a new Bledner session.",
+          default = True
+        )
     
 
 # OPERATOR BUTTON_OT_openTT
@@ -284,6 +321,16 @@ class BUTTON_OT_openTT(bpy.types.Operator):
     
     def execute(self, context):
         open_turntable()
+        return{'FINISHED'}
+
+class BUTTON_OT_openAsset(bpy.types.Operator):
+    '''Open Latest Asset File'''
+    bl_idname = "ttutils.openasset"
+    bl_label = "Open Asset File"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        open_assetfile(bpy.context.scene.assetname,bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_selectTTcam
@@ -411,6 +458,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.operator("ttutils.get_asset_list", text=(BUTTON_OT_get_asset_list.bl_label))
         layout.prop(bpy.context.scene, "ttutils_stage")
         layout.prop(bpy.context.scene, "assetname")
+        layout.operator("ttutils.openasset", text=(BUTTON_OT_openAsset.bl_label))
         layout.operator("ttutils.get_asset", text=(BUTTON_OT_get_asset.bl_label))
         layout.prop(bpy.context.scene, "ttutils_overscan")
         layout.operator("ttutils.set_cam_loc", text=(BUTTON_OT_set_cam_loc.bl_label))
@@ -418,6 +466,8 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.operator("ttutils.selectttcam", text=(BUTTON_OT_selectTTcam.bl_label))
         layout.operator("ttutils.set_out_filepath", text=(BUTTON_OT_set_out_filepath.bl_label))
         layout.operator("ttutils.save_ttfile", text=(BUTTON_OT_save_ttfile.bl_label))
+        layout.prop(bpy.context.scene, "ttutils_newblend")
+
         
 
 #   REGISTER
@@ -425,7 +475,8 @@ classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel,
             BUTTON_OT_set_cam_loc, BUTTON_OT_get_asset, 
             BUTTON_OT_get_asset_list, BUTTON_OT_openTT, 
             BUTTON_OT_set_out_filepath, BUTTON_OT_save_ttfile,
-            BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam]
+            BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam,
+            BUTTON_OT_openAsset]
 
 def register():
     from bpy.utils import register_class
