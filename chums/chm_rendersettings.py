@@ -8,8 +8,8 @@
 bl_info = {
     "name": "Render Settings",
     "author": "Conrad Dueck",
-    "version": (0,0,9),
-    "blender": (3, 31, 0),
+    "version": (0,1,0),
+    "blender": (3, 3, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "",
     "warning": "",
@@ -23,7 +23,7 @@ import os
 from pathlib import Path
 
 # GLOBAL VARIABLES
-vsn = '0.0.9'
+vsn = '0.1.0'
 ONSITE_ROOT_DIR = "Y:/projects/CHUMS_Onsite"
 RENDER_SETTINS_FILENAME = "rendersettings_v001.py"
 
@@ -51,6 +51,7 @@ zeroRenderSettings = {
     'bpy.context.scene.cycles.use_denoising': 0,
     'bpy.context.scene.cycles.use_fast_gi': 0,
     'bpy.context.scene.cycles.film_exposure': 1.0,
+    'bpy.context.scene.view_settings.exposure': 1.0,
     'bpy.context.scene.cycles.sample_clamp_direct': 0.0,
     'bpy.context.scene.cycles.use_adaptive_sampling': True,
     'bpy.context.scene.render.use_persistent_data': True
@@ -155,6 +156,9 @@ class renderSettingsProperties(bpy.types.PropertyGroup):
     bpy.types.Scene.rs_node_tree = bpy.props.StringProperty(
         default = ("bpy.context.scene.node_tree.chunk_size,bpy.context.scene.node_tree.use_opencl")
         )
+    bpy.types.Scene.rs_view_layer = bpy.props.StringProperty(
+        default = ("bpy.context.scene.view_settings.exposure")
+        )
     bpy.types.Scene.rs_render = bpy.props.StringProperty(
         default = ("bpy.context.scene.render.engine,bpy.context.scene.render.use_motion_blur,bpy.context.scene.render.motion_blur_shutter,bpy.context.scene.render.use_persistent_data")
         )
@@ -206,6 +210,7 @@ class BUTTON_OT_rssave(bpy.types.Operator):
         for a in bpy.context.scene.rs_node_tree.split(","): rs_settings.append(a)
         for a in bpy.context.scene.rs_render.split(","): rs_settings.append(a)
         for a in bpy.context.scene.rs_cycles.split(","): rs_settings.append(a)
+        for a in bpy.context.scene.rs_view_layer.split(","): rs_settings.append(a)
         rs_passes = bpy.context.scene.rs_passes.split(",")
         all_render_passes = [
             'use_pass_ambient_occlusion', 
@@ -304,6 +309,7 @@ class BUTTON_OT_rsload(bpy.types.Operator):
             'bpy.context.scene.cycles.use_denoising': 0,
             'bpy.context.scene.cycles.use_fast_gi': 0,
             'bpy.context.scene.cycles.film_exposure': 1.0,
+            'bpy.context.scene.view_settings.exposure': 1.0,
             'bpy.context.scene.cycles.sample_clamp_direct': 0.0,
             'bpy.context.scene.cycles.use_adaptive_sampling': True,
             'bpy.context.scene.render.use_persistent_data': True
