@@ -6,15 +6,12 @@ from shutil import copyfile, copy
 ##############################
 # v1.1.0 is the version we used on 7723; Juston's original
 # v2.0.0 is Conrad Dueck's update
-# v2 - reads the project root environment variable that's set with the blender launcher to accommodate different node group availability per project
-# v2 - uses the last item in the split command instead of the second....this correctly identifies .blend files when there's dots in the file name (eg; grp.flow.000.blend)
-# v2 - added version number to interface - using variable 'vrsn' - please maintain correct versioning to allow for more ease in troubleshooting future issues 
-
+# v2 
 bl_info = {
     "name":        "Node Group Manager",
     "description": "Convienient tools for appending, linking, and saving node groups",
-    "author":      "Justin Goran",
-    "version":     (2, 0, 0),
+    "author":      "Justin Goran, Conrad Dueck",
+    "version":     (3, 0, 0),
     "blender":     (3, 30, 1),
     "wiki_url": "",
     "tracker_url": "",
