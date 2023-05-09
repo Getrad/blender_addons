@@ -37,7 +37,7 @@
 ## - check restore logging - seems to be missing - test in 2.7x version too
 # v4.0
 ## * port to Chums using Blender LTS 3.3.1
-## ** remove/replace Tangent specific code
+## ** remove/replace chums specific code
 
 bl_info = {
     "name": "Publish Maps",
@@ -133,7 +133,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         therestore = open(therestorefile, 'w')
         thelogfile = os.path.join(thefilepath, thislog)
         thelog = open(thelogfile, 'w')
-        logmsg = ('tangent_publishmaps    version: ' + vsn)
+        logmsg = ('chums_publishmaps    version: ' + vsn)
         
         #   temporarily switch to absolute paths
         print('Temporarily set all files to absolute.')
@@ -557,7 +557,7 @@ class BUTTON_OT_publishmapsrestore(bpy.types.Operator):
         thislog = ('texture_restore_log_' + theFile + '_' + theDate + '_' + theTime + '.txt')
         restorelogfile = os.path.join(thefilepath, thislog)
         restorelog = open(restorelogfile, 'w')
-        logmsg = ('tangent_publishmaps    version: ' + vsn)
+        logmsg = ('chums_publishmaps    version: ' + vsn)
         logmsg += ('\nRESTORING FROM: ' + thepath)
         
         #   switch to absolute paths
