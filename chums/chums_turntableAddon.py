@@ -9,7 +9,7 @@
 bl_info = {
     "name": "TurnTable Tools",
     "author": "Conrad Dueck",
-    "version": (0, 0, 9),
+    "version": (0, 1, 0),
     "blender": (3, 31, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -33,7 +33,7 @@ chm_assetssubtree = '30_texture/projects/blender'
 chm_assetturntables = '30_texture/projects/blender/turntables'
 thecam_name = "cam.ttCamera"
 turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable.blend"
-vsn = '0.0.9'
+vsn = '0.1.0'
 
 
 def get_selection_bounds(thesel):
@@ -454,6 +454,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layout.prop(bpy.context.scene, "ttutils_newblend")
         layout.operator("ttutils.opentt", text=(BUTTON_OT_openTT.bl_label))
         layout.operator("ttutils.get_asset_list", text=(BUTTON_OT_get_asset_list.bl_label))
         layout.prop(bpy.context.scene, "ttutils_stage")
@@ -466,8 +467,6 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.operator("ttutils.selectttcam", text=(BUTTON_OT_selectTTcam.bl_label))
         layout.operator("ttutils.set_out_filepath", text=(BUTTON_OT_set_out_filepath.bl_label))
         layout.operator("ttutils.save_ttfile", text=(BUTTON_OT_save_ttfile.bl_label))
-        layout.prop(bpy.context.scene, "ttutils_newblend")
-
         
 
 #   REGISTER
