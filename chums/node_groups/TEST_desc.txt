@@ -1,0 +1,3 @@
+TEST
+Proximity Scale
+GEOMETRY

@@ -1,0 +1,3 @@
+Forces the object to display bounds only
+test_vp_bb.001
+GEOMETRY

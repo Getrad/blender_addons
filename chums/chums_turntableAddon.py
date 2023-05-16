@@ -5,11 +5,12 @@
 # 0.0.5 - adds dropdown for choosing latest workfile vs publish
 # 0.0.8 - adds camera select button
 # 0.0.9 - add button to open asset file; bugfix-list asset fail on missing dir; optopm to force new sessions on file opens
+# 0.1.1 - add deadline submit
 
 bl_info = {
     "name": "TurnTable Tools",
-    "author": "Conrad Dueck",
-    "version": (0, 1, 0),
+    "author": "Conrad Dueck, Darren Place",
+    "version": (0, 1, 1),
     "blender": (3, 31, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -20,10 +21,17 @@ bl_info = {
 
 
 # ---    GLOBAL IMPORTS    ----
+from pathlib import Path
+from getpass import getuser
+from socket import gethostname
 import bpy
 import os
+import re
 import math
 import shutil
+import uuid
+import sys
+import subprocess
 
 # ---    GLOBAL VARIABLES    ----
 chm_assettypes = ['characters', 'environments', 'props', 'proxies']
@@ -33,7 +41,170 @@ chm_assetssubtree = '30_texture/projects/blender'
 chm_assetturntables = '30_texture/projects/blender/turntables'
 thecam_name = "cam.ttCamera"
 turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable.blend"
-vsn = '0.1.0'
+deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
+#updateSgVersionScript = Path(lp.getCurrentActionDirectory()).joinpath('sgPostScript.py')
+#updateEditorialScript = Path(lp.getCurrentActionDirectory()).joinpath('updateEditorialScript.py')
+frameRate = 23.976
+vsn = '0.1.1'
+
+def getPipelineTmpFolder():
+    tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
+    return tmp
+
+
+def getCurrentUser():
+    currentUser = getuser()
+    return currentUser
+
+
+def getMachineName():
+    hostName = gethostname()
+    return hostName
+
+
+def sendDeadlineCmd():
+    print("RUNNING SUBMIT TO DEADLINE")
+    tmpDir = Path(getPipelineTmpFolder()).joinpath('dlJobFiles')
+    asset_name = bpy.context.scene.assetname
+    asset_stage = bpy.context.scene.ttutils_stage
+    chm_assetprefix = {'chr':'characters', 
+                       'env':'environments', 
+                       'prp':'props', 
+                       'prx':'proxies'}
+    asset_type = chm_assetprefix[asset_name[:3]]
+    the_outpath_base = os.path.join(chm_renderroot, 
+                                asset_type,
+                                asset_name)
+    the_workpath = os.path.join(chm_assetroot, 
+                                asset_type,
+                                asset_name, 
+                                chm_assetssubtree,
+                                asset_stage)
+    latest_asset_workfile = find_latest_workfile(the_workpath)
+    the_outfilepath = latest_asset_workfile.replace("workfiles", "turntables")
+    the_outfilepath = the_outfilepath.replace("publish", "turntables")
+    the_outfilepath = the_outfilepath.replace(".blend",("_tt.blend"))
+    latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
+    latest_asset_filename = os.path.basename(latest_asset_workfile)
+    the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
+    if not(os.path.exists(the_outpath_base)):
+        os.makedirs(the_outpath_base)
+    outname = latest_asset_filename.replace(".blend",".####.png")
+    the_outpath = os.path.join(the_outpath_base, outname)
+    dlName = os.path.basename(the_outfilepath)
+    dlSceneFile = Path(the_outfilepath).as_posix()
+    dlOutputFile = Path(the_outpath).as_posix()
+    dlFrames = '0-121'
+    filename = uuid.uuid4()
+    jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
+    with open(jobInfoPath, 'w') as f:
+        f.write(f"Name={dlName} [Blender Render]\n")
+        f.write(f"BatchName={dlName}\n")
+        f.write(f"Department=Assets\n")
+        f.write(f"Priority=50\n")
+        f.write(f"ChunkSize=10\n")
+        f.write(f"Comment=Turntable\n")
+        f.write(f"Frames={dlFrames}\n")
+        f.write(f"UserName={getCurrentUser()}\n")
+        f.write(f"MachineName={getMachineName()}\n")
+        f.write(f"Plugin=Blender\n") # required
+        f.write(f"OutputDirectory0={the_outpath_base}\n")
+        f.write(f"OutputFilename0={outname}\n")
+    pluginInfoPath = Path(tmpDir).joinpath(f'{filename}_pluginInfo.job')
+    # Open the pluginInfo jobfile for writing
+    with open(pluginInfoPath, 'w') as f:
+        f.write(f"SceneFile={dlSceneFile}\n")
+        f.write(f"OutputFile={dlOutputFile}\n")
+        f.write(f"Threads=0\n")
+        f.write(f"Build=None\n")
+
+    command = f'{deadlineBin} {jobInfoPath} {pluginInfoPath}'
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    sys.stdout.write(stdout.decode())
+    if stdout:
+        # Decode the byte string into a UTF-8 string
+        output = stdout.decode('utf-8')
+        match = re.search(r'JobID=([0-9a-z]+)', output)
+        global blendJobId
+        if match:
+            blendJobId = match.group(1)
+
+
+def xcodeH264():
+    print("Info: Submitting H264 Transcode Job...")
+    tmpDir = Path(getPipelineTmpFolder()).joinpath('dlJobFiles')
+    asset_name = bpy.context.scene.assetname
+    asset_stage = bpy.context.scene.ttutils_stage
+    chm_assetprefix = {'chr':'characters', 
+                       'env':'environments', 
+                       'prp':'props', 
+                       'prx':'proxies'}
+    asset_type = chm_assetprefix[asset_name[:3]]
+    the_outpath_base = os.path.join(chm_renderroot, 
+                                asset_type,
+                                asset_name)
+    the_workpath = os.path.join(chm_assetroot, 
+                                asset_type,
+                                asset_name, 
+                                chm_assetssubtree,
+                                asset_stage)
+    latest_asset_workfile = find_latest_workfile(the_workpath)
+    the_outfilepath = latest_asset_workfile.replace("workfiles", "turntables")
+    the_outfilepath = the_outfilepath.replace("publish", "turntables")
+    the_outfilepath = the_outfilepath.replace(".blend",("_tt.blend"))
+    latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
+    latest_asset_filename = os.path.basename(latest_asset_workfile)
+    the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
+    if not(os.path.exists(the_outpath_base)):
+        os.makedirs(the_outpath_base)
+    outname = latest_asset_filename.replace(".blend",".####.png")
+    the_outpath = os.path.join(the_outpath_base, outname)
+    dlName = os.path.basename(the_outfilepath)
+    dlSceneFile = Path(the_outfilepath).as_posix()
+    dlOutputFile = Path(the_outpath).as_posix()
+    dlOutputPath = Path(the_outpath_base).as_posix()
+    dlFrames = '0-121'
+    filename = uuid.uuid4()
+    jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
+
+    with open(jobInfoPath, 'w') as f:
+        f.write(f"Name={dlName} [H.264 Transcode]\n")
+        f.write(f"BatchName={dlName}\n")
+        f.write(f"ChunkSize=1000000\n")
+        f.write(f"JobDependency0={blendJobId}\n")
+        f.write(f"Comment=\n")
+        f.write(f"Department=Assets\n")
+        f.write(f"Priority=50\n")
+        f.write(f"Frames={dlFrames}\n")
+        f.write(f"UserName={os.getlogin()}\n")
+        f.write(f"MachineName={getMachineName()}\n")
+        f.write(f"Plugin=FFmpeg\n")
+        f.write(f"OutputDirectory0={dlOutputPath}\n")
+        f.write(f"OutputFilename0={outname}.mov\n")
+        f.write(f"MachineLimit=1\n")
+        f.write(f"Allowlist=Darren\n") #FIXME: remove this line when running in prod on the server
+        f.write(f"ExtraInfo6={dlSceneFile}\n")
+
+        #if args["createSgVersion"] == True:
+        #    f.write(f"PostJobScript={updateSgVersionScript}\n")
+        #    f.write(f"ExtraInfo5={args['sgUsername']}\n")
+    
+    pluginInfoPath = Path(tmpDir).joinpath(f'{filename}_pluginInfo.job')
+    # Open the pluginInfo jobfile for writing
+    with open(pluginInfoPath, 'w') as f:
+        f.write(f"InputFile0={dlOutputFile.replace('####', '%04d')}\n") # the image sequence
+        f.write(f"InputFile1=\n")    # the audio
+        f.write(f"InputArgs0=-r {frameRate}\n") # force the image sequence fps to output framerate
+        f.write(f"ReplacePadding0=False\n")
+        f.write(f"ReplacePadding1=False\n")
+        f.write(f"OutputArgs=-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -profile:v high -level 4.1 -r {frameRate} -s 1920x1080 -c:a aac -b:a 192k -map 0:v:0 -map 1:a:0 -y\n")
+        f.write(f"OutputFile={Path(dlOutputPath).joinpath((outname) + '_h264.mov')}\n")
+    
+    command = f'{deadlineBin} {jobInfoPath} {pluginInfoPath}'
+    subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    
+
 
 
 def get_selection_bounds(thesel):
@@ -198,14 +369,11 @@ def open_turntable():
         os.popen(mycmd)
     else:
         bpy.ops.wm.open_mainfile(filepath=turntable_filepath)
-    
-
 
 
 def set_output_path(asset_name, asset_stage):
     #new goal: Y:\projects\CHUMS_Onsite\renders\assets\<asset type>\<asset name>\<v###>
     the_outpath = ""
-    vNo = 0
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
                        'prp':'props', 
@@ -250,7 +418,6 @@ def clean_up_after_blender_save(save_path):
 
 def save_tt_file(asset_name, asset_stage):
     the_outpath = ""
-    vNo = 0
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
                        'prp':'props', 
@@ -443,6 +610,23 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
         save_tt_file(bpy.context.scene.assetname, bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
+
+# OPERATOR BUTTON_OT_submit_tt
+class BUTTON_OT_submit_tt(bpy.types.Operator):
+    '''Submit Turntable to Deadline'''
+    bl_idname = "ttutils.submit_tt"
+    bl_label = "Submit Turntable Render"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        assetname = bpy.context.scene.assetname
+        theoutpath = set_output_path(assetname, bpy.context.scene.ttutils_stage)
+        sendDeadlineCmd()
+        xcodeH264()
+        print("theoutpath: ", theoutpath)
+        return{'FINISHED'}
+
+
 # PANEL VIEW3D_PT_ttutils_panel
 class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
@@ -456,7 +640,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout = self.layout
         layout.prop(bpy.context.scene, "ttutils_newblend")
         layout.operator("ttutils.opentt", text=(BUTTON_OT_openTT.bl_label))
-        layout.operator("ttutils.get_asset_list", text=(BUTTON_OT_get_asset_list.bl_label))
+        #layout.operator("ttutils.get_asset_list", text=(BUTTON_OT_get_asset_list.bl_label))
         layout.prop(bpy.context.scene, "ttutils_stage")
         layout.prop(bpy.context.scene, "assetname")
         layout.operator("ttutils.openasset", text=(BUTTON_OT_openAsset.bl_label))
@@ -467,6 +651,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.operator("ttutils.selectttcam", text=(BUTTON_OT_selectTTcam.bl_label))
         layout.operator("ttutils.set_out_filepath", text=(BUTTON_OT_set_out_filepath.bl_label))
         layout.operator("ttutils.save_ttfile", text=(BUTTON_OT_save_ttfile.bl_label))
+        layout.operator("ttutils.submit_tt", text=(BUTTON_OT_submit_tt.bl_label))
         
 
 #   REGISTER
@@ -475,7 +660,7 @@ classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel,
             BUTTON_OT_get_asset_list, BUTTON_OT_openTT, 
             BUTTON_OT_set_out_filepath, BUTTON_OT_save_ttfile,
             BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam,
-            BUTTON_OT_openAsset]
+            BUTTON_OT_openAsset, BUTTON_OT_submit_tt]
 
 def register():
     from bpy.utils import register_class

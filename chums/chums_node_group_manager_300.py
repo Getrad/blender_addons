@@ -20,13 +20,18 @@ bl_info = {
     }
 
 vrsn = '3.0.0'
+dev_local = True
 
 ##############################
 #### Master Path Settings ####
 ##############################
-theserverroot = 'P'
-theprojectroot = os.environ.get("PROJECT_ROOT")
-base_path = (theserverroot+':\\projects\\CHUMS_Onsite\\pipeline\\software\\tools\\blender\\node_groups')
+if dev_local:
+    theserverroot = 'P'
+else:
+    theserverroot = 'Y'
+
+#base_path = (theserverroot+':\\projects\\CHUMS_Onsite\\pipeline\\software\\tools\\blender\\node_groups')
+base_path = ""
 empty_blend = (theserverroot+':\\projects\\CHUMS_Onsite\\pipeline\\software\\tools\\blender\\node_groups\\empty.blend')
 
 user = os.getlogin()
@@ -41,6 +46,7 @@ def update_node_list(self, context):
     self.node_list.clear()
     
     selected = self.cat_lst
+    base_path = bpy.context.scene.custom_nodes_library
     cat_path = os.path.join(base_path, selected)
     
     files = os.listdir(cat_path)
@@ -63,7 +69,7 @@ def update_node_list(self, context):
 
 
 def update_cat_lst(self, context):
-    
+    base_path = bpy.context.scene.custom_nodes_library
     cat_folder = os.listdir(base_path)
     
     categories = []
@@ -94,16 +100,29 @@ class ExportNodes(bpy.types.Operator):
     bl_label = 'Save'
     
     def execute(self, context):
+        # Get path for the node to import
+        base_path = bpy.context.scene.custom_nodes_library
+        sel_cat = bpy.context.scene.custom_nodes.cat_lst        
+        print("sel_cat: ", sel_cat)
+        cat_path = os.path.join(base_path, sel_cat)
+        print("cat_path: ", cat_path)
         
+        # Get the selected node name
+        node_props = bpy.context.scene.custom_nodes
+        node_name = node_props.node_list[node_props.index].name
+        
+
         ng_name = bpy.context.scene.custom_nodes.ng_name
+        print("ng_name: ", ng_name)
         sel = context.active_node.node_tree.name
+        print("sel: ", sel)
         
         node_group = bpy.data.node_groups[sel]
-        
+        print("node_group: ", node_group)
+        base_path = bpy.context.scene.custom_nodes_library
         user_path = os.path.join(base_path, user)
         print("user_path: ", user_path)
         arch_path = os.path.join(user_path, 'archive')
-        
         print("arch_path: ", arch_path)
         new_file = '{}\\{}.blend'.format(user_path, ng_name)
         
@@ -150,6 +169,7 @@ class ImportNodes(bpy.types.Operator):
     def execute(self, context):
         
         # Get path for the node to import
+        base_path = bpy.context.scene.custom_nodes_library
         sel_cat = bpy.context.scene.custom_nodes.cat_lst        
         cat_path = os.path.join(base_path, sel_cat)
         
@@ -191,6 +211,16 @@ class ImportNodes(bpy.types.Operator):
                 node = nodetree.nodes.new("CompositorNodeGroup")
                 node.node_tree = bpy.data.node_groups[realname]
                 
+            elif bpy.data.node_groups[realname].type == 'GEOMETRY':
+            
+                #nodetree = bpy.context.scene.node_tree
+                if context.active_object.type == 'MESH':
+                    nodetree = context.active_object.modifiers.active.node_group
+                else:
+                    nodetree = context.active_object.data.node_tree
+                node = nodetree.nodes.new("GeometryNodeGroup")
+                node.node_tree = bpy.data.node_groups[realname]
+            
         return {'FINISHED'}
         
 class DeleteNodes(bpy.types.Operator):
@@ -200,6 +230,7 @@ class DeleteNodes(bpy.types.Operator):
     
     def execute(self, context):
     
+        base_path = bpy.context.scene.custom_nodes_library
         sel_cat = bpy.context.scene.custom_nodes.cat_lst        
         cat_path = os.path.join(base_path, sel_cat)
         
@@ -230,6 +261,7 @@ def rename_name(self, context):
     sel_cat = bpy.context.scene.custom_nodes.cat_lst
     if sel_cat == user:
      
+        base_path = bpy.context.scene.custom_nodes_library
         cat_path = os.path.join(base_path, sel_cat)
             
         node_file = os.path.join(cat_path, '{}.blend'.format(self.name))
@@ -264,7 +296,8 @@ def rename_name(self, context):
 def rename_desc(self, context):
 
     sel_cat = bpy.context.scene.custom_nodes.cat_lst
-    if sel_cat == user:        
+    if sel_cat == user:
+        base_path = bpy.context.scene.custom_nodes_library
         cat_path = os.path.join(base_path, sel_cat)
         node_desc = os.path.join(cat_path, '{}_desc.txt'.format(self.name))
         
@@ -342,6 +375,9 @@ class CUSTOMNODES_PT_NodeImporter(bpy.types.Panel):
         layout = self.layout
         np = bpy.context.scene.custom_nodes
         
+        #### Library Location
+        layout.prop(bpy.context.scene, "custom_nodes_library")
+
         #### Category drop-down ####
         layout.prop(np, 'cat_lst')
         
@@ -406,6 +442,13 @@ def register():
     for cls in classes:
         register_class(cls)
     bpy.types.Scene.custom_nodes = bpy.props.PointerProperty(type=CustomNodeProperties)
+    bpy.types.Scene.custom_nodes_library = bpy.props.StringProperty(
+        name="Library:",
+        description="Path to Node Group Library",
+        default=base_path,
+        maxlen=1024,
+        subtype='DIR_PATH')
+    
 
 def unregister():
     from bpy.utils import unregister_class
