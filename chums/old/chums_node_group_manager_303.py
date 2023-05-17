@@ -37,7 +37,7 @@ base_path = ""
 empty_blend = os.path.join(base_path, 'empty.blend')
 
 user = os.getlogin()
-superusers = ['dplace','cdueck','conrad']
+superusers = ['dplace','cdueck']
 
 ###################
 #### Functions ####
