@@ -12,7 +12,7 @@
 bl_info = {
     "name": "TurnTable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 1, 3),
+    "version": (0, 1, 4),
     "blender": (3, 31, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -48,7 +48,7 @@ deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 #updateEditorialScript = Path(lp.getCurrentActionDirectory()).joinpath('updateEditorialScript.py')
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.1.3'
+vsn = '0.1.4'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -209,11 +209,12 @@ def xcodeH264():
     # Open the pluginInfo jobfile for writing
     with open(pluginInfoPath, 'w') as f:
         f.write(f"InputFile0={dlOutputFile.replace('####', '%04d')}\n") # the image sequence
-        f.write(f"InputFile1={tunes}\n")    # the audio
+        #f.write(f"InputFile1={tunes}\n")    # the audio
         f.write(f"InputArgs0=-r {frameRate}\n") # force the image sequence fps to output framerate
         f.write(f"ReplacePadding0=False\n")
-        f.write(f"ReplacePadding1=False\n")
-        f.write(f"OutputArgs=-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -profile:v high -level 4.1 -r {frameRate} -s 1080x1080 -c:a aac -b:a 192k -map 0:v:0 -map 1:a:0 -y\n")
+        #f.write(f"ReplacePadding1=False\n")
+        #f.write(f"OutputArgs=-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -profile:v high -level 4.1 -r {frameRate} -s 1080x1080 -c:a aac -b:a 192k -map 0:v:0 -map 1:a:0 -y\n")
+        f.write(f"OutputArgs=-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -profile:v high -level 4.1 -r {frameRate} -s 1920x1080 -map 0:v:0 -y\n")
         f.write(f"OutputFile={Path(dlOutputPath).joinpath((outmovname) + '_h264.mov')}\n")
     
     command = f'{deadlineBin} {jobInfoPath} {pluginInfoPath}'
@@ -641,8 +642,8 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
         assetname = bpy.context.scene.assetname
         theoutpath = set_output_path(assetname, bpy.context.scene.ttutils_stage)
         sendDeadlineCmd()
-        #if bpy.context.scene.ttutils_xcode == True:
-        #    xcodeH264()
+        if bpy.context.scene.ttutils_xcode == True:
+            xcodeH264()
         return{'FINISHED'}
 
 
@@ -671,7 +672,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.operator("ttutils.set_out_filepath", text=(BUTTON_OT_set_out_filepath.bl_label))
         layout.operator("ttutils.save_ttfile", text=(BUTTON_OT_save_ttfile.bl_label))
         layout.operator("ttutils.submit_tt", text=(BUTTON_OT_submit_tt.bl_label))
-        #layout.prop(bpy.context.scene, "ttutils_xcode")
+        layout.prop(bpy.context.scene, "ttutils_xcode")
         
 
 #   REGISTER
