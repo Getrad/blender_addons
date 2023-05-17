@@ -6,11 +6,13 @@
 # 0.0.8 - adds camera select button
 # 0.0.9 - add button to open asset file; bugfix-list asset fail on missing dir; optopm to force new sessions on file opens
 # 0.1.1 - add deadline submit
+# 0.1.2 - add quick draft and remove transcode
+# 0.1.3 - music for xcode - is all working but disabled as this audio will make us crazy
 
 bl_info = {
     "name": "TurnTable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 1, 1),
+    "version": (0, 1, 3),
     "blender": (3, 31, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -44,8 +46,9 @@ turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/pr
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 #updateSgVersionScript = Path(lp.getCurrentActionDirectory()).joinpath('sgPostScript.py')
 #updateEditorialScript = Path(lp.getCurrentActionDirectory()).joinpath('updateEditorialScript.py')
+tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.1.1'
+vsn = '0.1.3'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -91,7 +94,7 @@ def sendDeadlineCmd():
         os.makedirs(the_outpath_base)
     outname = latest_asset_filename.replace(".blend",".####.png")
     the_outpath = os.path.join(the_outpath_base, outname)
-    dlName = os.path.basename(the_outfilepath)
+    dlName = os.path.basename(the_outfilepath)[:-6]
     dlSceneFile = Path(the_outfilepath).as_posix()
     dlOutputFile = Path(the_outpath).as_posix()
     dlFrames = '0-121'
@@ -110,6 +113,17 @@ def sendDeadlineCmd():
         f.write(f"Plugin=Blender\n") # required
         f.write(f"OutputDirectory0={the_outpath_base}\n")
         f.write(f"OutputFilename0={outname}\n")
+        f.write(f"ExtraInfoKeyValue0=SubmitQuickDraft=True\n")
+        f.write(f"ExtraInfoKeyValue1=DraftExtension=mov\n")
+        f.write(f"ExtraInfoKeyValue2=DraftType=movie\n")
+        f.write(f"ExtraInfoKeyValue3=DraftResolution=1\n")
+        f.write(f"ExtraInfoKeyValue4=DraftCodec=h264\n")
+        f.write(f"ExtraInfoKeyValue5=DraftQuality=85\n")
+        f.write(f"ExtraInfoKeyValue6=DraftFrameRate=24\n")
+        f.write(f"ExtraInfoKeyValue7=DraftColorSpaceIn=Draft sRGB\n")
+        f.write(f"ExtraInfoKeyValue8=DraftColorSpaceOut=Draft sRGB\n")
+        f.write(f"ExtraInfoKeyValue9=DraftUploadToShotgun=False\n")
+
     pluginInfoPath = Path(tmpDir).joinpath(f'{filename}_pluginInfo.job')
     # Open the pluginInfo jobfile for writing
     with open(pluginInfoPath, 'w') as f:
@@ -159,21 +173,22 @@ def xcodeH264():
     if not(os.path.exists(the_outpath_base)):
         os.makedirs(the_outpath_base)
     outname = latest_asset_filename.replace(".blend",".####.png")
+    outmovname = os.path.basename(the_outfilepath)[:-6]
     the_outpath = os.path.join(the_outpath_base, outname)
-    dlName = os.path.basename(the_outfilepath)
+    dlName = os.path.basename(the_outfilepath)[:-6]
     dlSceneFile = Path(the_outfilepath).as_posix()
     dlOutputFile = Path(the_outpath).as_posix()
     dlOutputPath = Path(the_outpath_base).as_posix()
     dlFrames = '0-121'
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
-
+    
     with open(jobInfoPath, 'w') as f:
         f.write(f"Name={dlName} [H.264 Transcode]\n")
         f.write(f"BatchName={dlName}\n")
         f.write(f"ChunkSize=1000000\n")
         f.write(f"JobDependency0={blendJobId}\n")
-        f.write(f"Comment=\n")
+        f.write(f"Comment=Turntable\n")
         f.write(f"Department=Assets\n")
         f.write(f"Priority=50\n")
         f.write(f"Frames={dlFrames}\n")
@@ -181,7 +196,7 @@ def xcodeH264():
         f.write(f"MachineName={getMachineName()}\n")
         f.write(f"Plugin=FFmpeg\n")
         f.write(f"OutputDirectory0={dlOutputPath}\n")
-        f.write(f"OutputFilename0={outname}.mov\n")
+        f.write(f"OutputFilename0={outmovname}.mov\n")
         f.write(f"MachineLimit=1\n")
         f.write(f"Allowlist=Darren\n") #FIXME: remove this line when running in prod on the server
         f.write(f"ExtraInfo6={dlSceneFile}\n")
@@ -194,17 +209,15 @@ def xcodeH264():
     # Open the pluginInfo jobfile for writing
     with open(pluginInfoPath, 'w') as f:
         f.write(f"InputFile0={dlOutputFile.replace('####', '%04d')}\n") # the image sequence
-        f.write(f"InputFile1=\n")    # the audio
+        f.write(f"InputFile1={tunes}\n")    # the audio
         f.write(f"InputArgs0=-r {frameRate}\n") # force the image sequence fps to output framerate
         f.write(f"ReplacePadding0=False\n")
         f.write(f"ReplacePadding1=False\n")
-        f.write(f"OutputArgs=-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -profile:v high -level 4.1 -r {frameRate} -s 1920x1080 -c:a aac -b:a 192k -map 0:v:0 -map 1:a:0 -y\n")
-        f.write(f"OutputFile={Path(dlOutputPath).joinpath((outname) + '_h264.mov')}\n")
+        f.write(f"OutputArgs=-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -profile:v high -level 4.1 -r {frameRate} -s 1080x1080 -c:a aac -b:a 192k -map 0:v:0 -map 1:a:0 -y\n")
+        f.write(f"OutputFile={Path(dlOutputPath).joinpath((outmovname) + '_h264.mov')}\n")
     
     command = f'{deadlineBin} {jobInfoPath} {pluginInfoPath}'
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
-
 
 
 def get_selection_bounds(thesel):
@@ -477,6 +490,12 @@ class ttutilsProperties(bpy.types.PropertyGroup):
           description = "When opening assets or the turntable file with this enabled will launch a new Bledner session.",
           default = True
         )
+    bpy.types.Scene.ttutils_xcode = bpy.props.BoolProperty \
+        (
+          name = "Transcode",
+          description = "Transcode H264.",
+          default = False
+        )
     
 
 # OPERATOR BUTTON_OT_openTT
@@ -622,8 +641,8 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
         assetname = bpy.context.scene.assetname
         theoutpath = set_output_path(assetname, bpy.context.scene.ttutils_stage)
         sendDeadlineCmd()
-        xcodeH264()
-        print("theoutpath: ", theoutpath)
+        #if bpy.context.scene.ttutils_xcode == True:
+        #    xcodeH264()
         return{'FINISHED'}
 
 
@@ -652,6 +671,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.operator("ttutils.set_out_filepath", text=(BUTTON_OT_set_out_filepath.bl_label))
         layout.operator("ttutils.save_ttfile", text=(BUTTON_OT_save_ttfile.bl_label))
         layout.operator("ttutils.submit_tt", text=(BUTTON_OT_submit_tt.bl_label))
+        #layout.prop(bpy.context.scene, "ttutils_xcode")
         
 
 #   REGISTER
