@@ -1,3 +1,0 @@
-Forces the object to display bounds only
-NodeGroup.001
-GEOMETRY
