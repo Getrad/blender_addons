@@ -12,8 +12,8 @@
 bl_info = {
     "name": "TurnTable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 1, 4),
-    "blender": (3, 31, 0),
+    "version": (0, 1, 6),
+    "blender": (3, 3, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
     "warning": "",
@@ -44,11 +44,9 @@ chm_assetturntables = '30_texture/projects/blender/turntables'
 thecam_name = "cam.ttCamera"
 turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable.blend"
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
-#updateSgVersionScript = Path(lp.getCurrentActionDirectory()).joinpath('sgPostScript.py')
-#updateEditorialScript = Path(lp.getCurrentActionDirectory()).joinpath('updateEditorialScript.py')
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.1.4'
+vsn = '0.1.6'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -68,35 +66,44 @@ def getMachineName():
 def sendDeadlineCmd():
     print("RUNNING SUBMIT TO DEADLINE")
     tmpDir = Path(getPipelineTmpFolder()).joinpath('dlJobFiles')
+    thisfilename = bpy.data.filepath
+    thisoutputpath = bpy.context.scene.render.filepath
     asset_name = bpy.context.scene.assetname
     asset_stage = bpy.context.scene.ttutils_stage
     chm_assetprefix = {'chr':'characters', 
-                       'env':'environments', 
-                       'prp':'props', 
-                       'prx':'proxies'}
+                    'env':'environments', 
+                    'prp':'props', 
+                    'prx':'proxies'}
     asset_type = chm_assetprefix[asset_name[:3]]
     the_outpath_base = os.path.join(chm_renderroot, 
                                 asset_type,
                                 asset_name)
-    the_workpath = os.path.join(chm_assetroot, 
-                                asset_type,
-                                asset_name, 
-                                chm_assetssubtree,
-                                asset_stage)
-    latest_asset_workfile = find_latest_workfile(the_workpath)
-    the_outfilepath = latest_asset_workfile.replace("workfiles", "turntables")
-    the_outfilepath = the_outfilepath.replace("publish", "turntables")
-    the_outfilepath = the_outfilepath.replace(".blend",("_tt.blend"))
-    latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
-    latest_asset_filename = os.path.basename(latest_asset_workfile)
-    the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
-    if not(os.path.exists(the_outpath_base)):
-        os.makedirs(the_outpath_base)
-    outname = latest_asset_filename.replace(".blend",".####.png")
-    the_outpath = os.path.join(the_outpath_base, outname)
-    dlName = os.path.basename(the_outfilepath)[:-6]
-    dlSceneFile = Path(the_outfilepath).as_posix()
-    dlOutputFile = Path(the_outpath).as_posix()
+    if os.path.basename(thisfilename) == os.path.basename(turntable_filepath):
+        the_workpath = os.path.join(chm_assetroot, 
+                                    asset_type,
+                                    asset_name, 
+                                    chm_assetssubtree,
+                                    asset_stage)
+        latest_asset_workfile = find_latest_workfile(the_workpath)
+        the_outfilepath = latest_asset_workfile.replace("workfiles", "turntables")
+        the_outfilepath = the_outfilepath.replace("publish", "turntables")
+        the_outfilepath = the_outfilepath.replace(".blend",("_tt.blend"))
+        latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
+        latest_asset_filename = os.path.basename(latest_asset_workfile)
+        the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
+        if not(os.path.exists(the_outpath_base)):
+            os.makedirs(the_outpath_base)
+        outname = latest_asset_filename.replace(".blend",".####.png")
+        the_outpath = os.path.join(the_outpath_base, outname)
+        dlName = os.path.basename(the_outfilepath)[:-6]
+        dlSceneFile = Path(the_outfilepath).as_posix()
+        dlOutputFile = Path(the_outpath).as_posix()
+    else:
+        dlName = os.path.basename(thisfilename)[:-6]
+        dlSceneFile = Path(thisfilename).as_posix()
+        dlOutputFile = Path(thisoutputpath).as_posix()
+        the_outpath_base = os.path.basename(thisfilename)
+        outname = os.path.basename(thisoutputpath)
     dlFrames = '0-121'
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
@@ -113,16 +120,17 @@ def sendDeadlineCmd():
         f.write(f"Plugin=Blender\n") # required
         f.write(f"OutputDirectory0={the_outpath_base}\n")
         f.write(f"OutputFilename0={outname}\n")
-        f.write(f"ExtraInfoKeyValue0=SubmitQuickDraft=True\n")
-        f.write(f"ExtraInfoKeyValue1=DraftExtension=mov\n")
-        f.write(f"ExtraInfoKeyValue2=DraftType=movie\n")
-        f.write(f"ExtraInfoKeyValue3=DraftResolution=1\n")
-        f.write(f"ExtraInfoKeyValue4=DraftCodec=h264\n")
-        f.write(f"ExtraInfoKeyValue5=DraftQuality=85\n")
-        f.write(f"ExtraInfoKeyValue6=DraftFrameRate=24\n")
-        f.write(f"ExtraInfoKeyValue7=DraftColorSpaceIn=Draft sRGB\n")
-        f.write(f"ExtraInfoKeyValue8=DraftColorSpaceOut=Draft sRGB\n")
-        f.write(f"ExtraInfoKeyValue9=DraftUploadToShotgun=False\n")
+        if bpy.context.scene.ttutils_draft == True:
+            f.write(f"ExtraInfoKeyValue0=SubmitQuickDraft=True\n")
+            f.write(f"ExtraInfoKeyValue1=DraftExtension=mov\n")
+            f.write(f"ExtraInfoKeyValue2=DraftType=movie\n")
+            f.write(f"ExtraInfoKeyValue3=DraftResolution=1\n")
+            f.write(f"ExtraInfoKeyValue4=DraftCodec=h264\n")
+            f.write(f"ExtraInfoKeyValue5=DraftQuality=85\n")
+            f.write(f"ExtraInfoKeyValue6=DraftFrameRate=24\n")
+            f.write(f"ExtraInfoKeyValue7=DraftColorSpaceIn=Draft sRGB\n")
+            f.write(f"ExtraInfoKeyValue8=DraftColorSpaceOut=Draft sRGB\n")
+            f.write(f"ExtraInfoKeyValue9=DraftUploadToShotgun=False\n")
 
     pluginInfoPath = Path(tmpDir).joinpath(f'{filename}_pluginInfo.job')
     # Open the pluginInfo jobfile for writing
@@ -148,6 +156,8 @@ def sendDeadlineCmd():
 def xcodeH264():
     print("Info: Submitting H264 Transcode Job...")
     tmpDir = Path(getPipelineTmpFolder()).joinpath('dlJobFiles')
+    thisfilename = bpy.data.filepath
+    thisoutputpath = bpy.context.scene.render.filepath
     asset_name = bpy.context.scene.assetname
     asset_stage = bpy.context.scene.ttutils_stage
     chm_assetprefix = {'chr':'characters', 
@@ -158,31 +168,37 @@ def xcodeH264():
     the_outpath_base = os.path.join(chm_renderroot, 
                                 asset_type,
                                 asset_name)
-    the_workpath = os.path.join(chm_assetroot, 
-                                asset_type,
-                                asset_name, 
-                                chm_assetssubtree,
-                                asset_stage)
-    latest_asset_workfile = find_latest_workfile(the_workpath)
-    the_outfilepath = latest_asset_workfile.replace("workfiles", "turntables")
-    the_outfilepath = the_outfilepath.replace("publish", "turntables")
-    the_outfilepath = the_outfilepath.replace(".blend",("_tt.blend"))
-    latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
-    latest_asset_filename = os.path.basename(latest_asset_workfile)
-    the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
-    if not(os.path.exists(the_outpath_base)):
-        os.makedirs(the_outpath_base)
-    outname = latest_asset_filename.replace(".blend",".####.png")
-    outmovname = os.path.basename(the_outfilepath)[:-6]
-    the_outpath = os.path.join(the_outpath_base, outname)
-    dlName = os.path.basename(the_outfilepath)[:-6]
-    dlSceneFile = Path(the_outfilepath).as_posix()
-    dlOutputFile = Path(the_outpath).as_posix()
-    dlOutputPath = Path(the_outpath_base).as_posix()
+    if os.path.basename(thisfilename) == os.path.basename(turntable_filepath):
+        the_workpath = os.path.join(chm_assetroot, 
+                                    asset_type,
+                                    asset_name, 
+                                    chm_assetssubtree,
+                                    asset_stage)
+        latest_asset_workfile = find_latest_workfile(the_workpath)
+        the_outfilepath = latest_asset_workfile.replace("workfiles", "turntables")
+        the_outfilepath = the_outfilepath.replace("publish", "turntables")
+        the_outfilepath = the_outfilepath.replace(".blend",("_tt.blend"))
+        latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
+        latest_asset_filename = os.path.basename(latest_asset_workfile)
+        the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
+        if not(os.path.exists(the_outpath_base)):
+            os.makedirs(the_outpath_base)
+        outname = latest_asset_filename.replace(".blend",".####.png")
+        outmovname = os.path.basename(the_outfilepath)[:-6]
+        the_outpath = os.path.join(the_outpath_base, outname)
+        dlName = os.path.basename(the_outfilepath)[:-6]
+        dlSceneFile = Path(the_outfilepath).as_posix()
+        dlOutputFile = Path(the_outpath).as_posix()
+        dlOutputPath = Path(the_outpath_base).as_posix()
+    else:
+        dlName = os.path.basename(thisfilename)[:-6]
+        dlSceneFile = Path(thisfilename).as_posix()
+        dlOutputFile = Path(thisoutputpath).as_posix()
+        dlOutputPath = Path(os.path.dirname(thisoutputpath)).as_posix()
+        outmovname = os.path.basename(thisfilename)[:-6]
     dlFrames = '0-121'
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
-    
     with open(jobInfoPath, 'w') as f:
         f.write(f"Name={dlName} [H.264 Transcode]\n")
         f.write(f"BatchName={dlName}\n")
@@ -219,7 +235,7 @@ def xcodeH264():
     
     command = f'{deadlineBin} {jobInfoPath} {pluginInfoPath}'
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+    
 
 def get_selection_bounds(thesel):
     print("\nENTER get_selection_bounds FUNCTION")
@@ -268,7 +284,6 @@ def get_selection_bounds(thesel):
     
     return thesize, thecenter
 
-
 def get_local_asset_objects():
     print("\nENTER get_local_asset_objects FUNCTION")
     object_list = []
@@ -285,7 +300,6 @@ def get_local_asset_objects():
                             object_list.append(obj)
     return object_list
 
-
 def remove_any_existing_asset():
     # asumee all objects in collection "asset_prod" are to be removed as well as the collection itself
     for col in bpy.data.collections:
@@ -294,7 +308,6 @@ def remove_any_existing_asset():
                 bpy.data.objects.remove(obj, do_unlink=True)
             bpy.data.collections.remove(col)
     return 0
-
 
 def find_latest_workfile(input_path):
     #print("ENTER find_latest_workfile FUNCTION")
@@ -313,7 +326,6 @@ def find_latest_workfile(input_path):
                         vNo = this_version
                         latest_filepath = this_path
     return latest_filepath
-
 
 def get_asset(asset_name, asset_stage):
     print("ENTER get_asset FUNCTION", asset_name)
@@ -339,7 +351,6 @@ def get_asset(asset_name, asset_stage):
                 colobj.parent = bpy.data.objects['AnimGrp.asset']
     return 0
 
-
 def open_assetfile(asset_name, asset_stage):
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
@@ -359,7 +370,6 @@ def open_assetfile(asset_name, asset_stage):
 
     return 0
 
-
 def get_asset_list(asset_stage):
     asset_list = []
     for asset_type in chm_assettypes:
@@ -374,7 +384,6 @@ def get_asset_list(asset_stage):
 
     return asset_list
 
-
 def open_turntable():
     if bpy.context.scene.ttutils_newblend:
         mycmd = '\"'
@@ -383,7 +392,6 @@ def open_turntable():
         os.popen(mycmd)
     else:
         bpy.ops.wm.open_mainfile(filepath=turntable_filepath)
-
 
 def set_output_path(asset_name, asset_stage):
     #new goal: Y:\projects\CHUMS_Onsite\renders\assets\<asset type>\<asset name>\<v###>
@@ -414,7 +422,6 @@ def set_output_path(asset_name, asset_stage):
     print("outpath: ", the_outpath)
     return the_outpath
 
-
 def clean_up_after_blender_save(save_path):
     the_garbage_dir = save_path.replace("_tt.blend",("_tt_blend"))
     if os.path.exists(the_garbage_dir) and os.path.isdir(the_garbage_dir):
@@ -428,7 +435,6 @@ def clean_up_after_blender_save(save_path):
     if os.path.exists(the_garbage_file_2) and os.path.isfile(the_garbage_file_2):
         os.remove(the_garbage_file_2)
     return 0
-
 
 def save_tt_file(asset_name, asset_stage):
     the_outpath = ""
@@ -495,9 +501,14 @@ class ttutilsProperties(bpy.types.PropertyGroup):
         (
           name = "Transcode",
           description = "Transcode H264.",
+          default = True
+        )
+    bpy.types.Scene.ttutils_draft = bpy.props.BoolProperty \
+        (
+          name = "Draft",
+          description = "Deadline Draft.",
           default = False
         )
-    
 
 # OPERATOR BUTTON_OT_openTT
 class BUTTON_OT_openTT(bpy.types.Operator):
@@ -630,7 +641,6 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
         save_tt_file(bpy.context.scene.assetname, bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
-
 # OPERATOR BUTTON_OT_submit_tt
 class BUTTON_OT_submit_tt(bpy.types.Operator):
     '''Submit Turntable to Deadline'''
@@ -645,7 +655,6 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
         if bpy.context.scene.ttutils_xcode == True:
             xcodeH264()
         return{'FINISHED'}
-
 
 # PANEL VIEW3D_PT_ttutils_panel
 class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
@@ -672,7 +681,11 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.operator("ttutils.set_out_filepath", text=(BUTTON_OT_set_out_filepath.bl_label))
         layout.operator("ttutils.save_ttfile", text=(BUTTON_OT_save_ttfile.bl_label))
         layout.operator("ttutils.submit_tt", text=(BUTTON_OT_submit_tt.bl_label))
-        layout.prop(bpy.context.scene, "ttutils_xcode")
+        split = layout.split(factor=0.5, align=True)
+        col = split.column(align=True)
+        col.prop(bpy.context.scene, "ttutils_xcode")
+        col = split.column(align=True)
+        col.prop(bpy.context.scene, "ttutils_draft")
         
 
 #   REGISTER
