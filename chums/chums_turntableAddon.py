@@ -8,6 +8,7 @@
 # 0.1.1 - add deadline submit
 # 0.1.2 - add quick draft and remove transcode
 # 0.1.3 - music for xcode - is all working but disabled as this audio will make us crazy
+# 0.1.6 - added/fixed transcode and draft qt post gen options; expanded submit to render capabilities
 
 bl_info = {
     "name": "TurnTable Tools",
