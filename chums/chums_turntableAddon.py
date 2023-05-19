@@ -600,7 +600,7 @@ class BUTTON_OT_set_out_filepath(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        assetname = bpy.context.scene.assetname
+        assetname = bpy.context.scene.ttutils_alist
         theoutpath = set_output_path(assetname, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         print("theoutpath: ", theoutpath)
         bpy.context.scene.render.filepath = theoutpath
