@@ -9,11 +9,13 @@
 # 0.1.2 - add quick draft and remove transcode
 # 0.1.3 - music for xcode - is all working but disabled as this audio will make us crazy
 # 0.1.6 - added/fixed transcode and draft qt post gen options; expanded submit to render capabilities
+# 0.1.7 - add 20_model level support
+# 0.1.8 - add asset directory query code
 
 bl_info = {
     "name": "TurnTable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 1, 6),
+    "version": (0, 1, 8),
     "blender": (3, 3, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -37,32 +39,36 @@ import sys
 import subprocess
 
 # ---    GLOBAL VARIABLES    ----
-chm_assettypes = ['characters', 'environments', 'props', 'proxies']
 chm_assetroot = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
+chm_assetprefix = {'chr':'characters', 
+                    'env':'environments', 
+                    'prp':'props', 
+                    'prx':'proxies'}
+chm_omitlist = ['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirrel']
+#chm_assettypes = ['characters', 'environments', 'props', 'proxies']
+chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
+                  os.path.isdir(os.path.join(chm_assetroot, f))])
 chm_renderroot = 'Y:/projects/CHUMS_Onsite/renders/_prod/assets/'
-chm_assetssubtree = '30_texture/projects/blender'
+chm_assetssubtree = 'projects/blender'
 chm_assetturntables = '30_texture/projects/blender/turntables'
 thecam_name = "cam.ttCamera"
 turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable.blend"
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.1.6'
+vsn = '0.1.8'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
     return tmp
 
-
 def getCurrentUser():
     currentUser = getuser()
     return currentUser
 
-
 def getMachineName():
     hostName = gethostname()
     return hostName
-
 
 def sendDeadlineCmd():
     print("RUNNING SUBMIT TO DEADLINE")
@@ -71,6 +77,7 @@ def sendDeadlineCmd():
     thisoutputpath = bpy.context.scene.render.filepath
     asset_name = bpy.context.scene.assetname
     asset_stage = bpy.context.scene.ttutils_stage
+    asset_task = bpy.context.scene.ttutils_task
     chm_assetprefix = {'chr':'characters', 
                     'env':'environments', 
                     'prp':'props', 
@@ -78,11 +85,13 @@ def sendDeadlineCmd():
     asset_type = chm_assetprefix[asset_name[:3]]
     the_outpath_base = os.path.join(chm_renderroot, 
                                 asset_type,
-                                asset_name)
+                                asset_name,
+                                asset_task)
     if os.path.basename(thisfilename) == os.path.basename(turntable_filepath):
         the_workpath = os.path.join(chm_assetroot, 
                                     asset_type,
                                     asset_name, 
+                                    asset_task, 
                                     chm_assetssubtree,
                                     asset_stage)
         latest_asset_workfile = find_latest_workfile(the_workpath)
@@ -103,11 +112,12 @@ def sendDeadlineCmd():
         dlName = os.path.basename(thisfilename)[:-6]
         dlSceneFile = Path(thisfilename).as_posix()
         dlOutputFile = Path(thisoutputpath).as_posix()
-        the_outpath_base = os.path.basename(thisfilename)
+        the_outpath_base = os.path.dirname(thisoutputpath)
         outname = os.path.basename(thisoutputpath)
     dlFrames = '0-121'
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
+    
     with open(jobInfoPath, 'w') as f:
         f.write(f"Name={dlName} [Blender Render]\n")
         f.write(f"BatchName={dlName}\n")
@@ -152,7 +162,7 @@ def sendDeadlineCmd():
         global blendJobId
         if match:
             blendJobId = match.group(1)
-
+    
 
 def xcodeH264():
     print("Info: Submitting H264 Transcode Job...")
@@ -161,6 +171,7 @@ def xcodeH264():
     thisoutputpath = bpy.context.scene.render.filepath
     asset_name = bpy.context.scene.assetname
     asset_stage = bpy.context.scene.ttutils_stage
+    asset_task = bpy.context.scene.ttutils_task
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
                        'prp':'props', 
@@ -168,11 +179,13 @@ def xcodeH264():
     asset_type = chm_assetprefix[asset_name[:3]]
     the_outpath_base = os.path.join(chm_renderroot, 
                                 asset_type,
-                                asset_name)
+                                asset_name,
+                                asset_task)
     if os.path.basename(thisfilename) == os.path.basename(turntable_filepath):
         the_workpath = os.path.join(chm_assetroot, 
                                     asset_type,
                                     asset_name, 
+                                    asset_task, 
                                     chm_assetssubtree,
                                     asset_stage)
         latest_asset_workfile = find_latest_workfile(the_workpath)
@@ -236,7 +249,6 @@ def xcodeH264():
     
     command = f'{deadlineBin} {jobInfoPath} {pluginInfoPath}'
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
 
 def get_selection_bounds(thesel):
     print("\nENTER get_selection_bounds FUNCTION")
@@ -328,7 +340,7 @@ def find_latest_workfile(input_path):
                         latest_filepath = this_path
     return latest_filepath
 
-def get_asset(asset_name, asset_stage):
+def get_asset(asset_name, asset_dept, asset_stage):
     print("ENTER get_asset FUNCTION", asset_name)
     remove_any_existing_asset()
     chm_assetprefix = {'chr':'characters', 
@@ -336,7 +348,8 @@ def get_asset(asset_name, asset_stage):
                        'prp':'props', 
                        'prx':'proxies'}
     the_asset_type = chm_assetprefix[asset_name[:3]]
-    the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,chm_assetssubtree,asset_stage)
+    the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_assetssubtree,asset_stage)
+    print("the_asset_dir:", the_asset_dir)
     the_asset_path = find_latest_workfile(the_asset_dir)
     # LINK FROM LATEST WORKFILE
     # initialize
@@ -352,13 +365,15 @@ def get_asset(asset_name, asset_stage):
                 colobj.parent = bpy.data.objects['AnimGrp.asset']
     return 0
 
-def open_assetfile(asset_name, asset_stage):
+def open_assetfile(asset_name, asset_dept, asset_stage):
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
                        'prp':'props', 
                        'prx':'proxies'}
     the_asset_type = chm_assetprefix[asset_name[:3]]
-    the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,chm_assetssubtree,asset_stage)
+    #the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,chm_assetssubtree,asset_stage)
+    the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_assetssubtree,asset_stage)
+    print("the_asset_dir:", the_asset_dir)
     the_asset_path = find_latest_workfile(the_asset_dir)
     if bpy.context.scene.ttutils_newblend:
         mycmd = '\"'
@@ -394,7 +409,7 @@ def open_turntable():
     else:
         bpy.ops.wm.open_mainfile(filepath=turntable_filepath)
 
-def set_output_path(asset_name, asset_stage):
+def set_output_path(asset_name, asset_task, asset_stage):
     #new goal: Y:\projects\CHUMS_Onsite\renders\assets\<asset type>\<asset name>\<v###>
     the_outpath = ""
     chm_assetprefix = {'chr':'characters', 
@@ -404,10 +419,12 @@ def set_output_path(asset_name, asset_stage):
     asset_type = chm_assetprefix[asset_name[:3]]
     the_outpath_base = os.path.join(chm_renderroot, 
                                 asset_type,
-                                asset_name)
+                                asset_name,
+                                asset_task)
     the_workpath = os.path.join(chm_assetroot, 
                                 asset_type,
                                 asset_name, 
+                                asset_task, 
                                 chm_assetssubtree,
                                 asset_stage)
     print("the_outpath_base: ", the_outpath_base)
@@ -437,7 +454,7 @@ def clean_up_after_blender_save(save_path):
         os.remove(the_garbage_file_2)
     return 0
 
-def save_tt_file(asset_name, asset_stage):
+def save_tt_file(asset_name, asset_task, asset_stage):
     the_outpath = ""
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
@@ -447,6 +464,7 @@ def save_tt_file(asset_name, asset_stage):
     the_workpath = os.path.join(chm_assetroot, 
                                 asset_type,
                                 asset_name, 
+                                asset_task,
                                 chm_assetssubtree,
                                 asset_stage)
     latest_asset_workfile = find_latest_workfile(the_workpath)
@@ -463,11 +481,28 @@ def save_tt_file(asset_name, asset_stage):
 
 # PROPERTY GROUP ttutilsProperties
 class ttutilsProperties(bpy.types.PropertyGroup):
+    def queryAssetList():
+        print("\nENTER queryAssetList FUNCTION")
+        anames = []
+        for atype in chm_assettypes:
+            thistype = os.path.join(chm_assetroot, atype)
+            anames += ([(aname,aname,'') for aname in os.listdir(thistype) if 
+                    (aname[:3] in chm_assetprefix.keys() and 
+                    not(aname in chm_omitlist))])
+        return anames
     bpy.types.Scene.assetname = bpy.props.StringProperty \
         (
           name = "Asset Name",
           description = "Asset Name",
           default = ""
+        )
+    bpy.types.Scene.ttutils_task = bpy.props.EnumProperty(
+        name="",
+        description="Use latest model or texture version.",
+        items=[ ('20_model', "Model", ""),
+                ('30_texture', "Texture", "")
+               ],
+        default = "30_texture"
         )
     bpy.types.Scene.ttutils_stage = bpy.props.EnumProperty(
         name="",
@@ -510,6 +545,13 @@ class ttutilsProperties(bpy.types.PropertyGroup):
           description = "Deadline Draft.",
           default = False
         )
+    bpy.types.Scene.ttutils_alist = bpy.props.EnumProperty(
+        name="",
+        description="Asset List",
+        items=queryAssetList(),
+        default = None
+        )
+    
 
 # OPERATOR BUTTON_OT_openTT
 class BUTTON_OT_openTT(bpy.types.Operator):
@@ -529,7 +571,7 @@ class BUTTON_OT_openAsset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        open_assetfile(bpy.context.scene.assetname,bpy.context.scene.ttutils_stage)
+        open_assetfile(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task,bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_selectTTcam
@@ -559,7 +601,7 @@ class BUTTON_OT_set_out_filepath(bpy.types.Operator):
     
     def execute(self, context):
         assetname = bpy.context.scene.assetname
-        theoutpath = set_output_path(assetname, bpy.context.scene.ttutils_stage)
+        theoutpath = set_output_path(assetname, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         print("theoutpath: ", theoutpath)
         bpy.context.scene.render.filepath = theoutpath
         return{'FINISHED'}
@@ -596,8 +638,8 @@ class BUTTON_OT_get_asset(bpy.types.Operator):
     
     def execute(self, context):
         print("EXECUTE BUTTON_OT_get_asset OPERATOR CLASS")
-        asset_name = bpy.context.scene.assetname
-        get_asset(asset_name, bpy.context.scene.ttutils_stage)
+        asset_name = bpy.context.scene.ttutils_alist
+        get_asset(asset_name, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_get_asset_list
@@ -639,7 +681,7 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
     
     def execute(self, context):
         print("EXECUTE BUTTON_OT_save_ttfile OPERATOR CLASS")
-        save_tt_file(bpy.context.scene.assetname, bpy.context.scene.ttutils_stage)
+        save_tt_file(bpy.context.scene.assetname, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_submit_tt
@@ -651,7 +693,7 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
     
     def execute(self, context):
         assetname = bpy.context.scene.assetname
-        theoutpath = set_output_path(assetname, bpy.context.scene.ttutils_stage)
+        theoutpath = set_output_path(assetname, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         sendDeadlineCmd()
         if bpy.context.scene.ttutils_xcode == True:
             xcodeH264()
@@ -671,8 +713,10 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.prop(bpy.context.scene, "ttutils_newblend")
         layout.operator("ttutils.opentt", text=(BUTTON_OT_openTT.bl_label))
         #layout.operator("ttutils.get_asset_list", text=(BUTTON_OT_get_asset_list.bl_label))
+        layout.prop(bpy.context.scene, "ttutils_task")
         layout.prop(bpy.context.scene, "ttutils_stage")
-        layout.prop(bpy.context.scene, "assetname")
+        layout.prop(bpy.context.scene, "ttutils_alist")
+        #layout.prop(bpy.context.scene, "assetname")
         layout.operator("ttutils.openasset", text=(BUTTON_OT_openAsset.bl_label))
         layout.operator("ttutils.get_asset", text=(BUTTON_OT_get_asset.bl_label))
         layout.prop(bpy.context.scene, "ttutils_overscan")
@@ -687,7 +731,6 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         col.prop(bpy.context.scene, "ttutils_xcode")
         col = split.column(align=True)
         col.prop(bpy.context.scene, "ttutils_draft")
-        
 
 #   REGISTER
 classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel, 
