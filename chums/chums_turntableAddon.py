@@ -681,7 +681,7 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
     
     def execute(self, context):
         print("EXECUTE BUTTON_OT_save_ttfile OPERATOR CLASS")
-        save_tt_file(bpy.context.scene.assetname, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        save_tt_file(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_submit_tt
