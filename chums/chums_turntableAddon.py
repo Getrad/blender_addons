@@ -11,6 +11,7 @@
 # 0.1.6 - added/fixed transcode and draft qt post gen options; expanded submit to render capabilities
 # 0.1.7 - add 20_model level support
 # 0.1.8 - add asset directory query code
+#         a: debug assetname variable to work better with ttutils_alist
 
 bl_info = {
     "name": "TurnTable Tools",
@@ -59,7 +60,7 @@ turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/pr
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.1.8'
+vsn = '0.1.8a'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -79,6 +80,7 @@ def sendDeadlineCmd():
     thisfilename = bpy.data.filepath
     thisoutputpath = bpy.context.scene.render.filepath
     asset_name = bpy.context.scene.ttutils_alist
+    bpy.context.scene.assetname = bpy.context.scene.ttutils_alist
     asset_stage = bpy.context.scene.ttutils_stage
     asset_task = bpy.context.scene.ttutils_task
     chm_assetprefix = {'chr':'characters', 
@@ -643,6 +645,7 @@ class BUTTON_OT_get_asset(bpy.types.Operator):
     def execute(self, context):
         print("EXECUTE BUTTON_OT_get_asset OPERATOR CLASS")
         asset_name = bpy.context.scene.ttutils_alist
+        bpy.context.scene.assetname = bpy.context.scene.ttutils_alist
         get_asset(asset_name, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
@@ -697,6 +700,7 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
     
     def execute(self, context):
         asset_name = bpy.context.scene.ttutils_alist
+        bpy.context.scene.assetname = bpy.context.scene.ttutils_alist
         theoutpath = set_output_path(asset_name, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         sendDeadlineCmd()
         if bpy.context.scene.ttutils_xcode == True:
