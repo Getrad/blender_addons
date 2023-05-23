@@ -78,7 +78,7 @@ def sendDeadlineCmd():
     tmpDir = Path(getPipelineTmpFolder()).joinpath('dlJobFiles')
     thisfilename = bpy.data.filepath
     thisoutputpath = bpy.context.scene.render.filepath
-    asset_name = bpy.context.scene.assetname
+    asset_name = bpy.context.scene.ttutils_alist
     asset_stage = bpy.context.scene.ttutils_stage
     asset_task = bpy.context.scene.ttutils_task
     chm_assetprefix = {'chr':'characters', 
@@ -172,7 +172,7 @@ def xcodeH264():
     tmpDir = Path(getPipelineTmpFolder()).joinpath('dlJobFiles')
     thisfilename = bpy.data.filepath
     thisoutputpath = bpy.context.scene.render.filepath
-    asset_name = bpy.context.scene.assetname
+    asset_name = bpy.context.scene.ttutils_alist
     asset_stage = bpy.context.scene.ttutils_stage
     asset_task = bpy.context.scene.ttutils_task
     chm_assetprefix = {'chr':'characters', 
@@ -326,17 +326,17 @@ def remove_any_existing_asset():
     return 0
 
 def find_latest_workfile(input_path):
-    #print("ENTER find_latest_workfile FUNCTION")
+    print("ENTER find_latest_workfile FUNCTION")
     latest_filepath = ""
     vNo = 0
     if os.path.exists(input_path):
         for f in os.listdir(input_path):
             this_path = os.path.join(input_path, f)
             if this_path.endswith(".blend") and (this_path[-10] == "v"):
-                #print("this_path: ", this_path)
+                print("this_path: ", this_path)
                 if os.path.isfile(this_path):
                     str_version = (f.split(".")[0][-3:])
-                    #print("str_version: ", str_version)
+                    print("str_version: ", str_version)
                     this_version = int(str_version)
                     if this_version > vNo:
                         vNo = this_version
@@ -431,6 +431,7 @@ def set_output_path(asset_name, asset_task, asset_stage):
                                 chm_assetssubtree,
                                 asset_stage)
     print("the_outpath_base: ", the_outpath_base)
+    print("the_workpath: ", the_workpath)
     latest_asset_workfile = find_latest_workfile(the_workpath)
     print("latest_asset_workfile: ", latest_asset_workfile)
     latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
@@ -695,8 +696,8 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        assetname = bpy.context.scene.assetname
-        theoutpath = set_output_path(assetname, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        asset_name = bpy.context.scene.ttutils_alist
+        theoutpath = set_output_path(asset_name, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         sendDeadlineCmd()
         if bpy.context.scene.ttutils_xcode == True:
             xcodeH264()
