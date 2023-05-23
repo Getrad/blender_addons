@@ -44,7 +44,10 @@ chm_assetprefix = {'chr':'characters',
                     'env':'environments', 
                     'prp':'props', 
                     'prx':'proxies'}
-chm_omitlist = ['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirrel']
+chm_omitlist = (['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirrel', 
+                'env_AAAtemplate', 'env_rompersburrow', 
+                'prp_AAAtemplate', 'prp_bush_romperPopout_01', 'prp_tree_hollowknot',
+                'prx_AAAtemplate', 'prx_treeObstacle_Source'])
 #chm_assettypes = ['characters', 'environments', 'props', 'proxies']
 chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
                   os.path.isdir(os.path.join(chm_assetroot, f))])
