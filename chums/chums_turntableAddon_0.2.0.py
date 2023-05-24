@@ -13,12 +13,12 @@
 # 0.1.8 - add asset directory query code
 #         a: debug assetname variable to work better with ttutils_alist
 # 0.1.9 - messagebox for error messages like missing paths
-#       - a - bugfix on overzealous blocking filesave
+# 0.2.0 - update alist enum item
 
 bl_info = {
     "name": "TurnTable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 1, 9),
+    "version": (0, 2, 0),
     "blender": (3, 3, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -62,7 +62,7 @@ turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/pr
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.1.9a'
+vsn = '0.2.0'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -608,6 +608,7 @@ class BUTTON_OT_openTT(bpy.types.Operator):
         open_turntable()
         return{'FINISHED'}
 
+# OPERATOR BUTTON_OT_openAsset
 class BUTTON_OT_openAsset(bpy.types.Operator):
     '''Open Latest Asset File'''
     bl_idname = "ttutils.openasset"
@@ -616,6 +617,17 @@ class BUTTON_OT_openAsset(bpy.types.Operator):
     
     def execute(self, context):
         open_assetfile(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task,bpy.context.scene.ttutils_stage)
+        return{'FINISHED'}
+
+# OPERATOR BUTTON_OT_exploreAsset
+class BUTTON_OT_exploreAsset(bpy.types.Operator):
+    '''Open Asset Folder'''
+    bl_idname = "ttutils.exploreasset"
+    bl_label = "Open Asset Folder"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        #open_assetfile(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task,bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_selectTTcam
@@ -733,10 +745,11 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
     def execute(self, context):
         print("EXECUTE BUTTON_OT_save_ttfile OPERATOR CLASS")
         thisfilepath = bpy.data.filepath
-        print("thisfilepath: ", thisfilepath)
         thisfilename = os.path.basename(thisfilepath)
-        print("thisfilename: ", thisfilename)
-        if (thisfilename == 'turntable.blend') or (bpy.context.scene.ttutils_alist in thisfilename and thisfilename[-8:] == "tt.blend"):
+        if (thisfilepath == turntable_filepath):
+            save_tt_file(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        elif (bpy.context.scene.ttutils_alist in thisfilename and 
+              thisfilename[-8:] == "tt.blend"):
             save_tt_file(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         else:
             ttutils_messagebox("To save a turntable file, the starting file must be one of:   the turntable.blend   OR   a previous turntable filename starting with   " + str(bpy.context.scene.ttutils_alist) + "   and ending with   tt.blend.    Please ensure you're starting with one of those files.", "Failed Save")
