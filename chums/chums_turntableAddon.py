@@ -12,11 +12,12 @@
 # 0.1.7 - add 20_model level support
 # 0.1.8 - add asset directory query code
 #         a: debug assetname variable to work better with ttutils_alist
+# 0.1.9 - messagebox for error messages like missing paths
 
 bl_info = {
     "name": "TurnTable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 1, 8),
+    "version": (0, 1, 9),
     "blender": (3, 3, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -60,7 +61,7 @@ turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/pr
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.1.8a'
+vsn = '0.1.9'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -167,7 +168,6 @@ def sendDeadlineCmd():
         global blendJobId
         if match:
             blendJobId = match.group(1)
-    
 
 def xcodeH264():
     print("Info: Submitting H264 Transcode Job...")
@@ -338,11 +338,17 @@ def find_latest_workfile(input_path):
                 print("this_path: ", this_path)
                 if os.path.isfile(this_path):
                     str_version = (f.split(".")[0][-3:])
-                    print("str_version: ", str_version)
+                    #print("str_version: ", str_version)
                     this_version = int(str_version)
                     if this_version > vNo:
                         vNo = this_version
                         latest_filepath = this_path
+    else:
+        # return messagebox showing filepath and message that it can't be found
+        ttutils_messagebox(("Cannot find Path:    " + input_path), "Missing Path")
+        print("CANNOT FIND PATH: ", input_path)
+    if len(latest_filepath) < 3:
+        ttutils_messagebox(("Cannot find latest version:    " + input_path), "Version Issue")
     return latest_filepath
 
 def get_asset(asset_name, asset_dept, asset_stage):
@@ -356,18 +362,28 @@ def get_asset(asset_name, asset_dept, asset_stage):
     the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_assetssubtree,asset_stage)
     print("the_asset_dir:", the_asset_dir)
     the_asset_path = find_latest_workfile(the_asset_dir)
-    # LINK FROM LATEST WORKFILE
-    # initialize
-    with bpy.data.libraries.load(the_asset_path, link=False) as (data_src, data_dst):
-        data_dst.collections = data_src.collections
-    # link collections
-    for coll in data_dst.collections:
-        the_topnodes = []
-        if coll.name == "asset_prod":
-            bpy.context.scene.collection.children.link(coll)
-        for colobj in coll.all_objects:
-            if not(colobj.parent):
-                colobj.parent = bpy.data.objects['AnimGrp.asset']
+    print("the_asset_path:", the_asset_path)
+    if os.path.exists(the_asset_path):
+        # LINK FROM LATEST WORKFILE
+        # initialize
+        with bpy.data.libraries.load(the_asset_path, link=False) as (data_src, data_dst):
+            data_dst.collections = data_src.collections
+        # link collections
+        for coll in data_dst.collections:
+            the_topnodes = []
+            if coll.name == "asset_prod":
+                bpy.context.scene.collection.children.link(coll)
+            for colobj in coll.all_objects:
+                if not(colobj.parent):
+                    colobj.parent = bpy.data.objects['AnimGrp.asset']
+    else:
+        if bpy.context.scene.ttutils_task == '30_texture':
+            mytask = "Texture"
+        else:
+            mytask = "Model"
+        # return messagebox showing filepath and message that it can't be found
+        ttutils_messagebox(("Cannot find Path:    " + the_asset_dir + "    check if   " + mytask + "   " + bpy.context.scene.ttutils_stage + "   are set correctly."), "Missing Path")
+        print("CANNOT FIND PATH: ", the_asset_dir)
     return 0
 
 def open_assetfile(asset_name, asset_dept, asset_stage):
@@ -380,14 +396,18 @@ def open_assetfile(asset_name, asset_dept, asset_stage):
     the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_assetssubtree,asset_stage)
     print("the_asset_dir:", the_asset_dir)
     the_asset_path = find_latest_workfile(the_asset_dir)
-    if bpy.context.scene.ttutils_newblend:
-        mycmd = '\"'
-        mycmd += bpy.app.binary_path
-        mycmd += ('\" \"' + the_asset_path + '\"')
-        os.popen(mycmd)
+    if os.path.exists(the_asset_dir):
+        if bpy.context.scene.ttutils_newblend:
+            mycmd = '\"'
+            mycmd += bpy.app.binary_path
+            mycmd += ('\" \"' + the_asset_path + '\"')
+            os.popen(mycmd)
+        else:
+            bpy.ops.wm.open_mainfile(filepath=the_asset_path)
     else:
-        bpy.ops.wm.open_mainfile(filepath=the_asset_path)
-    
+        # return messagebox showing filepath and message that it can't be found
+        ttutils_messagebox(("Cannot find Path:    " + the_asset_dir), "Missing Path")
+        print("CANNOT FIND PATH: ", the_asset_dir)
 
     return 0
 
@@ -406,13 +426,16 @@ def get_asset_list(asset_stage):
     return asset_list
 
 def open_turntable():
-    if bpy.context.scene.ttutils_newblend:
-        mycmd = '\"'
-        mycmd += bpy.app.binary_path
-        mycmd += ('\" \"' + turntable_filepath + '\"')
-        os.popen(mycmd)
+    if os.path.exists(turntable_filepath):
+        if bpy.context.scene.ttutils_newblend:
+            mycmd = '\"'
+            mycmd += bpy.app.binary_path
+            mycmd += ('\" \"' + turntable_filepath + '\"')
+            os.popen(mycmd)
+        else:
+            bpy.ops.wm.open_mainfile(filepath=turntable_filepath)
     else:
-        bpy.ops.wm.open_mainfile(filepath=turntable_filepath)
+        ttutils_messagebox("Turntable cannot be found here:    " + str(turntable_filepath) + "\nPlease check path manually and notify your supervisor if you can see and open the file directly.", "Turntable Missing")
 
 def set_output_path(asset_name, asset_task, asset_stage):
     #new goal: Y:\projects\CHUMS_Onsite\renders\assets\<asset type>\<asset name>\<v###>
@@ -432,18 +455,21 @@ def set_output_path(asset_name, asset_task, asset_stage):
                                 asset_task, 
                                 chm_assetssubtree,
                                 asset_stage)
-    print("the_outpath_base: ", the_outpath_base)
-    print("the_workpath: ", the_workpath)
-    latest_asset_workfile = find_latest_workfile(the_workpath)
-    print("latest_asset_workfile: ", latest_asset_workfile)
-    latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
-    latest_asset_filename = os.path.basename(latest_asset_workfile)
-    the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
-    if not(os.path.exists(the_outpath_base)):
-        os.makedirs(the_outpath_base)
-    outname = latest_asset_filename.replace(".blend",".####.png")
-    the_outpath = os.path.join(the_outpath_base, outname)
-    print("outpath: ", the_outpath)
+    #print("the_outpath_base: ", the_outpath_base)
+    #print("the_workpath: ", the_workpath)
+    if os.path.exists(the_workpath):
+        latest_asset_workfile = find_latest_workfile(the_workpath)
+        #print("latest_asset_workfile: ", latest_asset_workfile)
+        latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
+        latest_asset_filename = os.path.basename(latest_asset_workfile)
+        the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
+        if not(os.path.exists(the_outpath_base)):
+            os.makedirs(the_outpath_base)
+        outname = latest_asset_filename.replace(".blend",".####.png")
+        the_outpath = os.path.join(the_outpath_base, outname)
+        print("outpath: ", the_outpath)
+    else:
+        ttutils_messagebox(("Cannot find Path:    " + str(the_workpath)), "Error Setting Output")
     return the_outpath
 
 def clean_up_after_blender_save(save_path):
@@ -462,6 +488,10 @@ def clean_up_after_blender_save(save_path):
 
 def save_tt_file(asset_name, asset_task, asset_stage):
     the_outpath = ""
+    asset_name = bpy.context.scene.ttutils_alist
+    bpy.context.scene.assetname = bpy.context.scene.ttutils_alist
+    asset_stage = bpy.context.scene.ttutils_stage
+    asset_task = bpy.context.scene.ttutils_task
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
                        'prp':'props', 
@@ -480,9 +510,17 @@ def save_tt_file(asset_name, asset_task, asset_stage):
     if not(os.path.exists(the_outpath)):
         os.makedirs(the_outpath)
     clean_up_after_blender_save(the_outpath)
-    bpy.ops.wm.save_as_mainfile(filepath=the_outpath)
-    clean_up_after_blender_save(the_outpath)
+    try:
+        bpy.ops.wm.save_as_mainfile(filepath=the_outpath)
+        clean_up_after_blender_save(the_outpath)
+    except:
+        ttutils_messagebox("Error encountered.\nIf it appears the file saved successfully, \nyou may wish to check that file before closing this one,\nto ensure it actually did save correctly.\nIf not please reach out for support to flag the issue.", "File Save Issue")
     return the_outpath
+
+def ttutils_messagebox(message, title):
+    def draw(self, context):
+        self.layout.label(text=message)
+    bpy.context.window_manager.popup_menu(draw, title = title, icon='ERROR')
 
 
 # PROPERTY GROUP ttutilsProperties
@@ -529,7 +567,7 @@ class ttutilsProperties(bpy.types.PropertyGroup):
           name = "Overscan %",
           description = "Percent of asset size to use as border",
           min = 0.00,
-          max = 100.0,
+          max = 10000.0,
           step = 0.5,
           default = 20.0
         )
@@ -558,7 +596,6 @@ class ttutilsProperties(bpy.types.PropertyGroup):
         default = None
         )
     
-
 # OPERATOR BUTTON_OT_openTT
 class BUTTON_OT_openTT(bpy.types.Operator):
     '''Open Turntable Basefile.'''
@@ -588,14 +625,17 @@ class BUTTON_OT_selectTTcam(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        try:
-            for o in bpy.context.selected_objects:
-                o.select_set(False)
-            thecam = bpy.data.objects['cam.ttCamera']
-            thecam.select_set(True)
-            bpy.context.view_layer.objects.active = thecam
-        except:
-            print("FAILED TO FIND cam.ttCamera")
+        if thecam_name in bpy.data.objects:
+            try:
+                for o in bpy.context.selected_objects:
+                    o.select_set(False)
+                thecam = bpy.data.objects[thecam_name]
+                thecam.select_set(True)
+                bpy.context.view_layer.objects.active = thecam
+            except:
+                print("FAILED TO FIND " + str(thecam_name))
+        else:
+            ttutils_messagebox("Camera " + str(thecam_name) + "appears to be missing.\nPlease ensure you're in a turntable file that contains this object.", "Missing Object")
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_set_out_filepath
@@ -606,8 +646,7 @@ class BUTTON_OT_set_out_filepath(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        assetname = bpy.context.scene.ttutils_alist
-        theoutpath = set_output_path(assetname, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        theoutpath = set_output_path(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         print("theoutpath: ", theoutpath)
         bpy.context.scene.render.filepath = theoutpath
         return{'FINISHED'}
@@ -633,6 +672,8 @@ class BUTTON_OT_set_cam_loc(bpy.types.Operator):
             if bpy.data.objects['Ruler']:
                 bpy.data.objects['Ruler'].location.y = ((theasset_size[0][1]/2)*(-1.0 - (bpy.context.scene.ttutils_overscan/100.0)))
             thecam.parent.location.z = (theasset_size[1][2])
+        else:
+            ttutils_messagebox("Camera    " + str(thecam_name) + "    appears to be missing.\nPlease ensure you're in a turntable file that contains this object.", "Missing Object")
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_get_asset
@@ -644,12 +685,11 @@ class BUTTON_OT_get_asset(bpy.types.Operator):
     
     def execute(self, context):
         print("EXECUTE BUTTON_OT_get_asset OPERATOR CLASS")
-        asset_name = bpy.context.scene.ttutils_alist
         bpy.context.scene.assetname = bpy.context.scene.ttutils_alist
-        get_asset(asset_name, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        get_asset(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
-# OPERATOR BUTTON_OT_get_asset_list
+# OPERATOR BUTTON_OT_get_asset_list - currently not used
 class BUTTON_OT_get_asset_list(bpy.types.Operator):
     '''Return the latest asset - see console'''
     bl_idname = "ttutils.get_asset_list"
@@ -673,10 +713,13 @@ class BUTTON_OT_tilt_cam(bpy.types.Operator):
     
     def execute(self, context):
         print("EXECUTE BUTTON_OT_tilt_cam OPERATOR CLASS")
-        for o in bpy.context.selected_objects:
-            o.select_set(False)
-        bpy.data.objects["AnimGrp.camera"].select_set(True)
-        bpy.context.view_layer.objects.active = bpy.data.objects["AnimGrp.camera"]
+        if "AnimGrp.camera" in bpy.data.objects:
+            for o in bpy.context.selected_objects:
+                o.select_set(False)
+            bpy.data.objects["AnimGrp.camera"].select_set(True)
+            bpy.context.view_layer.objects.active = bpy.data.objects["AnimGrp.camera"]
+        else:
+            ttutils_messagebox("Camera control object    AnimGrp.camera    appears to be missing.\nPlease ensure you're in a turntable file that contains this object.", "Missing Object")
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_save_ttfile
@@ -688,7 +731,16 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
     
     def execute(self, context):
         print("EXECUTE BUTTON_OT_save_ttfile OPERATOR CLASS")
-        save_tt_file(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        thisfilepath = bpy.data.filepath
+        thisfilename = os.path.basename(thisfilepath)
+        if (thisfilepath == turntable_filepath):
+            save_tt_file(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        elif (bpy.context.scene.ttutils_alist in thisfilename and 
+              thisfilename[-8:] == "tt.blend"):
+            save_tt_file(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        else:
+            ttutils_messagebox("To save a turntable file, the starting file must be one of:   the turntable.blend   OR   a previous turntable filename starting with   " + str(bpy.context.scene.ttutils_alist) + "   and ending with   tt.blend.    Please ensure you're starting with one of those files.", "Failed Save")
+        
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_submit_tt
@@ -699,12 +751,21 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
+        thisfilepath = bpy.data.filepath
+        thisfilename = os.path.basename(thisfilepath)
+        thisoutputpath = bpy.context.scene.render.filepath
         asset_name = bpy.context.scene.ttutils_alist
         bpy.context.scene.assetname = bpy.context.scene.ttutils_alist
         theoutpath = set_output_path(asset_name, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
-        sendDeadlineCmd()
-        if bpy.context.scene.ttutils_xcode == True:
-            xcodeH264()
+        if (bpy.context.scene.ttutils_alist in thisfilename and 
+            bpy.context.scene.ttutils_alist in thisoutputpath and
+            thisfilename[-8:] == "tt.blend"):
+            sendDeadlineCmd()
+            if bpy.context.scene.ttutils_xcode == True:
+                xcodeH264()
+        else:
+            ttutils_messagebox("To submit a turntable render, this file name must start with the asset selected above    " + str(bpy.context.scene.ttutils_alist) + "    in the filename and the filename must end with    tt.blend", "Failed Submit")
+        
         return{'FINISHED'}
 
 # PANEL VIEW3D_PT_ttutils_panel
@@ -743,7 +804,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
 #   REGISTER
 classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel, 
             BUTTON_OT_set_cam_loc, BUTTON_OT_get_asset, 
-            BUTTON_OT_get_asset_list, BUTTON_OT_openTT, 
+            BUTTON_OT_openTT, 
             BUTTON_OT_set_out_filepath, BUTTON_OT_save_ttfile,
             BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam,
             BUTTON_OT_openAsset, BUTTON_OT_submit_tt]
