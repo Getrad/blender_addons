@@ -14,11 +14,12 @@
 #         a: debug assetname variable to work better with ttutils_alist
 # 0.1.9 - messagebox for error messages like missing paths
 #       - a - bugfix on overzealous blocking filesave
+# 0.2.0 - explore asset button
 
 bl_info = {
     "name": "TurnTable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 1, 9),
+    "version": (0, 2, 0),
     "blender": (3, 3, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -62,7 +63,7 @@ turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/pr
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.1.9a'
+vsn = '0.2.0'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -412,6 +413,24 @@ def open_assetfile(asset_name, asset_dept, asset_stage):
 
     return 0
 
+def explore_asset(asset_name, asset_dept, asset_stage):
+    chm_assetprefix = {'chr':'characters', 
+                       'env':'environments', 
+                       'prp':'props', 
+                       'prx':'proxies'}
+    the_asset_type = chm_assetprefix[asset_name[:3]]
+    #the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,chm_assetssubtree,asset_stage)
+    the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_assetssubtree,asset_stage).replace("/","\\")
+    print("the_asset_dir:", the_asset_dir)
+    if os.path.exists(the_asset_dir):
+        subprocess.Popen('explorer \"' + the_asset_dir + '\"')
+    else:
+        # return messagebox showing filepath and message that it can't be found
+        ttutils_messagebox(("Cannot find Path:    " + the_asset_dir), "Missing Path")
+        print("CANNOT FIND PATH: ", the_asset_dir)
+
+    return 0
+
 def get_asset_list(asset_stage):
     asset_list = []
     for asset_type in chm_assettypes:
@@ -618,6 +637,17 @@ class BUTTON_OT_openAsset(bpy.types.Operator):
         open_assetfile(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task,bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
+# OPERATOR BUTTON_OT_exploreAsset
+class BUTTON_OT_exploreAsset(bpy.types.Operator):
+    '''Open Asset Folder'''
+    bl_idname = "ttutils.exploreasset"
+    bl_label = "Explore Asset"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        explore_asset(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task,bpy.context.scene.ttutils_stage)
+        return{'FINISHED'}
+
 # OPERATOR BUTTON_OT_selectTTcam
 class BUTTON_OT_selectTTcam(bpy.types.Operator):
     '''Select turntable camera object.'''
@@ -786,6 +816,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.prop(bpy.context.scene, "ttutils_stage")
         layout.prop(bpy.context.scene, "ttutils_alist")
         #layout.prop(bpy.context.scene, "assetname")
+        layout.operator("ttutils.exploreasset", text=(BUTTON_OT_exploreAsset.bl_label))
         layout.operator("ttutils.openasset", text=(BUTTON_OT_openAsset.bl_label))
         layout.operator("ttutils.get_asset", text=(BUTTON_OT_get_asset.bl_label))
         layout.prop(bpy.context.scene, "ttutils_overscan")
@@ -804,7 +835,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
 #   REGISTER
 classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel, 
             BUTTON_OT_set_cam_loc, BUTTON_OT_get_asset, 
-            BUTTON_OT_openTT, 
+            BUTTON_OT_openTT, BUTTON_OT_exploreAsset,
             BUTTON_OT_set_out_filepath, BUTTON_OT_save_ttfile,
             BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam,
             BUTTON_OT_openAsset, BUTTON_OT_submit_tt]
