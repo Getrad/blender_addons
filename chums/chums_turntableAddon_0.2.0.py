@@ -13,7 +13,8 @@
 # 0.1.8 - add asset directory query code
 #         a: debug assetname variable to work better with ttutils_alist
 # 0.1.9 - messagebox for error messages like missing paths
-# 0.2.0 - update alist enum item
+#       - a - bugfix on overzealous blocking filesave
+# 0.2.0 - explore asset button
 
 bl_info = {
     "name": "TurnTable Tools",
@@ -412,6 +413,24 @@ def open_assetfile(asset_name, asset_dept, asset_stage):
 
     return 0
 
+def explore_asset(asset_name, asset_dept, asset_stage):
+    chm_assetprefix = {'chr':'characters', 
+                       'env':'environments', 
+                       'prp':'props', 
+                       'prx':'proxies'}
+    the_asset_type = chm_assetprefix[asset_name[:3]]
+    #the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,chm_assetssubtree,asset_stage)
+    the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_assetssubtree,asset_stage).replace("/","\\")
+    print("the_asset_dir:", the_asset_dir)
+    if os.path.exists(the_asset_dir):
+        subprocess.Popen('explorer \"' + the_asset_dir + '\"')
+    else:
+        # return messagebox showing filepath and message that it can't be found
+        ttutils_messagebox(("Cannot find Path:    " + the_asset_dir), "Missing Path")
+        print("CANNOT FIND PATH: ", the_asset_dir)
+
+    return 0
+
 def get_asset_list(asset_stage):
     asset_list = []
     for asset_type in chm_assettypes:
@@ -608,7 +627,6 @@ class BUTTON_OT_openTT(bpy.types.Operator):
         open_turntable()
         return{'FINISHED'}
 
-# OPERATOR BUTTON_OT_openAsset
 class BUTTON_OT_openAsset(bpy.types.Operator):
     '''Open Latest Asset File'''
     bl_idname = "ttutils.openasset"
@@ -621,13 +639,13 @@ class BUTTON_OT_openAsset(bpy.types.Operator):
 
 # OPERATOR BUTTON_OT_exploreAsset
 class BUTTON_OT_exploreAsset(bpy.types.Operator):
-    '''Open Asset Folder'''
+    '''Explore Asset'''
     bl_idname = "ttutils.exploreasset"
     bl_label = "Open Asset Folder"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        #open_assetfile(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task,bpy.context.scene.ttutils_stage)
+        explore_asset(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task,bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_selectTTcam
@@ -745,11 +763,10 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
     def execute(self, context):
         print("EXECUTE BUTTON_OT_save_ttfile OPERATOR CLASS")
         thisfilepath = bpy.data.filepath
+        print("thisfilepath: ", thisfilepath)
         thisfilename = os.path.basename(thisfilepath)
-        if (thisfilepath == turntable_filepath):
-            save_tt_file(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
-        elif (bpy.context.scene.ttutils_alist in thisfilename and 
-              thisfilename[-8:] == "tt.blend"):
+        print("thisfilename: ", thisfilename)
+        if (thisfilename == 'turntable.blend') or (bpy.context.scene.ttutils_alist in thisfilename and thisfilename[-8:] == "tt.blend"):
             save_tt_file(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         else:
             ttutils_messagebox("To save a turntable file, the starting file must be one of:   the turntable.blend   OR   a previous turntable filename starting with   " + str(bpy.context.scene.ttutils_alist) + "   and ending with   tt.blend.    Please ensure you're starting with one of those files.", "Failed Save")
@@ -799,6 +816,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.prop(bpy.context.scene, "ttutils_stage")
         layout.prop(bpy.context.scene, "ttutils_alist")
         #layout.prop(bpy.context.scene, "assetname")
+        layout.operator("ttutils.exploreasset", text=(BUTTON_OT_exploreAsset.bl_label))
         layout.operator("ttutils.openasset", text=(BUTTON_OT_openAsset.bl_label))
         layout.operator("ttutils.get_asset", text=(BUTTON_OT_get_asset.bl_label))
         layout.prop(bpy.context.scene, "ttutils_overscan")
@@ -817,7 +835,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
 #   REGISTER
 classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel, 
             BUTTON_OT_set_cam_loc, BUTTON_OT_get_asset, 
-            BUTTON_OT_openTT, 
+            BUTTON_OT_openTT, BUTTON_OT_exploreAsset,
             BUTTON_OT_set_out_filepath, BUTTON_OT_save_ttfile,
             BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam,
             BUTTON_OT_openAsset, BUTTON_OT_submit_tt]
