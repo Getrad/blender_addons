@@ -16,22 +16,6 @@
 #       - a - bugfix on overzealous blocking filesave
 # 0.2.0 - explore asset button
 # 0.2.1 - asset preferences
-# to do - add asset library path as user preference
-# to do - add deadline repo path as user preference
-# to do - add refresh button to force update the asset root path when dropped connection
-
-bl_info = {
-    "name": "TurnTable Tools",
-    "author": "Conrad Dueck, Darren Place",
-    "version": (0, 2, 1),
-    "blender": (3, 3, 1),
-    "location": "View3D > Tool Shelf > Chums",
-    "description": "Turntable Convenience Tools",
-    "warning": "",
-    "wiki_url": "",
-    "tracker_url": "",
-    "category": "Chums"}
-
 
 # ---    GLOBAL IMPORTS    ----
 from pathlib import Path
@@ -71,7 +55,7 @@ turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/pr
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.2.1a'
+vsn = '0.2.1b'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -557,7 +541,6 @@ def queryAssetList():
             chm_assetroot = 'P:/projects/CHUMS_Onsite/_prod/assets/'
         if not(os.path.exists(chm_assetroot)):
             chm_assetroot = 'C:/temp/'
-        bpy.context.scene.assetroot = chm_assetroot
         anames = []
         for atype in chm_assettypes:
             thistype = os.path.join(chm_assetroot, atype)
@@ -609,7 +592,6 @@ class OBJECT_OT_ttutils_preferences(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
 # PROPERTY GROUP ttutilsProperties
 class ttutilsProperties(bpy.types.PropertyGroup):
     bpy.types.Scene.assetname = bpy.props.StringProperty \
@@ -617,12 +599,6 @@ class ttutilsProperties(bpy.types.PropertyGroup):
           name = "Asset Name",
           description = "Asset Name",
           default = ""
-        )
-    bpy.types.Scene.assetroot = bpy.props.StringProperty \
-        (
-          name = "Asset Root",
-          description = "Asset Root",
-          default = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
         )
     bpy.types.Scene.ttutils_task = bpy.props.EnumProperty(
         name="",
@@ -909,14 +885,12 @@ def register():
         print(cls)
         register_class(cls)
     
-
 #   UNREGISTER
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
   
-
 if __name__ == "__main__":
     register()
     
