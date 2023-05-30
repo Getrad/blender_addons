@@ -621,7 +621,8 @@ class ttutilsProperties(bpy.types.PropertyGroup):
         (
           name = "Asset Root",
           description = "Asset Root",
-          default = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
+          default = chm_assetroot
+          #default = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
         )
     bpy.types.Scene.ttutils_task = bpy.props.EnumProperty(
         name="",
