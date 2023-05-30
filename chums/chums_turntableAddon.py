@@ -557,7 +557,6 @@ def queryAssetList():
             chm_assetroot = 'P:/projects/CHUMS_Onsite/_prod/assets/'
         if not(os.path.exists(chm_assetroot)):
             chm_assetroot = 'C:/temp/'
-        bpy.context.scene.assetroot = chm_assetroot
         anames = []
         for atype in chm_assettypes:
             thistype = os.path.join(chm_assetroot, atype)
