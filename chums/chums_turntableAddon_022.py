@@ -20,6 +20,7 @@
 #     a - WIP - add asset library path as user preference
 #     b - WIP - add refresh button to force update the asset root path when dropped connection
 #     c - dynamic enumproperty for refreshing list
+#       - https://www.google.com/search?q=blender+3+api+dynamic+enumproperty&oq=blender+3+api+dynamic+enumproperty&aqs=chrome..69i57.8926j0j4&sourceid=chrome&ie=UTF-8
 # to do - add deadline repo path as user preference
 
 bl_info = {
