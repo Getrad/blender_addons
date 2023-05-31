@@ -21,7 +21,7 @@
 # to do - add refresh button to force update the asset root path when dropped connection
 
 bl_info = {
-    "name": "TurnTable Tools",
+    "name": "Turntable Tools",
     "author": "Conrad Dueck, Darren Place",
     "version": (0, 2, 2),
     "blender": (3, 3, 1),
@@ -565,31 +565,23 @@ def queryAssetList():
                     not(aname in chm_omitlist))])
         return anames
 
+
 # PREFERENCES ttutilsPreferences
 class ttutilsPreferences(bpy.types.AddonPreferences):
-    # this must match the add-on name, use '__package__'
-    # when defining this in a submodule of a python package.
-    bl_idname = "TurnTable Tools"
+    #bl_idname = "Turntable Tools"
+    bl_idname = __name__
 
-    filepath: bpy.props.StringProperty(
-        name="Example File Path",
-        subtype='FILE_PATH',
-    )
-    number: bpy.props.IntProperty(
-        name="Example Number",
-        default=4,
-    )
-    boolean: bpy.props.BoolProperty(
-        name="Example Boolean",
-        default=False,
+    assetroot: bpy.props.StringProperty(
+        name="Asset Root Directory",
+        subtype='DIR_PATH',
+        default='Y:/projects/CHUMS_Onsite/_prod/assets/',
     )
 
     def draw(self, context):
         layout = self.layout
         layout.label(text="This is a preferences view for our add-on")
-        layout.prop(self, "filepath")
-        layout.prop(self, "number")
-        layout.prop(self, "boolean")
+        layout.prop(self, "assetroot")
+        
 
 class OBJECT_OT_ttutils_preferences(bpy.types.Operator):
     bl_idname = "object.ttutils_preferences"
