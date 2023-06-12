@@ -556,21 +556,21 @@ def ttutils_messagebox(message, title):
         self.layout.label(text=message)
     bpy.context.window_manager.popup_menu(draw, title = title, icon='ERROR')
 
-def queryAssetList(chm_assetroot):
-        print("\nENTER queryAssetList FUNCTION")
-        chm_assetroot = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
-        #chm_assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
+def queryAssetList_callback:
+    print("\nENTER queryAssetList FUNCTION")
+    chm_assetroot = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
+    #chm_assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
+    anames = []
+    if os.path.exists(chm_assetroot):
         anames = []
-        if os.path.exists(chm_assetroot):
-            anames = []
-            for atype in chm_assettypes:
-                thistype = os.path.join(chm_assetroot, atype)
-                anames += ([(aname,aname,'') for aname in os.listdir(thistype) if 
-                    (aname[:3] in chm_assetprefix.keys() and 
-                    not(aname in chm_omitlist))])
-        else:
-            ttutils_messagebox("Asset Library Missing.  Please choose a new asset library path in the addon preferences.", "Asset Library Missing")
-        return anames
+        for atype in chm_assettypes:
+            thistype = os.path.join(chm_assetroot, atype)
+            anames += ([(aname,aname,'') for aname in os.listdir(thistype) if 
+                (aname[:3] in chm_assetprefix.keys() and 
+                not(aname in chm_omitlist))])
+    else:
+        ttutils_messagebox("Asset Library Missing.  Please choose a new asset library path in the addon preferences.", "Asset Library Missing")
+    return anames
 
 
 # PREFERENCES ttutilsPreferences
@@ -660,8 +660,7 @@ class ttutilsProperties(bpy.types.PropertyGroup):
     bpy.types.Scene.ttutils_alist = bpy.props.EnumProperty(
         name="",
         description="Asset List",
-        items=queryAssetList('Y:/projects/CHUMS_Onsite/_prod/assets/'),
-        default = None
+        items=queryAssetList_callback
         )
     
 # OPERATOR BUTTON_OT_openTT

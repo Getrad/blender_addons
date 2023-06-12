@@ -16,9 +16,12 @@
 #       - a - bugfix on overzealous blocking filesave
 # 0.2.0 - explore asset button
 # 0.2.1 - asset preferences
-# 0.2.2 - WIP - add asset library path as user preference
+# 0.2.2
+#     a - WIP - add asset library path as user preference
+#     b - WIP - add refresh button to force update the asset root path when dropped connection
+#     c - dynamic enumproperty for refreshing list
+#       - https://www.google.com/search?q=blender+3+api+dynamic+enumproperty&oq=blender+3+api+dynamic+enumproperty&aqs=chrome..69i57.8926j0j4&sourceid=chrome&ie=UTF-8
 # to do - add deadline repo path as user preference
-# to do - add refresh button to force update the asset root path when dropped connection
 
 bl_info = {
     "name": "Turntable Tools",
@@ -48,10 +51,6 @@ import subprocess
 
 # ---    GLOBAL VARIABLES    ----
 chm_assetroot = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
-if not(os.path.exists(chm_assetroot)):
-    chm_assetroot = 'P:/projects/CHUMS_Onsite/_prod/assets/'
-if not(os.path.exists(chm_assetroot)):
-    chm_assetroot = 'C:/temp/'
 chm_assetprefix = {'chr':'characters', 
                     'env':'environments', 
                     'prp':'props', 
@@ -60,18 +59,24 @@ chm_omitlist = (['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirre
                 'env_AAAtemplate', 'env_rompersburrow', 
                 'prp_AAAtemplate', 'prp_bush_romperPopout_01', 'prp_tree_hollowknot',
                 'prx_AAAtemplate', 'prx_treeObstacle_Source'])
-if os.path.exists('Y:/projects/CHUMS_Onsite/_prod/assets/'):
-    chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
-                  os.path.isdir(os.path.join(chm_assetroot, f))])
+#chm_assettypes = ['characters', 'environments', 'props', 'proxies']
+#chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
+#                  os.path.isdir(os.path.join(chm_assetroot, f))])
 chm_renderroot = 'Y:/projects/CHUMS_Onsite/renders/_prod/assets/'
 chm_assetssubtree = 'projects/blender'
 chm_assetturntables = '30_texture/projects/blender/turntables'
+chm_assetlist = [('assetname','assetname','')]
 thecam_name = "cam.ttCamera"
 turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable.blend"
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.2.2'
+vsn = '0.2.2c'
+
+def ttutils_messagebox(message, title):
+    def draw(self, context):
+        self.layout.label(text=message)
+    bpy.context.window_manager.popup_menu(draw, title = title, icon='ERROR')
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -265,6 +270,16 @@ def xcodeH264():
     command = f'{deadlineBin} {jobInfoPath} {pluginInfoPath}'
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+def get_assetroot():
+    assetroot = ''
+    assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
+    if not(os.path.exists(assetroot)):
+        assetroot = bpy.context.preferences.addons[__name__].preferences.backuproot
+        if not(os.path.exists(assetroot)):
+            assetroot = 'C:/temp/'
+
+    return assetroot
+        
 def get_selection_bounds(thesel):
     print("\nENTER get_selection_bounds FUNCTION")
     from mathutils import Vector
@@ -328,39 +343,6 @@ def get_local_asset_objects():
                             object_list.append(obj)
     return object_list
 
-def remove_any_existing_asset():
-    # asumee all objects in collection "asset_prod" are to be removed as well as the collection itself
-    for col in bpy.data.collections:
-        if col.name == "asset_prod":
-            for obj in col.objects:
-                bpy.data.objects.remove(obj, do_unlink=True)
-            bpy.data.collections.remove(col)
-    return 0
-
-def find_latest_workfile(input_path):
-    print("ENTER find_latest_workfile FUNCTION")
-    latest_filepath = ""
-    vNo = 0
-    if os.path.exists(input_path):
-        for f in os.listdir(input_path):
-            this_path = os.path.join(input_path, f)
-            if this_path.endswith(".blend") and (this_path[-10] == "v"):
-                print("this_path: ", this_path)
-                if os.path.isfile(this_path):
-                    str_version = (f.split(".")[0][-3:])
-                    #print("str_version: ", str_version)
-                    this_version = int(str_version)
-                    if this_version > vNo:
-                        vNo = this_version
-                        latest_filepath = this_path
-    else:
-        # return messagebox showing filepath and message that it can't be found
-        ttutils_messagebox(("Cannot find Path:    " + input_path), "Missing Path")
-        print("CANNOT FIND PATH: ", input_path)
-    if len(latest_filepath) < 3:
-        ttutils_messagebox(("Cannot find latest version:    " + input_path), "Version Issue")
-    return latest_filepath
-
 def get_asset(asset_name, asset_dept, asset_stage):
     print("ENTER get_asset FUNCTION", asset_name)
     remove_any_existing_asset()
@@ -395,6 +377,39 @@ def get_asset(asset_name, asset_dept, asset_stage):
         ttutils_messagebox(("Cannot find Path:    " + the_asset_dir + "    check if   " + mytask + "   " + bpy.context.scene.ttutils_stage + "   are set correctly."), "Missing Path")
         print("CANNOT FIND PATH: ", the_asset_dir)
     return 0
+
+def remove_any_existing_asset():
+    # asumee all objects in collection "asset_prod" are to be removed as well as the collection itself
+    for col in bpy.data.collections:
+        if col.name == "asset_prod":
+            for obj in col.objects:
+                bpy.data.objects.remove(obj, do_unlink=True)
+            bpy.data.collections.remove(col)
+    return 0
+
+def find_latest_workfile(input_path):
+    print("ENTER find_latest_workfile FUNCTION")
+    latest_filepath = ""
+    vNo = 0
+    if os.path.exists(input_path):
+        for f in os.listdir(input_path):
+            this_path = os.path.join(input_path, f)
+            if this_path.endswith(".blend") and (this_path[-10] == "v"):
+                print("this_path: ", this_path)
+                if os.path.isfile(this_path):
+                    str_version = (f.split(".")[0][-3:])
+                    #print("str_version: ", str_version)
+                    this_version = int(str_version)
+                    if this_version > vNo:
+                        vNo = this_version
+                        latest_filepath = this_path
+    else:
+        # return messagebox showing filepath and message that it can't be found
+        ttutils_messagebox(("Cannot find Path:    " + input_path), "Missing Path")
+        print("CANNOT FIND PATH: ", input_path)
+    if len(latest_filepath) < 3:
+        ttutils_messagebox(("Cannot find latest version:    " + input_path), "Version Issue")
+    return latest_filepath
 
 def open_assetfile(asset_name, asset_dept, asset_stage):
     chm_assetprefix = {'chr':'characters', 
@@ -438,20 +453,6 @@ def explore_asset(asset_name, asset_dept, asset_stage):
         print("CANNOT FIND PATH: ", the_asset_dir)
 
     return 0
-
-def get_asset_list(asset_stage):
-    asset_list = []
-    for asset_type in chm_assettypes:
-        asset_type_path = (os.path.join(chm_assetroot,asset_type))
-        assets = [o for o in os.listdir(asset_type_path) if (not(o[-3:] == "zip") and not("_AAA" in o) and not(o == ".DS_Store"))]
-        for asset in assets:
-            # find the asset blender folder
-            this_asset_path = os.path.join(asset_type_path,asset,chm_assetssubtree,asset_stage)
-            this_latest_filepath = find_latest_workfile(this_asset_path)
-            if len(this_latest_filepath) > 0:
-                asset_list.append((asset,asset,""))
-
-    return asset_list
 
 def open_turntable():
     if os.path.exists(turntable_filepath):
@@ -545,22 +546,50 @@ def save_tt_file(asset_name, asset_task, asset_stage):
         ttutils_messagebox("Error encountered.\nIf it appears the file saved successfully, \nyou may wish to check that file before closing this one,\nto ensure it actually did save correctly.\nIf not please reach out for support to flag the issue.", "File Save Issue")
     return the_outpath
 
-def ttutils_messagebox(message, title):
-    def draw(self, context):
-        self.layout.label(text=message)
-    bpy.context.window_manager.popup_menu(draw, title = title, icon='ERROR')
-
-def queryAssetList():
-        print("\nENTER queryAssetList FUNCTION")
-        anames = []
+def refresh_alist():
+    print("\nENTER refresh_alist FUNCTION")
+    chm_assetroot = get_assetroot()
+    asset_list = [('assetname','assetname',''),]
+    if os.path.exists(chm_assetroot):
         chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
-                  os.path.isdir(os.path.join(chm_assetroot, f))])
+                    os.path.isdir(os.path.join(chm_assetroot, f))])
         for atype in chm_assettypes:
             thistype = os.path.join(chm_assetroot, atype)
-            anames += ([(aname,aname,'') for aname in os.listdir(thistype) if 
-                    (aname[:3] in chm_assetprefix.keys() and 
-                    not(aname in chm_omitlist))])
-        return anames
+            asset_list += ([(aname,aname,'') for aname in os.listdir(thistype) if 
+                (aname[:3] in chm_assetprefix.keys() and 
+                not(aname in chm_omitlist))])
+    else:
+        asset_list = [('assetname','assetname',''),]
+        ttutils_messagebox("Asset Library Missing.  Please choose a new asset library path in the addon preferences.", "Asset Library Missing")
+        bpy.types.Scene.assetlist = bpy.props.EnumProperty(items=asset_list,
+            default = None
+        )
+
+    return asset_list
+
+def queryAssetList_callback(scene, context):
+    print("\nENTER queryAssetList FUNCTION")
+    '''
+    #chm_assetroot = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
+    #chm_assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
+    chm_assetroot = get_assetroot()
+    asset_list = []
+    if os.path.exists(chm_assetroot):
+        chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
+                    os.path.isdir(os.path.join(chm_assetroot, f))])
+        for atype in chm_assettypes:
+            thistype = os.path.join(chm_assetroot, atype)
+            asset_list += ([(aname,aname,'') for aname in os.listdir(thistype) if 
+                (aname[:3] in chm_assetprefix.keys() and 
+                not(aname in chm_omitlist))])
+    else:
+        asset_list = [(assetname,assetname,'')]
+        ttutils_messagebox("Asset Library Missing.  Please choose a new asset library path in the addon preferences.", "Asset Library Missing")
+    '''
+    #asset_list = bpy.context.scene.assetlist
+    asset_list = refresh_alist()
+
+    return asset_list
 
 
 # PREFERENCES ttutilsPreferences
@@ -573,29 +602,17 @@ class ttutilsPreferences(bpy.types.AddonPreferences):
         subtype='DIR_PATH',
         default='Y:/projects/CHUMS_Onsite/_prod/assets/',
     )
+    #default='C:/temp/',
+    backuproot: bpy.props.StringProperty(
+        name="Fallback Root Directory",
+        subtype='DIR_PATH',
+        default='P:/projects/CHUMS_Onsite/_prod/assets/',
+    )
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="This is a preferences view for our add-on")
         layout.prop(self, "assetroot")
-        
-
-class OBJECT_OT_ttutils_preferences(bpy.types.Operator):
-    bl_idname = "object.ttutils_preferences"
-    bl_label = "Turntable Add-on Preferences"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        preferences = context.preferences
-        addon_prefs = preferences.addons["Turntable Tools"].preferences
-
-        info = ("Path: %s, Number: %d, Boolean %r" %
-                (addon_prefs.filepath, addon_prefs.number, addon_prefs.boolean))
-
-        self.report({'INFO'}, info)
-        print(info)
-
-        return {'FINISHED'}
+        #layout.prop(self, "backuproot")
 
 
 # PROPERTY GROUP ttutilsProperties
@@ -611,6 +628,12 @@ class ttutilsProperties(bpy.types.PropertyGroup):
           name = "Asset Root",
           description = "Asset Root",
           default = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
+        )
+    bpy.types.Scene.assetlist = bpy.props.EnumProperty(
+        name="",
+        description="",
+        items=queryAssetList_callback,
+        default = None
         )
     bpy.types.Scene.ttutils_task = bpy.props.EnumProperty(
         name="",
@@ -636,7 +659,7 @@ class ttutilsProperties(bpy.types.PropertyGroup):
         subtype='FILE_PATH')
     bpy.types.Scene.ttutils_overscan = bpy.props.FloatProperty \
         (
-          name = "Overscan %",
+          name = "3. Overscan %",
           description = "Percent of asset size to use as border",
           min = 0.00,
           max = 10000.0,
@@ -664,15 +687,14 @@ class ttutilsProperties(bpy.types.PropertyGroup):
     bpy.types.Scene.ttutils_alist = bpy.props.EnumProperty(
         name="",
         description="Asset List",
-        items=queryAssetList(),
-        default = None
+        items=queryAssetList_callback
         )
     
 # OPERATOR BUTTON_OT_openTT
 class BUTTON_OT_openTT(bpy.types.Operator):
     '''Open Turntable Basefile.'''
     bl_idname = "ttutils.opentt"
-    bl_label = "Open Turntable"
+    bl_label = "1. Open Turntable"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
@@ -725,7 +747,7 @@ class BUTTON_OT_selectTTcam(bpy.types.Operator):
 class BUTTON_OT_set_out_filepath(bpy.types.Operator):
     '''Set Output path.'''
     bl_idname = "ttutils.set_out_filepath"
-    bl_label = "Set Output"
+    bl_label = "5. Set Output"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
@@ -738,7 +760,7 @@ class BUTTON_OT_set_out_filepath(bpy.types.Operator):
 class BUTTON_OT_set_cam_loc(bpy.types.Operator):
     '''Set Camera distance from asset.'''
     bl_idname = "ttutils.set_cam_loc"
-    bl_label = "Set Camera"
+    bl_label = "4. Set Camera"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
@@ -763,7 +785,7 @@ class BUTTON_OT_set_cam_loc(bpy.types.Operator):
 class BUTTON_OT_get_asset(bpy.types.Operator):
     '''Append the asset_prod collection from the latest asset'''
     bl_idname = "ttutils.get_asset"
-    bl_label = "Get Asset"
+    bl_label = "2. Get Asset"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
@@ -772,16 +794,17 @@ class BUTTON_OT_get_asset(bpy.types.Operator):
         get_asset(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
-# OPERATOR BUTTON_OT_get_asset_list - currently not used
-class BUTTON_OT_get_asset_list(bpy.types.Operator):
-    '''Return the latest asset - see console'''
-    bl_idname = "ttutils.get_asset_list"
-    bl_label = "Get Asset List"
+# OPERATOR BUTTON_OT_refresh_alist - currently not used
+class BUTTON_OT_ttutils_refresh(bpy.types.Operator):
+    '''Refresh the Asset List'''
+    bl_idname = "ttutils.refresh"
+    bl_label = "Refresh"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        print("EXECUTE BUTTON_OT_get_asset_list OPERATOR CLASS")
-        the_asset_list = get_asset_list(bpy.context.scene.ttutils_stage)
+        print("EXECUTE BUTTON_OT_refresh_alist OPERATOR CLASS")
+        #the_asset_list = refresh_alist(bpy.context.scene.ttutils_stage)
+        the_asset_list = queryAssetList_callback(bpy.context.scene, bpy.context)
         print("the_asset_list: ")
         for i in the_asset_list:
             print( i[0])
@@ -809,7 +832,7 @@ class BUTTON_OT_tilt_cam(bpy.types.Operator):
 class BUTTON_OT_save_ttfile(bpy.types.Operator):
     '''Return the latest asset - see console'''
     bl_idname = "ttutils.save_ttfile"
-    bl_label = "Save Turntable File"
+    bl_label = "6. Save Turntable File"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
@@ -829,7 +852,7 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
 class BUTTON_OT_submit_tt(bpy.types.Operator):
     '''Submit Turntable to Deadline'''
     bl_idname = "ttutils.submit_tt"
-    bl_label = "Submit Turntable Render"
+    bl_label = "7. Submit Turntable Render"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
@@ -860,12 +883,17 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
+        scene = context.scene
         layout = self.layout
         layout.prop(bpy.context.scene, "ttutils_newblend")
         layout.operator("ttutils.opentt", text=(BUTTON_OT_openTT.bl_label))
         layout.prop(bpy.context.scene, "ttutils_task")
         layout.prop(bpy.context.scene, "ttutils_stage")
-        layout.prop(bpy.context.scene, "ttutils_alist")
+        split = layout.split(factor=0.85, align=True)
+        col = split.column(align=True)
+        col.prop(bpy.context.scene, "ttutils_alist")
+        col = split.column(align=True)
+        col.operator("ttutils.refresh", text=(BUTTON_OT_ttutils_refresh.bl_label))
         layout.operator("ttutils.exploreasset", text=(BUTTON_OT_exploreAsset.bl_label))
         layout.operator("ttutils.openasset", text=(BUTTON_OT_openAsset.bl_label))
         layout.operator("ttutils.get_asset", text=(BUTTON_OT_get_asset.bl_label))
@@ -882,6 +910,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         col = split.column(align=True)
         col.prop(bpy.context.scene, "ttutils_draft")
 
+
 #   REGISTER
 classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel, 
             BUTTON_OT_set_cam_loc, BUTTON_OT_get_asset, 
@@ -889,21 +918,19 @@ classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel,
             BUTTON_OT_set_out_filepath, BUTTON_OT_save_ttfile,
             BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam,
             BUTTON_OT_openAsset, BUTTON_OT_submit_tt,
-            ttutilsPreferences, OBJECT_OT_ttutils_preferences]
+            BUTTON_OT_ttutils_refresh, ttutilsPreferences]
 
 def register():
     from bpy.utils import register_class
     for cls in classes:
         print(cls)
         register_class(cls)
-    
 
 #   UNREGISTER
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
-  
 
 if __name__ == "__main__":
     register()
