@@ -1,10 +1,5 @@
 import bpy
 
-#src = bpy.data.objects['env.loonbeach:ground']
-#tgt = bpy.data.objects['ground.master']
-src = bpy.context.object
-tgts = [i for i in bpy.context.selected_objects if not i == src]
-
 def copy_vertex_groups(src,tgts):
     for tgt in tgts:
         for vgrp in src.vertex_groups:
@@ -14,5 +9,5 @@ def copy_vertex_groups(src,tgts):
         
         
 if __name__ == "__main__":
-    copy_vertex_groups(src,tgts)
+    copy_vertex_groups((bpy.context.object),[i for i in bpy.context.selected_objects if not i == (bpy.context.object)])
     
