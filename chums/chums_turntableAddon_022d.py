@@ -266,14 +266,16 @@ def xcodeH264():
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 def get_assetroot():
+    print("\nENTER get_assetroot FUNCTION")
     assetroot = ''
     try:
-        assetroot = bpy.context.preferences.addons["Turntable Tools"].preferences.assetroot
+        assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
     except:
         assetroot = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
+    
     if not(os.path.exists(assetroot)):
         assetroot = 'C:/temp/'
-
+    
     return assetroot
         
 def get_selection_bounds(thesel):
