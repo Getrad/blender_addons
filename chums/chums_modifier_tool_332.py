@@ -10,7 +10,7 @@
 bl_info = {
     "name": "Modifier Tool",
     "author": "conrad dueck",
-    "version": (0,3,1),
+    "version": (0,3,2),
     "blender": (3, 30, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Affect multiple scene or selected modifiers en masse.",
@@ -23,7 +23,7 @@ import bpy
 from bpy import context
 
 ####    GLOBAL VARIABLES    ####
-vsn = '3.1'
+vsn = '3.2'
 
 ####    CLASSES    ####
 #   OPERATOR BUTTON_OT_modtooldelete
