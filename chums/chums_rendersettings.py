@@ -377,7 +377,6 @@ class VIEW3D_PT_rspanel(bpy.types.Panel):
         layout.operator("rendersettings.rsload", text=(BUTTON_OT_rsload.bl_label))
         
 
-
 # REGISTER
 classes = [ renderSettingsProperties, 
            BUTTON_OT_rssave, BUTTON_OT_rsload, 

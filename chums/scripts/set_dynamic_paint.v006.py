@@ -16,46 +16,54 @@ def set_collection_excluded(scene, view_layer_name, collection_name, exclude):
             if lc.collection.name == collection_name:
                 lc.exclude = exclude
 
+def setup_brush(brush_object):
+
 def do_the_bake():
     bpy.ops.dpaint.bake()
     return "done"
 
-print('HELLO')
-brushes = ['chr_flieswitheagles_scene_ma:legs','chr_luna_scene_ma:foot_R','chr_luna_scene_ma:foot_L','chr_ira_scene_ma:body']
+print('\n\n Dynamic paint list defined mayaCaches')
+
 canvas = bpy.data.objects['env.loonbeach:ground.002']
-#shots = {'020':10,'030':10,'050':10}
+brushes = ['chr_flieswitheagles_scene_ma:legs','chr_luna_scene_ma:foot_R','chr_luna_scene_ma:foot_L','chr_ira_scene_ma:body']
 shots = {'010':146,'020':198,'030':64,'050':124,'070':280,'080':262,'090':43,'110':73,'120':172}
-#shots = {'010':146,'020':198,'030':64}
-#shots = {'030':10}
+#shots = {'030':15,'050':12}
 paintpath = ''
 viewlayer = bpy.context.view_layer.name
+last_shot = ''
+shot_end, cache_offset, render_end = 0
+#cache_offset = 0
+#render_end = 0
 
 #collect all the mayaCache collections in the file
 caches = [c for c in bpy.data.collections if ("_mayaCache" in c.name and not("Caches" in c.name))]
-print(caches)
+print("caches: ", caches)
 
-last_shot = ''
-shot_end = 0
-cache_offset = 0
-render_end = 0
+#loop thru shot dict and prep brushes
 for shot in shots.keys():
+    #per shot reset
     cachefiles = []
     shot_end = shots[shot]
-    #find mayaCache for current shot
-    for cache in caches:
-        #deselect all objects
+    
+    #deselect all objects
         for ob in bpy.data.objects:
             ob.select_set(False)
+    
+    #find mayaCache for current shot
+    for cache in caches:
         if ("_sh"+shot) in cache.name:
             set_collection_excluded(bpy.context.scene, viewlayer, cache.name, False)
             print("\n\n", shot, cache.name, shot_end, cache_offset)
+            
             #set putput paintpath for image sequence path
             paintpath = os.path.join(os.path.dirname(bpy.data.filepath), "dynamic_paint_test", "all")
             print('paintpath: ', paintpath)
+            
             #handle output path existence
             if not(os.path.exists(paintpath)):
                 os.makedirs(paintpath)
-            #setup BRUSHes
+            
+            #setup BRUSH (s)
             for brush in brushes:
                 print('brush: ', brush)
                 for obj in cache.objects:
