@@ -71,7 +71,7 @@ turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/pr
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.2.2'
+vsn = '0.2.2d'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -265,6 +265,19 @@ def xcodeH264():
     command = f'{deadlineBin} {jobInfoPath} {pluginInfoPath}'
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+def get_assetroot():
+    print("\nENTER get_assetroot FUNCTION")
+    assetroot = ''
+    try:
+        assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
+    except:
+        assetroot = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
+    
+    if not(os.path.exists(assetroot)):
+        assetroot = 'C:/temp/'
+    
+    return assetroot
+        
 def get_selection_bounds(thesel):
     print("\nENTER get_selection_bounds FUNCTION")
     from mathutils import Vector
@@ -552,6 +565,7 @@ def ttutils_messagebox(message, title):
 
 def queryAssetList():
         print("\nENTER queryAssetList FUNCTION")
+        chm_assetroot = get_assetroot()
         anames = []
         chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
                   os.path.isdir(os.path.join(chm_assetroot, f))])
@@ -687,6 +701,23 @@ class BUTTON_OT_openAsset(bpy.types.Operator):
     
     def execute(self, context):
         open_assetfile(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task,bpy.context.scene.ttutils_stage)
+        return{'FINISHED'}
+
+# OPERATOR BUTTON_OT_tt_refresh_alist - currently not used
+class BUTTON_OT_ttutils_refresh(bpy.types.Operator):
+    '''Refresh the Asset List'''
+    bl_idname = "ttutils.refresh"
+    bl_label = "Refresh"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        print("EXECUTE BUTTON_OT_tt_refresh_alist OPERATOR CLASS")
+        bpy.types.Scene.ttutils_alist = bpy.props.EnumProperty(
+            name="",
+            description="Asset List",
+            items=queryAssetList(),
+            default = None
+            )
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_exploreAsset
@@ -865,7 +896,11 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.operator("ttutils.opentt", text=(BUTTON_OT_openTT.bl_label))
         layout.prop(bpy.context.scene, "ttutils_task")
         layout.prop(bpy.context.scene, "ttutils_stage")
-        layout.prop(bpy.context.scene, "ttutils_alist")
+        split = layout.split(factor=0.85, align=True)
+        col = split.column(align=True)
+        col.prop(bpy.context.scene, "ttutils_alist")
+        col = split.column(align=True)
+        col.operator("ttutils.refresh", text=(BUTTON_OT_ttutils_refresh.bl_label))
         layout.operator("ttutils.exploreasset", text=(BUTTON_OT_exploreAsset.bl_label))
         layout.operator("ttutils.openasset", text=(BUTTON_OT_openAsset.bl_label))
         layout.operator("ttutils.get_asset", text=(BUTTON_OT_get_asset.bl_label))
@@ -889,7 +924,8 @@ classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel,
             BUTTON_OT_set_out_filepath, BUTTON_OT_save_ttfile,
             BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam,
             BUTTON_OT_openAsset, BUTTON_OT_submit_tt,
-            ttutilsPreferences, OBJECT_OT_ttutils_preferences]
+            ttutilsPreferences, OBJECT_OT_ttutils_preferences,
+            BUTTON_OT_ttutils_refresh]
 
 def register():
     from bpy.utils import register_class
