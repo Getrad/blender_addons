@@ -42,7 +42,7 @@
 bl_info = {
     "name": "Publish Maps",
     "author": "conrad dueck",
-    "version": (0,4,0),
+    "version": (0,4,1),
     "blender": (3, 30, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Collect image maps to publish directory and back up any maps that already exist there.",
@@ -54,7 +54,7 @@ bl_info = {
 import bpy, os, sys, shutil, datetime, time, filecmp
 
 ####    GLOBAL VARIABLES    ####
-vsn='4.0'
+vsn='4.1'
 imgignorelist = ['Render Result', 'Viewer Node']
 
 
@@ -227,11 +227,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 print('imgnum = ', imgnum)
                 print('img = ', img)
                 print('commence processing ', img.name)
-                print('srcfile = ', srcfile,
-                      '\nsrcpath = ', srcpath,
-                      '\nsrcfilename = ', srcfilename,
-                      '\nsrcformat = ', srcformat,
-                      '\nsrctype = ', srctype, '\n')
+                print('srcfile = ', srcfile,'\nsrcpath = ', srcpath,'\nsrcfilename = ', srcfilename,'\nsrcformat = ', srcformat,'\nsrctype = ', srctype, '\n')
                 #   UNPACK if the image is PACKED into the file
                 if img.packed_file:
                     totalpacks += 1
@@ -278,8 +274,11 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             
             #   process the 3 (old, archive, new) lists
             for imgnum in range(len(theimgs)):
+                print('imgnum:', imgnum)
                 img = theimgs[imgnum]
+                print('img:', img)
                 srcfile = theoldpaths[imgnum]
+                print('srcfile:', srcfile)
                 srcformat = img.file_format
                 srcext = srcfile[-3:]
                 srctype = theimgtypes[imgnum]
@@ -292,13 +291,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 print('    src: ', srcfile)
                 print('    tgt: ', tgtfile)
                 print('    arc: ', arcfile)
-                logmsg += ('\n\nProcessing image:       ' + theoldname + 
-                           '\n    source file:        ' + srcfile + 
-                           '\n    exists:             ' + str(os.path.exists(srcfile)) + 
-                           '\n    type:               ' + srctype + 
-                           '\n    new image path:     ' + tgtfile +
-                           '\n    archive image path: ' + arcfile)
-            
+                logmsg += ('\n\nProcessing image:       ' + theoldname + '\n    source file:        ' + srcfile + '\n    exists:             ' + str(os.path.exists(srcfile)) + '\n    type:               ' + srctype + '\n    new image path:     ' + tgtfile + '\n    archive image path: ' + arcfile)
                 #   publish already exists
                 if os.path.exists(tgtfile):
                     print('    found existing publish file')
@@ -514,12 +507,12 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             logmsg += ('\n\nThe restore file for this publish is: ' + str(therestorefile))
             
             #   log totals
-            logmsg += ('\n\nTotal images processed: ' + str(totalimgs) + 
-                       '\nTotal images unpacked: ' + str(totalpacks) + 
-                       '\nTotal images published: ' + str(totalpubs) + 
-                       '\nTotal images archived: ' + str(totalbaks) + 
-                       '\nTotal publishes skipped: ' + str(totalpubskps) + 
-                       '\nTotal archives skipped: ' + str(totalarcskps) + 
+            logmsg += ('\n\nTotal images processed: ' + str(totalimgs) + \
+                       '\nTotal images unpacked: ' + str(totalpacks) + \
+                       '\nTotal images published: ' + str(totalpubs) + \
+                       '\nTotal images archived: ' + str(totalbaks) + \
+                       '\nTotal publishes skipped: ' + str(totalpubskps) + \
+                       '\nTotal archives skipped: ' + str(totalarcskps) + \
                        '\n\nTotal confirmed publishes: ' + str(totalconfirmedpaths))
             print('Done.')
         #   close log files and finish
