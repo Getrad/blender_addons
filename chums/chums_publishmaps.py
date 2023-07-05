@@ -40,7 +40,7 @@
 ## ** remove/replace chums specific code
 # v4.2
 ## clean file format to 16 bit floatt EXR in linear space
-## need to add imagemagick code
+## see about autonaming new image
 
 bl_info = {
     "name": "Publish Maps",
@@ -57,7 +57,7 @@ bl_info = {
 import bpy, os, sys, shutil, datetime, time, filecmp
 
 ####    GLOBAL VARIABLES    ####
-vsn='4.1'
+vsn='4.2'
 imgignorelist = ['Render Result', 'Viewer Node']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
