@@ -59,10 +59,10 @@ import bpy, os, sys, shutil, datetime, time, filecmp
 ####    GLOBAL VARIABLES    ####
 vsn='4.1'
 imgignorelist = ['Render Result', 'Viewer Node']
-clean_export_fileformat = ''
-clean_export_fileext = 'EXR'
-clean_export_filedepth = ''
-clean_export_file = ''
+clean_export_fileformat = 'OPEN_EXR'
+clean_export_fileext = 'exr'
+clean_export_filedepth = '16'
+clean_export_filecodec = 'PIZ'
 
 
 
@@ -129,7 +129,6 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                         'TARGA':'.tga','TARGA_RAW':'.tga','CINEON':'.cin','DPX':'.dpx',
                         'OpenEXR':'.exr','OPEN_EXR_MULTILAYER':'.exr','OPEN_EXR':'.exr',
                         'HDR':'.hdr','TIFF':'.tif','AVI_JPEG':'.avi','AVI_RAW':'.avi'}
-        
         #   set up restore and log files; get date and time and filename and filepath
         now = datetime.datetime.now()
         theDate = (str(now.year) + str(now.month).zfill(2) + str(now.day).zfill(2))
@@ -217,11 +216,15 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             
             #   log name cleaning option
             if bpy.context.scene.publishmaps_cleanup == True:
-                print('Clean up naming is ON')
-                logmsg += ('\nClean up naming is ON')
+                print('Clean up is ON')
+                logmsg += ('\nClean up is ON')
+                #   setup to manage image clean up temporarily
+                bpy.context.scene.render.image_settings.file_format = clean_export_fileformat
+                bpy.context.scene.render.image_settings.color_depth = clean_export_filedepth
+                bpy.context.scene.render.image_settings.exr_codec = clean_export_filecodec
             else:
-                print('Clean up naming is OFF')
-                logmsg += ('\nClean up naming is OFF')
+                print('Clean up is OFF')
+                logmsg += ('\nClean up is OFF')
             
             #   cycle thru images and collect original paths (theoldpaths) and generate the new image paths (thenewpaths) and archive paths (thearcpaths)
             for imgnum in range(len(theimgs)):
@@ -230,7 +233,12 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 srcfile = theoldpaths[imgnum]
                 srcpath = os.path.dirname(srcfile)
                 srcfilename = os.path.basename(srcfile)
-                srcformat = img.file_format
+                clean_export_fileext = 'exr'
+                if bpy.context.scene.publishmaps_cleanup == True:
+                    srcformat = clean_export_fileformat
+
+                else:
+                    srcformat = img.file_format
                 srctype = theimgtypes[imgnum]
                 theoldname = os.path.basename(theoldpaths[imgnum])
                 print('imgnum = ', imgnum)
@@ -273,7 +281,9 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                     bpy.context.scene.render.image_settings.file_format = curformat
                 #   clean the name if needed, set the 'thenewname' variable
                 if bpy.context.scene.publishmaps_cleanup == True:
-                    thenewname = theoldname.replace(' ', '_').lower()
+                    thenewname = theoldname.replace(' ', '_')
+                    thenewname_ext = thenewname.split(".")[-1]
+                    thenewname = thenewname.replace(thenewname_ext,clean_export_fileext)
                 else:
                     thenewname = theoldname
                 thenewpath = os.path.join(thepath, thenewname)
@@ -301,6 +311,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 print('    tgt: ', tgtfile)
                 print('    arc: ', arcfile)
                 logmsg += ('\n\nProcessing image:       ' + theoldname + '\n    source file:        ' + srcfile + '\n    exists:             ' + str(os.path.exists(srcfile)) + '\n    type:               ' + srctype + '\n    new image path:     ' + tgtfile + '\n    archive image path: ' + arcfile)
+                
                 #   publish already exists
                 if os.path.exists(tgtfile):
                     print('    found existing publish file')
@@ -685,8 +696,8 @@ def register():
         subtype='DIR_PATH')
     
     bpy.types.Scene.publishmaps_cleanup = bpy.props.BoolProperty(
-        name = "Clean Up Names",
-        description = "Replace spaces with underscores and make the image names all lower case",
+        name = "Clean Up",
+        description = "Replace spaces with underscores and convert to EXR",
         default = True)
     
     bpy.types.Scene.publishmaps_restore = bpy.props.StringProperty(
