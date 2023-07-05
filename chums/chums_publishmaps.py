@@ -38,11 +38,14 @@
 # v4.0
 ## * port to Chums using Blender LTS 3.3.1
 ## ** remove/replace chums specific code
+# v4.2
+## clean file format to 16 bit floatt EXR in linear space
+## need to add imagemagick code
 
 bl_info = {
     "name": "Publish Maps",
     "author": "conrad dueck",
-    "version": (0,4,1),
+    "version": (0,4,2),
     "blender": (3, 30, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Collect image maps to publish directory and back up any maps that already exist there.",
@@ -56,6 +59,12 @@ import bpy, os, sys, shutil, datetime, time, filecmp
 ####    GLOBAL VARIABLES    ####
 vsn='4.1'
 imgignorelist = ['Render Result', 'Viewer Node']
+clean_export_fileformat = ''
+clean_export_fileext = 'EXR'
+clean_export_filedepth = ''
+clean_export_file = ''
+
+
 
 
 ####    FUNCTIONS    ####
