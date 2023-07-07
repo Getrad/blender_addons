@@ -64,7 +64,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='4.3a'
+vsn='4.3b'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
@@ -124,11 +124,14 @@ def trace_to_shader(image):
 
 def convert_to_exr(image):
     import os
-    img_path = image.filepath
-    img_name = os.path.basename(img_path)
-    img_dir = os.path.dirname(img_path)
-    tgt_path = (img_path[:-4] + "GOING4" + ".exr")
-    img_cmd = (str(imagick) + " " + str(Path(img_path)) + " -compress zip -depth 16 " + str(Path(tgt_path)) + "")
+    cleanpath = image.replace('\\','/')
+    #img_path = image.filepath
+    img_name = os.path.basename(cleanpath)
+    img_dir = os.path.dirname(cleanpath)
+    tgt_path = (cleanpath[:-4] + "_converted_" + ".exr")
+    print('tgt_path = ',tgt_path)
+    #img_cmd = (str(imagick) + " " + str(Path(image)) + " -compress zip -depth 16 " + str(Path(tgt_path)) + "")
+    img_cmd = (str(imagick) + " \"" + str(Path(cleanpath)) + "\" -compress zip -depth 16 \"" + str(Path(tgt_path)) + "\"")
     print(img_cmd)
     running = subprocess.Popen(img_cmd)
     running.wait()
@@ -136,7 +139,7 @@ def convert_to_exr(image):
     if os.path.exists(tgt_path):
         return tgt_path
     else:
-        return (image.filepath) 
+        return (image) 
 
 ####    CLASSES    ####
 #   OPERATOR publishmapspublish PUBLISH MAPS
@@ -183,8 +186,8 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         theTime = (str(now.hour).zfill(2)+'.'+str(now.minute).zfill(2))
         thistype = ('texture_publish_restore_' + theFile + '_' + theDate + '_' + theTime + '.txt')
         thislog = ('texture_publish_log_' + theFile + '_' + theDate + '_' + theTime + '.txt')
-        therestorefile = os.path.join(thefilepath, thistype)
-        therestore = open(therestorefile, 'w')
+        #therestorefile = os.path.join(thefilepath, thistype)
+        #therestore = open(therestorefile, 'w')
         thelogfile = os.path.join(thefilepath, thislog)
         thelog = open(thelogfile, 'w')
         logmsg = ('chums_publishmaps    version: ' + vsn)
@@ -195,7 +198,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         bpy.ops.file.make_paths_absolute()
         
         #   get the destination/publish path from the UI
-        #thepath = os.path.abspath(bpy.path.abspath(bpy.context.scene.publishmaps_to))
+        thepath = os.path.abspath(bpy.path.abspath(bpy.context.scene.publishmaps_to))
         if (len(bpy.context.scene.publishmaps_to) >= 1) and (os.path.exists(bpy.context.scene.publishmaps_to)):
             thepath = os.path.abspath(bpy.path.abspath(bpy.context.scene.publishmaps_to))
             print('\nPublish folder found: ', thepath)
@@ -339,10 +342,9 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 tgtpath = os.path.join(thepath, tgtfilename)
                 tgtpaths.append(tgtpath)
                 print('srcfile = ', srcfile,'\nsrcpath = ', srcpath,'\nsrcfilename = ', srcfilename,'\nsrcformat = ', srcformat,'\nsrctype = ', srctype, '\n')
-                print('tgtfile = ', tgtpath,'\ntgtpath = ', thepath,'\ntgtfilename = ', tgtfilename,'\ntgtformat = ', tgtformat,'\ntgttype = ', srctype, '\n')
-                thearcpath = os.path.join(archivedir, theoldname)
-                thearcpaths.append(thearcpath)
-            
+                print('tgtfile = ', tgtfilename,'\ntgtpath = ', thepath,'\ntgtfilename = ', tgtfilename,'\ntgtformat = ', tgtformat,'\ntgttype = ', srctype, '\n')
+                
+                
             #   process the image list
             for imgnum in range(len(theimgs)):
                 print('imgnum:', imgnum)
@@ -367,90 +369,43 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                     print('    found existing publish file')
                     logmsg += ('\n    found existing publish file: ' + tgtfile)
                     
-                    
-                    
-                    #   check if existing publish matches srcfile
-                    if (filecmp.cmp(srcfile, tgtfile, shallow=False)):
-                        #   if so, SKIP and REPATH
-                        if not(os.path.basename(tgtfile) == os.path.basename(srcfile)):
-                            correctname = os.path.join(os.path.dirname(tgtfile), os.path.basename(tgtfile))
-                            os.replace(tgtfile, correctname)
-                        print('    matching tgtfile, so skipping publish step')
-                        img.filepath = tgtfile
-                        totalpubskps += 1
-                        logmsg += ('\n    repathed to matched existing publish: ' + tgtfile)
-                    else:
-                        #   if not, PUBLISH new
-                        print('    different tgtfile, so need to republish')
-                        logmsg += ('\n    existing publish does not match')
-                        if srctype == 'SEQUENCE':
-                            #   delete old and PUBLISH SEQUENCE
-                            print('   delete mismatched tgtfile sequence and publish sequence')
-                            theframecount = 0
-                            thearccount = 0
-                            srcpath = os.path.dirname(srcfile)
-                            srcbasename = removedigits(theoldname)
-                            tgtbasename = removedigits(tgtfilename)
-                            for fl in os.listdir(thepath):
-                                flfullpath = os.path.join(thepath, fl)
-                                if (os.path.isfile(flfullpath)) and not('humbs.db' in fl):
-                                    if (removedigits(fl) == tgtbasename):
-                                        print('    delete', flfullpath)
-                                        os.remove(flfullpath)
-                                        theframecount += 1
-                            logmsg += ('\n    deleted existing ' + str(theframecount) + ' published frames for publish that no longer exists.')
-                            for fl in os.listdir(srcpath):
-                                flfullpath = os.path.join(thepath, fl)
-                                if removedigits(fl) == tgtbasename:
-                                    print('    archive', flfullpath)
-                                    if bpy.context.scene.publishmaps_cleanup == True:
-                                        convert_to_exr(image)
-                                    else:
-                                        shutil.copy2(flfullpath, thepath)
-                                    thearccount += 1
-                            logmsg += ('\n    published ' + str(theframecount) + ' new frames.')
-                        else:
-                            #   delete old and PUBLISH SINGLE
-                            print('   delete mismatched tgtfile and publish')
-                            os.remove(tgtfile)
-                            shutil.copy2(srcfile, tgtfile)
-                        img.filepath = tgtfile
-                        totalpubs += 1
-                        logmsg += ('\n    updated existing publish: ' + tgtfile)
-                
-                #   publish does not already exist
-                else:
-                    #   SEQUENCE
-                    if srctype == 'SEQUENCE':
-                        #   publish sequence
-                        theframecount = 0
-                        srcbasename = removedigits(theoldname)
-                        print('\n    srcbasename = ', srcbasename)
-                        newbasename = 
-                        for fl in os.listdir(srcpath):
-                            flfullpath = os.path.join(srcpath, fl)
-                            print('\n    flfullpath = ', flfullpath)
-                            if (os.path.isfile(flfullpath)) and not('humbs.db' in fl):
-                                if removedigits(fl) == srcbasename:
-                                    print('    will need to publish', flfullpath)
+                #   SEQUENCE
+                if srctype == 'SEQUENCE':
+                    #   publish sequence
+                    theframecount = 0
+                    srcbasename = removedigits(theoldname)
+                    print('\n    srcbasename = ', srcbasename)
+                    for fl in os.listdir(srcpath):
+                        flfullpath = os.path.join(srcpath, fl)
+                        print('\n    flfullpath = ', flfullpath)
+                        if (os.path.isfile(flfullpath)) and not('humbs.db' in fl):
+                            if removedigits(fl) == srcbasename:
+                                print('    will need to publish', flfullpath)
+                                if bpy.context.scene.publishmaps_cleanup == True:
+                                    cleanfullpath = convert_to_exr(Path(srcfile))
+                                    shutil.copy2(cleanfullpath, thepath)
+                                else:
                                     shutil.copy2(flfullpath, thepath)
-                                    theframecount += 1
-                        img.filepath = tgtfile
-                        totalpubs += 1
-                        logmsg += ('\n    published new:      ' + str(theframecount) + ' frame sequence: ' + tgtfile)
-                    #   SINGLE
+                                theframecount += 1
+                    img.filepath = tgtfile
+                    totalpubs += 1
+                    logmsg += ('\n    published new:      ' + str(theframecount) + ' frame sequence: ' + tgtfile)
+                #   SINGLE
+                else:
+                    #   publish single
+                    if bpy.context.scene.publishmaps_cleanup == True:
+                        newfile = convert_to_exr(srcfile)
                     else:
-                        #   publish single
-                        shutil.copy2(srcfile, tgtfile)
-                        img.filepath = tgtfile
-                        totalpubs += 1
-                        logmsg += ('\n    published new:      ' + tgtfile)
-                
+                        newfile = srcfile
+                    shutil.copy2(newfile, tgtfile)
+                    img.filepath = tgtfile
+                    totalpubs += 1
+                    logmsg += ('\n    published new:      ' + tgtfile)
+            
                 themsg = ('\n' + img.name)
                 themsg += (',' + srcfile)
                 themsg += (',' + tgtfile)
-                therestore.write(themsg)
-            
+                
             #   user driven option make all paths relative again
             if bpy.context.scene.relative_paths:
                 logmsg += ('\n\nSetting all file paths back to relative.')
@@ -475,9 +430,9 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                         totalconfirmedpaths += 1
                 
             #   log restore file
-            if bpy.context.scene.publishmaps_restore:
-                bpy.context.scene.publishmaps_restore = therestorefile
-            logmsg += ('\n\nThe restore file for this publish is: ' + str(therestorefile))
+            #if bpy.context.scene.publishmaps_restore:
+            #    bpy.context.scene.publishmaps_restore = therestorefile
+            #logmsg += ('\n\nThe restore file for this publish is: ' + str(therestorefile))
             
             #   log totals
             logmsg += ('\n\nTotal images processed: ' + str(totalimgs) + \
@@ -490,7 +445,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             print('Done.')
         #   close log files and finish
         thelog.write(logmsg)
-        therestore.close()
+        #therestore.close()
         thelog.close()
         print('COMPLETE PUBLISH')
         return{'FINISHED'}
