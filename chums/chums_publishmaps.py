@@ -118,7 +118,7 @@ def trace_to_shader(image):
                             if the_out.is_linked:
                                 for link in the_out.links:
                                     my_maptype = link.to_socket.identifier.replace(' ','_')
-                                    continue
+                                    break
     
     return my_object, my_maptype
 
@@ -139,7 +139,7 @@ def convert_to_exr(image):
     if os.path.exists(tgt_path):
         return tgt_path
     else:
-        return (image) 
+        return (image)
 
 ####    CLASSES    ####
 #   OPERATOR publishmapspublish PUBLISH MAPS
