@@ -40,12 +40,17 @@
 ## ** remove/replace chums specific code
 # v4.2
 ## clean file format to 16 bit floatt EXR in linear space
-## see about autonaming new image
+# v4.3
+## see about autonaming new image: <asset name>_<object name>_<map type>_<version#>.<ext>
+## switch imagemagick for img conversion
+## comment Restore code out; keep logging (for now)
+# TARGETS v5.0
+## completely remove Restore functionality; keep logging (for now)
 
 bl_info = {
     "name": "Publish Maps",
     "author": "conrad dueck",
-    "version": (0,4,2),
+    "version": (0,4,3),
     "blender": (3, 30, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Collect image maps to publish directory and back up any maps that already exist there.",
@@ -55,17 +60,19 @@ bl_info = {
     "category": "Chums"}
 
 import bpy, os, sys, shutil, datetime, time, filecmp
+import subprocess
+from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='4.2'
-imgignorelist = ['Render Result', 'Viewer Node']
+vsn='4.3a'
+imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
 clean_export_filedepth = '16'
-clean_export_filecodec = 'PIZ'
-
-
-
+clean_export_imagick = 'zip'
+clean_export_filecodec = 'ZIP'
+clean_export_imagick = 'zip'
+imagick = Path("C:/Program Files/ImageMagick-7.1.1-Q16-HDRI\convert.exe")
 
 ####    FUNCTIONS    ####
 def make_path_absolute(self, context):
@@ -83,6 +90,7 @@ def removedigits(thestring):
             thestring = thestring.replace(str(i), '')
     return thestring
 
+# sha256 hash compare 2 files
 def compare2files(f1, f2):
     import hashlib
     replaceold = False
@@ -96,6 +104,39 @@ def compare2files(f1, f2):
     print('(compare2files) sha256 hash comparison = ', replaceold)
     return replaceold
 
+def trace_to_shader(image):
+    my_object = ''
+    my_maptype = ''
+    for o in bpy.context.view_layer.objects:
+        my_object = o.name
+        if o.type == 'MESH':
+            for mt in o.material_slots:
+                mtl = mt.material
+                for node in mtl.node_tree.nodes:
+                    if node.type == 'TEX_IMAGE' and node.image == image:
+                        for the_out in node.outputs:
+                            if the_out.is_linked:
+                                for link in the_out.links:
+                                    my_maptype = link.to_socket.identifier.replace(' ','_')
+                                    continue
+    
+    return my_object, my_maptype
+
+def convert_to_exr(image):
+    import os
+    img_path = image.filepath
+    img_name = os.path.basename(img_path)
+    img_dir = os.path.dirname(img_path)
+    tgt_path = (img_path[:-4] + "GOING4" + ".exr")
+    img_cmd = (str(imagick) + " " + str(Path(img_path)) + " -compress zip -depth 16 " + str(Path(tgt_path)) + "")
+    print(img_cmd)
+    running = subprocess.Popen(img_cmd)
+    running.wait()
+    print(running.returncode)
+    if os.path.exists(tgt_path):
+        return tgt_path
+    else:
+        return (image.filepath) 
 
 ####    CLASSES    ####
 #   OPERATOR publishmapspublish PUBLISH MAPS
@@ -112,7 +153,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         theimgs = []     # list of images to process
         theimgtypes = [] # list of image types mapped to theimgs
         theoldpaths = [] # list of image paths used by theimgs
-        thenewpaths = [] # list of the new paths to which the images will be published
+        tgtpaths = [] # list of the new paths to which the images will be published
         thearcpaths = [] # list of the archive paths for archiving previous publishes of theimgs
         totalimgs = 0
         totalpubs = 0
@@ -123,18 +164,23 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         totalpacks = 0
         totalmissing = 0
         totalconfirmedpaths = 0
-        unpacktarget = os.path.join(os.path.dirname(bpy.data.filepath), 'unpacked')
+        theFile = os.path.basename(bpy.data.filepath)[:-6]
+        thefilepath = os.path.dirname(bpy.data.filepath)
+        if len(theFile) >= 4 and len(theFile.split("_")) > 2:
+            theasset = theFile[:-5]
+        else:
+            theasset = "unknown"
+        unpacktarget = os.path.join(thefilepath, 'unpacked')
         myalphanum = 'abcdefghijklmnopqrstuvwxyz1234567890'
         imageformats = {'BMP':'.bmp','PNG':'.png','JPEG':'.jpg','JPEG2000':'.jpg',
                         'TARGA':'.tga','TARGA_RAW':'.tga','CINEON':'.cin','DPX':'.dpx',
                         'OpenEXR':'.exr','OPEN_EXR_MULTILAYER':'.exr','OPEN_EXR':'.exr',
                         'HDR':'.hdr','TIFF':'.tif','AVI_JPEG':'.avi','AVI_RAW':'.avi'}
+        
         #   set up restore and log files; get date and time and filename and filepath
         now = datetime.datetime.now()
         theDate = (str(now.year) + str(now.month).zfill(2) + str(now.day).zfill(2))
         theTime = (str(now.hour).zfill(2)+'.'+str(now.minute).zfill(2))
-        theFile = os.path.basename(bpy.data.filepath)[:-6]
-        thefilepath = os.path.dirname(bpy.data.filepath) 
         thistype = ('texture_publish_restore_' + theFile + '_' + theDate + '_' + theTime + '.txt')
         thislog = ('texture_publish_log_' + theFile + '_' + theDate + '_' + theTime + '.txt')
         therestorefile = os.path.join(thefilepath, thistype)
@@ -149,7 +195,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         bpy.ops.file.make_paths_absolute()
         
         #   get the destination/publish path from the UI
-        thepath = os.path.abspath(bpy.path.abspath(bpy.context.scene.publishmaps_to))
+        #thepath = os.path.abspath(bpy.path.abspath(bpy.context.scene.publishmaps_to))
         if (len(bpy.context.scene.publishmaps_to) >= 1) and (os.path.exists(bpy.context.scene.publishmaps_to)):
             thepath = os.path.abspath(bpy.path.abspath(bpy.context.scene.publishmaps_to))
             print('\nPublish folder found: ', thepath)
@@ -218,15 +264,11 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             if bpy.context.scene.publishmaps_cleanup == True:
                 print('Clean up is ON')
                 logmsg += ('\nClean up is ON')
-                #   setup to manage image clean up temporarily
-                bpy.context.scene.render.image_settings.file_format = clean_export_fileformat
-                bpy.context.scene.render.image_settings.color_depth = clean_export_filedepth
-                bpy.context.scene.render.image_settings.exr_codec = clean_export_filecodec
             else:
                 print('Clean up is OFF')
                 logmsg += ('\nClean up is OFF')
             
-            #   cycle thru images and collect original paths (theoldpaths) and generate the new image paths (thenewpaths) and archive paths (thearcpaths)
+            #   cycle thru images and collect original paths (theoldpaths) and generate the new image paths (tgtpaths) and archive paths (thearcpaths)
             for imgnum in range(len(theimgs)):
                 totalimgs += 1
                 img = theimgs[imgnum]
@@ -234,17 +276,22 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 srcpath = os.path.dirname(srcfile)
                 srcfilename = os.path.basename(srcfile)
                 clean_export_fileext = 'exr'
-                if bpy.context.scene.publishmaps_cleanup == True:
-                    srcformat = clean_export_fileformat
-
-                else:
-                    srcformat = img.file_format
-                srctype = theimgtypes[imgnum]
-                theoldname = os.path.basename(theoldpaths[imgnum])
+                
                 print('imgnum = ', imgnum)
                 print('img = ', img)
                 print('commence processing ', img.name)
+                
+                #   handle clean up - file format
+                if bpy.context.scene.publishmaps_cleanup == True:
+                    tgtformat = clean_export_fileformat
+                else:
+                    tgtformat = img.file_format
+                
+                srcformat = img.file_format
+                srctype = theimgtypes[imgnum]
+                theoldname = os.path.basename(theoldpaths[imgnum])
                 print('srcfile = ', srcfile,'\nsrcpath = ', srcpath,'\nsrcfilename = ', srcfilename,'\nsrcformat = ', srcformat,'\nsrctype = ', srctype, '\n')
+                
                 #   UNPACK if the image is PACKED into the file
                 if img.packed_file:
                     totalpacks += 1
@@ -255,8 +302,6 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                     if len(srcfilename) < 1:
                         srcfilename = (img.name + theext)
                     newpath = os.path.join(unpacktarget, srcfilename)
-                    #tempname = (img.name + theext)
-                    #newpath = os.path.join(unpacktarget, tempname)
                     thisversion = 0
                     print('FIRST existence check - newpath = ', newpath)
                     if os.path.exists(newpath):
@@ -279,19 +324,26 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                     curpath = img.filepath
                     srcfile = img.filepath
                     bpy.context.scene.render.image_settings.file_format = curformat
-                #   clean the name if needed, set the 'thenewname' variable
+                
+                #   handle clean up - file name
+                #   <asset name>_<object name>_<map type>_<version#>.<ext>
                 if bpy.context.scene.publishmaps_cleanup == True:
-                    thenewname = theoldname.replace(' ', '_')
-                    thenewname_ext = thenewname.split(".")[-1]
-                    thenewname = thenewname.replace(thenewname_ext,clean_export_fileext)
+                    thisobject, thismaptype = trace_to_shader(img)
+                    customname = (theasset + "_" + thisobject + "_" + thismaptype + "." + clean_export_fileext)
+                    tgtfilename = customname.replace(' ', '_')
+                    tgtfilename = tgtfilename.replace(":","_")
+                    tgtfilename_ext = tgtfilename.split(".")[-1]
+                    tgtfilename = tgtfilename.replace(tgtfilename_ext,clean_export_fileext)
                 else:
-                    thenewname = theoldname
-                thenewpath = os.path.join(thepath, thenewname)
-                thenewpaths.append(thenewpath)
+                    tgtfilename = theoldname
+                tgtpath = os.path.join(thepath, tgtfilename)
+                tgtpaths.append(tgtpath)
+                print('srcfile = ', srcfile,'\nsrcpath = ', srcpath,'\nsrcfilename = ', srcfilename,'\nsrcformat = ', srcformat,'\nsrctype = ', srctype, '\n')
+                print('tgtfile = ', tgtpath,'\ntgtpath = ', thepath,'\ntgtfilename = ', tgtfilename,'\ntgtformat = ', tgtformat,'\ntgttype = ', srctype, '\n')
                 thearcpath = os.path.join(archivedir, theoldname)
                 thearcpaths.append(thearcpath)
             
-            #   process the 3 (old, archive, new) lists
+            #   process the image list
             for imgnum in range(len(theimgs)):
                 print('imgnum:', imgnum)
                 img = theimgs[imgnum]
@@ -303,94 +355,19 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 srctype = theimgtypes[imgnum]
                 theoldname = os.path.basename(theoldpaths[imgnum])
                 realsrcpath = os.path.realpath(bpy.path.abspath(srcfile))
-                arcfile = thearcpaths[imgnum]
-                tgtfile = thenewpaths[imgnum]
-                thenewname = os.path.basename(thenewpaths[imgnum])
+                tgtfile = tgtpaths[imgnum]
+                tgtfilename = os.path.basename(tgtpaths[imgnum])
                 print('\nProcessing ', srcformat, ' image: ', theoldname)
                 print('    src: ', srcfile)
                 print('    tgt: ', tgtfile)
-                print('    arc: ', arcfile)
-                logmsg += ('\n\nProcessing image:       ' + theoldname + '\n    source file:        ' + srcfile + '\n    exists:             ' + str(os.path.exists(srcfile)) + '\n    type:               ' + srctype + '\n    new image path:     ' + tgtfile + '\n    archive image path: ' + arcfile)
+                logmsg += ('\n\nProcessing image:       ' + theoldname + '\n    source file:        ' + srcfile + '\n    exists:             ' + str(os.path.exists(srcfile)) + '\n    type:               ' + srctype + '\n    new image path:     ' + tgtfile)
                 
                 #   publish already exists
                 if os.path.exists(tgtfile):
                     print('    found existing publish file')
                     logmsg += ('\n    found existing publish file: ' + tgtfile)
                     
-                    #   archive already exists
-                    if os.path.exists(arcfile):
-                        print('    found arcfile')
-                        logmsg += ('\n    archive file already exists')
-                        #   check for a match to existing tgtfile
-                        if (filecmp.cmp(tgtfile, arcfile, shallow=False)):
-                            if not(os.path.basename(tgtfile) == os.path.basename(arcfile)):
-                                correctname = os.path.join(os.path.dirname(arcfile), os.path.basename(tgtfile))
-                                os.replace(arcfile, correctname)
-                            #   skip
-                            print('    matching arcfile, so skipping archive step')
-                            totalarcskps += 1
-                            logmsg += ('\n    archive matches, skipping: ' + arcfile)
-                        else:
-                            logmsg += ('\n    archive does not match existing publish.')
-                            if srctype == 'SEQUENCE':
-                                #   delete existing and ARCHIVE sequence
-                                print('    existing arcfile SEQUENCE does NOT match, need to delete and copy current tgtfile as new archive')
-                                #   check if the arcfile is being used as a srcfile before deleting 
-                                if arcfile in theoldpaths:
-                                    print('    arcfile is being used as source, so leave arcfile and publish')
-                                    totalarcskps += 1
-                                    logmsg += ('\n    skipped archive used as source: ' + arcfile)
-                                else:
-                                    theframecount = 0
-                                    thearccount = 0
-                                    arcpath = os.path.dirname(arcfile)
-                                    srcbasename = removedigits(theoldname)
-                                    tgtbasename = removedigits(thenewname)
-                                    for fl in os.listdir(arcpath):
-                                        flfullpath = os.path.join(arcpath, fl)
-                                        if (os.path.isfile(flfullpath)) and not('humbs.db' in fl):
-                                            if (removedigits(fl) == srcbasename) or (removedigits(fl) == tgtbasename):
-                                                print('    delete', flfullpath)
-                                                os.remove(flfullpath)
-                                                theframecount += 1
-                                    logmsg += ('\n    deleted existing ' + str(theframecount) + 'archive frames for publish that no longer exists.')
-                                    for fl in os.listdir(thepath):
-                                        flfullpath = os.path.join(thepath, fl)
-                                        if removedigits(fl) == tgtbasename:
-                                            print('    archive', flfullpath)
-                                            shutil.copy2(flfullpath, arcpath)
-                                            thearccount += 1
-                                    totalbaks += 1
-                                    logmsg += ('\n    archived ' + str(thearccount) + ' frames for updated publish.')
-                            else:
-                                #   delete existing and ARCHIVE single
-                                print('    existing arcfile FILE does NOT match, need to delete and copy current tgtfile as new archive')
-                                os.remove(arcfile)
-                                shutil.copy2(tgtfile, arcfile)
-                                totalbaks += 1
-                                logmsg += ('\n    archived: ' + arcfile)
-                    #   archive does not exist
-                    else:
-                        if srctype == 'SEQUENCE':
-                            #   ARCHIVE sequence
-                            theframecount = 0
-                            thearccount = 0
-                            arcpath = os.path.dirname(arcfile)
-                            tgtbasename = removedigits(thenewname)
-                            for fl in os.listdir(thepath):
-                                flfullpath = os.path.join(thepath, fl)
-                                if removedigits(fl) == tgtbasename:
-                                    print('    archive', flfullpath)
-                                    shutil.copy2(flfullpath, arcpath)
-                                    thearccount += 1
-                            totalbaks += 1
-                            logmsg += ('\n    archived ' + str(thearccount) + ' frames for updated publish.')
-                        else:
-                            #   ARCHIVE single
-                            print('    archive existing tgtfile')
-                            shutil.copy2(tgtfile, os.path.dirname(arcfile))
-                            totalbaks += 1
-                            logmsg += ('\n    archived: ' + arcfile)
+                    
                     
                     #   check if existing publish matches srcfile
                     if (filecmp.cmp(srcfile, tgtfile, shallow=False)):
@@ -407,13 +384,13 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                         print('    different tgtfile, so need to republish')
                         logmsg += ('\n    existing publish does not match')
                         if srctype == 'SEQUENCE':
-                            #   delete old and PUBLISH sequence
+                            #   delete old and PUBLISH SEQUENCE
                             print('   delete mismatched tgtfile sequence and publish sequence')
                             theframecount = 0
                             thearccount = 0
                             srcpath = os.path.dirname(srcfile)
                             srcbasename = removedigits(theoldname)
-                            tgtbasename = removedigits(thenewname)
+                            tgtbasename = removedigits(tgtfilename)
                             for fl in os.listdir(thepath):
                                 flfullpath = os.path.join(thepath, fl)
                                 if (os.path.isfile(flfullpath)) and not('humbs.db' in fl):
@@ -426,11 +403,14 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                                 flfullpath = os.path.join(thepath, fl)
                                 if removedigits(fl) == tgtbasename:
                                     print('    archive', flfullpath)
-                                    shutil.copy2(flfullpath, thepath)
+                                    if bpy.context.scene.publishmaps_cleanup == True:
+                                        convert_to_exr(image)
+                                    else:
+                                        shutil.copy2(flfullpath, thepath)
                                     thearccount += 1
                             logmsg += ('\n    published ' + str(theframecount) + ' new frames.')
                         else:
-                            #   delete old and PUBLISH single
+                            #   delete old and PUBLISH SINGLE
                             print('   delete mismatched tgtfile and publish')
                             os.remove(tgtfile)
                             shutil.copy2(srcfile, tgtfile)
@@ -440,41 +420,13 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 
                 #   publish does not already exist
                 else:
-                    #   ARCHIVE handle
-                    if os.path.exists(arcfile):
-                        print('    found arcfile for unpublished image')
-                        #   check if the arcfile is being used as a srcfile
-                        if arcfile in theoldpaths:
-                            print('    arcfile is being used as source, so leave arcfile and publish/repath')
-                            totalarcskps += 1
-                            logmsg += ('\n    skipped archive used as source: ' + arcfile)
-                        else:
-                            if srctype == 'SEQUENCE':
-                                #   delete sequence
-                                theframecount = 0
-                                arcpath = os.path.dirname(arcfile)
-                                srcbasename = removedigits(theoldname)
-                                for fl in os.listdir(arcpath):
-                                    flfullpath = os.path.join(arcpath, fl)
-                                    if (os.path.isfile(flfullpath)) and not('humbs.db' in fl):
-                                        if removedigits(fl) == srcbasename:
-                                            print('    delete', flfullpath)
-                                            os.remove(flfullpath)
-                                            theframecount += 1
-                                logmsg += ('\n    deleted existing ' + str(theframecount) + 'archive frames for publish that no longer exists.')
-                            else:
-                                #   delete single
-                                os.remove(arcfile)
-                                logmsg += ('\n    deleted existing archive of unpublished source: ' + arcfile)
-                    else:
-                        logmsg += ('\n    no existing archive found for new publish')
-                    
-					#   PUBLISH new
+                    #   SEQUENCE
                     if srctype == 'SEQUENCE':
                         #   publish sequence
                         theframecount = 0
                         srcbasename = removedigits(theoldname)
                         print('\n    srcbasename = ', srcbasename)
+                        newbasename = 
                         for fl in os.listdir(srcpath):
                             flfullpath = os.path.join(srcpath, fl)
                             print('\n    flfullpath = ', flfullpath)
@@ -486,6 +438,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                         img.filepath = tgtfile
                         totalpubs += 1
                         logmsg += ('\n    published new:      ' + str(theframecount) + ' frame sequence: ' + tgtfile)
+                    #   SINGLE
                     else:
                         #   publish single
                         shutil.copy2(srcfile, tgtfile)
@@ -542,9 +495,9 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         print('COMPLETE PUBLISH')
         return{'FINISHED'}
 
-#   OPERATOR publishmapsrestore RESTORE
+'''#   OPERATOR publishmapsrestore RESTORE
 class BUTTON_OT_publishmapsrestore(bpy.types.Operator):
-    '''Restore From Log'''
+    #Restore From Log
     bl_idname = "publishmaps.restore"
     bl_label = "Restore From Log"
     bl_options = {'REGISTER', 'UNDO'}
@@ -646,7 +599,8 @@ class BUTTON_OT_publishmapsrestore(bpy.types.Operator):
         restorelog.close()
         print('COMPLETE RESTORE')
         return{'FINISHED'}
-
+'''
+        
 #   PANEL publishmaps
 class VIEW3D_PT_publishmaps(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
@@ -664,13 +618,13 @@ class VIEW3D_PT_publishmaps(bpy.types.Panel):
         layout.prop(scene, "publishmaps_cleanup")
         layout.prop(scene, "relative_paths")
         layout.operator("publishmaps.publish", text=(BUTTON_OT_publishmapspublish.bl_label))
-        layout.prop(scene, "publishmaps_restore", text="")
-        layout.operator("publishmaps.restore", text=(BUTTON_OT_publishmapsrestore.bl_label))
+        #layout.prop(scene, "publishmaps_restore", text="")
+        #layout.operator("publishmaps.restore", text=(BUTTON_OT_publishmapsrestore.bl_label))
         
 
 ####    REGISTRATION    ####
 
-classes = ( BUTTON_OT_publishmapspublish, BUTTON_OT_publishmapsrestore, VIEW3D_PT_publishmaps )
+classes = ( BUTTON_OT_publishmapspublish, VIEW3D_PT_publishmaps )
 
 def register():
     from bpy.utils import register_class
