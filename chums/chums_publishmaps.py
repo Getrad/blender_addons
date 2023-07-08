@@ -64,7 +64,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='4.3b'
+vsn='4.3d'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
@@ -132,7 +132,7 @@ def convert_to_exr(image):
     print('tgt_path = ',tgt_path)
     #img_cmd = (str(imagick) + " " + str(Path(image)) + " -compress zip -depth 16 " + str(Path(tgt_path)) + "")
     img_cmd = (str(imagick) + " \"" + str(Path(cleanpath)) + "\" -compress zip -depth 16 \"" + str(Path(tgt_path)) + "\"")
-    print(img_cmd)
+    print("img_cmd = ", img_cmd)
     running = subprocess.Popen(img_cmd)
     running.wait()
     print(running.returncode)
