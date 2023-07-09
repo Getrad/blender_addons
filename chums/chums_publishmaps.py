@@ -64,7 +64,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='4.3d'
+vsn='4.3e'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
@@ -113,8 +113,9 @@ def trace_to_shader(image,object):
                         for the_out in node.outputs:
                             if the_out.is_linked:
                                 for link in the_out.links:
-                                    my_maptype = link.to_socket.identifier.replace(' ','_')
-                                    break
+                                    if link.to_node.type == 'BSDF_PRINCIPLED':
+                                        my_maptype = link.to_socket.identifier.replace(' ','_')
+                                        break
     
     return my_maptype
 
@@ -220,38 +221,29 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
 
             #   gather up a list of the images to process
             if bpy.context.scene.publishmaps_selected:
+                oblist = bpy.context.selected_objects
                 logmsg += ('\nPublishing images from selection only.')
-                for ob in bpy.context.selected_objects:
-                    for mtl in ob.material_slots:
-                        if mtl.material.use_nodes:
-                            for node in mtl.material.node_tree.nodes:
-                                if node.type == 'TEX_IMAGE':
-                                    if node.image.packed_file:
-                                        anypacks += 1
-                                    if not(node.image in theimgs) and not(node.image.name in imgignorelist):
-                                        if node.image.packed_file or os.path.exists(node.image.filepath):
-                                            theimgs.append(node.image)
-                                            theoldpaths.append(node.image.filepath)
-                                            theimgtypes.append(node.image.source)
-                                            theobjects.append(ob.name)
-                                        else:
-                                            print('MISSING: ', node.image.filepath)
-                                            totalmissing += 1
-                                            logmsg += ('\nMISSING SOURCE: ' + node.image.filepath)
             else:
-                logmsg += ('\nPublishing all images in the file.')
-                for img in bpy.data.images:
-                    if img.packed_file:
-                        anypacks += 1
-                    if not(img.name in imgignorelist):
-                        if img.packed_file or os.path.exists(img.filepath):
-                            theimgs.append(img)
-                            theoldpaths.append(img.filepath)
-                            theimgtypes.append(img.source)
-                        else:
-                            print('MISSING: ', img.filepath)
-                            totalmissing += 1
-                            logmsg += ('\nMISSING SOURCE: ' + img.filepath)
+                oblist = bpy.data.objects
+                logmsg += ('\nPublishing all images in all materials on all objects.')
+            
+            for ob in oblist:
+                for mtl in ob.material_slots:
+                    if mtl.material.use_nodes:
+                        for node in mtl.material.node_tree.nodes:
+                            if node.type == 'TEX_IMAGE':
+                                if node.image.packed_file:
+                                    anypacks += 1
+                                if not(node.image in theimgs) and not(node.image.name in imgignorelist):
+                                    if node.image.packed_file or os.path.exists(node.image.filepath):
+                                        theimgs.append(node.image)
+                                        theoldpaths.append(node.image.filepath)
+                                        theimgtypes.append(node.image.source)
+                                        theobjects.append(ob.name)
+                                    else:
+                                        print('MISSING: ', node.image.filepath)
+                                        totalmissing += 1
+                                        logmsg += ('\nMISSING SOURCE: ' + node.image.filepath)
             print('\nList to process:\n ', theimgs)
             
             #   handle missing unpack folder if there are any packed files
@@ -331,7 +323,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 #   handle clean up - file name
                 #   <asset name>_<object name>_<map type>_<version#>.<ext>
                 if bpy.context.scene.publishmaps_cleanup == True:
-                    thismaptype = trace_to_shader(img)
+                    thismaptype = trace_to_shader(img,bpy.data.objects[thisobject])
                     customname = (theasset + "_" + thisobject + "_" + thismaptype + "." + clean_export_fileext)
                     tgtfilename = customname.replace(' ', '_')
                     tgtfilename = tgtfilename.replace(":","_")
