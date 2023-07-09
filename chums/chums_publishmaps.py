@@ -104,13 +104,9 @@ def compare2files(f1, f2):
     print('(compare2files) sha256 hash comparison = ', replaceold)
     return replaceold
 
-def trace_to_shader(image):
-    my_object = ''
+def trace_to_shader(image,object):
     my_maptype = ''
-    for o in bpy.context.view_layer.objects:
-        my_object = o.name
-        if o.type == 'MESH':
-            for mt in o.material_slots:
+    for mt in object.material_slots:
                 mtl = mt.material
                 for node in mtl.node_tree.nodes:
                     if node.type == 'TEX_IMAGE' and node.image == image:
@@ -120,7 +116,7 @@ def trace_to_shader(image):
                                     my_maptype = link.to_socket.identifier.replace(' ','_')
                                     break
     
-    return my_object, my_maptype
+    return my_maptype
 
 def convert_to_exr(image):
     import os
@@ -152,7 +148,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
     def execute(self, context):
         print('\n\nSTART PUBLISH')
         #   set initial variables and empty lists
-        themtls = []     # list of materials
+        theobjects = []     # dict of objects and materials
         theimgs = []     # list of images to process
         theimgtypes = [] # list of image types mapped to theimgs
         theoldpaths = [] # list of image paths used by theimgs
@@ -210,6 +206,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         
         #   if the path is defined
         if len(thepath) >= 1:
+            '''
             #   check for archive directory and create if needed
             archivedir = os.path.join(thepath, 'archive')
             if not(os.path.exists(archivedir)):
@@ -219,7 +216,8 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             else:
                 print('\nArchive folder found: '+archivedir)
                 logmsg += ('\nArchive folder found: ' + archivedir)
-            
+            '''
+
             #   gather up a list of the images to process
             if bpy.context.scene.publishmaps_selected:
                 logmsg += ('\nPublishing images from selection only.')
@@ -235,6 +233,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                                             theimgs.append(node.image)
                                             theoldpaths.append(node.image.filepath)
                                             theimgtypes.append(node.image.source)
+                                            theobjects.append(ob.name)
                                         else:
                                             print('MISSING: ', node.image.filepath)
                                             totalmissing += 1
@@ -275,6 +274,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             for imgnum in range(len(theimgs)):
                 totalimgs += 1
                 img = theimgs[imgnum]
+                thisobject = theobjects[imgnum]
                 srcfile = theoldpaths[imgnum]
                 srcpath = os.path.dirname(srcfile)
                 srcfilename = os.path.basename(srcfile)
@@ -331,7 +331,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 #   handle clean up - file name
                 #   <asset name>_<object name>_<map type>_<version#>.<ext>
                 if bpy.context.scene.publishmaps_cleanup == True:
-                    thisobject, thismaptype = trace_to_shader(img)
+                    thismaptype = trace_to_shader(img)
                     customname = (theasset + "_" + thisobject + "_" + thismaptype + "." + clean_export_fileext)
                     tgtfilename = customname.replace(' ', '_')
                     tgtfilename = tgtfilename.replace(":","_")
