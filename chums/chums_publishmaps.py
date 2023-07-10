@@ -64,7 +64,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='4.3e'
+vsn='4.3g'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
@@ -104,19 +104,38 @@ def compare2files(f1, f2):
     print('(compare2files) sha256 hash comparison = ', replaceold)
     return replaceold
 
+
+def get_node_target(the_node):
+    the_next_type = 'none'
+    the_next_node = 'none'
+    the_id = ''
+    for the_out in the_node.outputs:
+        if the_out.is_linked:
+            for link in the_out.links:
+                the_next_type = link.to_node.type
+                the_next_node = link.to_node
+                the_id = link.to_socket.identifier
+    return the_next_type, the_next_node, the_id
+
 def trace_to_shader(image,object):
-    my_maptype = ''
+    my_maptype = 'nonetype'
     for mt in object.material_slots:
-                mtl = mt.material
-                for node in mtl.node_tree.nodes:
-                    if node.type == 'TEX_IMAGE' and node.image == image:
-                        for the_out in node.outputs:
-                            if the_out.is_linked:
-                                for link in the_out.links:
-                                    if link.to_node.type == 'BSDF_PRINCIPLED':
-                                        my_maptype = link.to_socket.identifier.replace(' ','_')
-                                        break
+        mtl = mt.material
+        for node in mtl.node_tree.nodes:
+            if node.type == 'TEX_IMAGE' and node.image == image:
+                for the_out in node.outputs:
+                    if the_out.is_linked:
+                        for link in the_out.links:
+                            tgt_link = get_node_target(node)
+                            while tgt_link[0] != 'BSDF_PRINCIPLED':
+                                tgt_link = get_node_target(tgt_link[1])
+                                my_maptype = tgt_link
+                            break
+    print('my_maptype = ', my_maptype)
+    return my_maptype
+
     
+    print(image.name + "\n" + 'trace_to_shader returns (my_maptype): ', my_maptype)
     return my_maptype
 
 def convert_to_exr(image):
@@ -324,17 +343,22 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 #   <asset name>_<object name>_<map type>_<version#>.<ext>
                 if bpy.context.scene.publishmaps_cleanup == True:
                     thismaptype = trace_to_shader(img,bpy.data.objects[thisobject])
-                    customname = (theasset + "_" + thisobject + "_" + thismaptype + "." + clean_export_fileext)
+                    customname = (theasset + "_" + thisobject + "_" + thismaptype[2].replace(' ','_') + "." + clean_export_fileext)
                     tgtfilename = customname.replace(' ', '_')
                     tgtfilename = tgtfilename.replace(":","_")
                     tgtfilename_ext = tgtfilename.split(".")[-1]
                     tgtfilename = tgtfilename.replace(tgtfilename_ext,clean_export_fileext)
                 else:
                     tgtfilename = theoldname
+                dupfix = 0
                 tgtpath = os.path.join(thepath, tgtfilename)
+                #   publish already exists
+                while os.path.exists(tgtpath):
+                    tgtpath = tgtpath.replace(('.'+clean_export_fileext),('_' + str(dupfix).zfill(3) + '.' + clean_export_fileext))
+                    dupfix += 1
                 tgtpaths.append(tgtpath)
                 print('srcfile = ', srcfile,'\nsrcpath = ', srcpath,'\nsrcfilename = ', srcfilename,'\nsrcformat = ', srcformat,'\nsrctype = ', srctype, '\n')
-                print('tgtfile = ', tgtfilename,'\ntgtpath = ', thepath,'\ntgtfilename = ', tgtfilename,'\ntgtformat = ', tgtformat,'\ntgttype = ', srctype, '\n')
+                print('tgtfile = ', tgtfilename,'\ntgtpath = ', tgtpath,'\ntgtfilename = ', tgtfilename,'\ntgtformat = ', tgtformat,'\ntgttype = ', srctype, '\n')
                 
                 
             #   process the image list
@@ -356,11 +380,6 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 print('    tgt: ', tgtfile)
                 logmsg += ('\n\nProcessing image:       ' + theoldname + '\n    source file:        ' + srcfile + '\n    exists:             ' + str(os.path.exists(srcfile)) + '\n    type:               ' + srctype + '\n    new image path:     ' + tgtfile)
                 
-                #   publish already exists
-                if os.path.exists(tgtfile):
-                    print('    found existing publish file')
-                    logmsg += ('\n    found existing publish file: ' + tgtfile)
-                    
                 #   SEQUENCE
                 if srctype == 'SEQUENCE':
                     #   publish sequence
