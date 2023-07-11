@@ -19,6 +19,8 @@
 # 0.2.2 - WIP - add asset library path as user preference
 # to do - add deadline repo path as user preference
 # to do - add refresh button to force update the asset root path when dropped connection
+# 0.2.3 - BUGFIX - incorrectly blocking tt file saves not detecting the "tt.blend" string at end of current open filename
+# 
 
 bl_info = {
     "name": "Turntable Tools",
@@ -71,7 +73,7 @@ turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/pr
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.2.2d'
+vsn = '0.2.3'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -849,7 +851,7 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
         print("thisfilepath: ", thisfilepath)
         thisfilename = os.path.basename(thisfilepath)
         print("thisfilename: ", thisfilename)
-        if (thisfilename == 'turntable.blend') or (bpy.context.scene.ttutils_alist in thisfilename and thisfilename[-8:] == "tt.blend"):
+        if (thisfilename == 'turntable.blend') or (bpy.context.scene.ttutils_alist in thisfilename or thisfilename[-8:] == "tt.blend"):
             save_tt_file(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         else:
             ttutils_messagebox("To save a turntable file, the starting file must be one of:   the turntable.blend   OR   a previous turntable filename starting with   " + str(bpy.context.scene.ttutils_alist) + "   and ending with   tt.blend.    Please ensure you're starting with one of those files.", "Failed Save")
