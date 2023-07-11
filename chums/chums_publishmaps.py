@@ -64,14 +64,13 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='4.3g'
+vsn='4.3h'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
 clean_export_filedepth = '16'
 clean_export_imagick = 'zip'
 clean_export_filecodec = 'ZIP'
-clean_export_imagick = 'zip'
 imagick = Path("C:/Program Files/ImageMagick-7.1.1-Q16-HDRI\convert.exe")
 
 ####    FUNCTIONS    ####
@@ -173,7 +172,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         theimgtypes = [] # list of image types mapped to theimgs
         theoldpaths = [] # list of image paths used by theimgs
         tgtpaths = [] # list of the new paths to which the images will be published
-        thearcpaths = [] # list of the archive paths for archiving previous publishes of theimgs
+        theimgnodes = {} # img_name: node_material, node_name, to_socket
         totalimgs = 0
         totalpubs = 0
         totalbaks = 0
@@ -226,18 +225,6 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         
         #   if the path is defined
         if len(thepath) >= 1:
-            '''
-            #   check for archive directory and create if needed
-            archivedir = os.path.join(thepath, 'archive')
-            if not(os.path.exists(archivedir)):
-                os.mkdir(archivedir)
-                print('\nArchive folder NOT found. Created: ' + archivedir)
-                logmsg += ('\nArchive folder NOT found. Created: ' + archivedir)
-            else:
-                print('\nArchive folder found: '+archivedir)
-                logmsg += ('\nArchive folder found: ' + archivedir)
-            '''
-
             #   gather up a list of the images to process
             if bpy.context.scene.publishmaps_selected:
                 oblist = bpy.context.selected_objects
@@ -253,6 +240,17 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                             if node.type == 'TEX_IMAGE':
                                 if node.image.packed_file:
                                     anypacks += 1
+                                this_image = os.path.basename(node.image.filepath)
+                                img = node.image
+                                thismaptype = trace_to_shader(img,ob)
+                                this_to_socket = thismaptype[2].replace(' ','_')
+                                if this_image in theimgnodes.keys():
+                                    theimgnodes[this_image].materials.append(mtl.name)
+                                    theimgnodes[this_image].nodes.append(node.name)
+                                    theimgnodes[this_image].objects.append(ob.name)
+                                    theimgnodes[this_image].to_socket.append(this_to_socket)
+                                else:
+                                    theimgnodes[this_image] = {'materials':(mtl.name),'nodes':(node.name), 'objects':(ob.name), 'to_socket':(this_to_socket)}
                                 if not(node.image in theimgs) and not(node.image.name in imgignorelist):
                                     if node.image.packed_file or os.path.exists(node.image.filepath):
                                         theimgs.append(node.image)
@@ -281,7 +279,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 print('Clean up is OFF')
                 logmsg += ('\nClean up is OFF')
             
-            #   cycle thru images and collect original paths (theoldpaths) and generate the new image paths (tgtpaths) and archive paths (thearcpaths)
+            #   cycle thru images and collect original paths (theoldpaths) and generate the new image paths (tgtpaths)
             for imgnum in range(len(theimgs)):
                 totalimgs += 1
                 img = theimgs[imgnum]
@@ -304,7 +302,6 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 srcformat = img.file_format
                 srctype = theimgtypes[imgnum]
                 theoldname = os.path.basename(theoldpaths[imgnum])
-                print('srcfile = ', srcfile,'\nsrcpath = ', srcpath,'\nsrcfilename = ', srcfilename,'\nsrcformat = ', srcformat,'\nsrctype = ', srctype, '\n')
                 
                 #   UNPACK if the image is PACKED into the file
                 if img.packed_file:
@@ -358,7 +355,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                     dupfix += 1
                 tgtpaths.append(tgtpath)
                 print('srcfile = ', srcfile,'\nsrcpath = ', srcpath,'\nsrcfilename = ', srcfilename,'\nsrcformat = ', srcformat,'\nsrctype = ', srctype, '\n')
-                print('tgtfile = ', tgtfilename,'\ntgtpath = ', tgtpath,'\ntgtfilename = ', tgtfilename,'\ntgtformat = ', tgtformat,'\ntgttype = ', srctype, '\n')
+                print('tgtfile = ', (thepath + tgtfilename),'\ntgtpath = ', tgtpath,'\ntgtfilename = ', tgtfilename,'\ntgtformat = ', tgtformat,'\ntgttype = ', srctype, '\n')
                 
                 
             #   process the image list
