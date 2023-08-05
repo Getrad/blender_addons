@@ -20,12 +20,12 @@
 # to do - add deadline repo path as user preference
 # to do - add refresh button to force update the asset root path when dropped connection
 # 0.2.3 - BUGFIX - incorrectly blocking tt file saves not detecting the "tt.blend" string at end of current open filename
-# 
+# 0.2.4 - FEATURE - add 22.5 degree z rotation to cam parent for more appealing start/end framing
 
 bl_info = {
     "name": "Turntable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 2, 2),
+    "version": (0, 2, 4),
     "blender": (3, 3, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -73,7 +73,7 @@ turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/pr
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.2.3'
+vsn = '0.2.4'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -788,6 +788,7 @@ class BUTTON_OT_set_cam_loc(bpy.types.Operator):
             if bpy.data.objects['Ruler']:
                 bpy.data.objects['Ruler'].location.y = ((theasset_size[0][1]/2)*(-1.0 - (bpy.context.scene.ttutils_overscan/100.0)))
             thecam.parent.location.z = (theasset_size[1][2])
+            thecam.parent.rotation_euler.z = math.radians(22.5)
         else:
             ttutils_messagebox("Camera    " + str(thecam_name) + "    appears to be missing.\nPlease ensure you're in a turntable file that contains this object.", "Missing Object")
         return{'FINISHED'}
