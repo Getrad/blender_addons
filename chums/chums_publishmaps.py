@@ -245,12 +245,12 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                                 thismaptype = trace_to_shader(img,ob)
                                 this_to_socket = thismaptype[2].replace(' ','_')
                                 if this_image in theimgnodes.keys():
-                                    theimgnodes[this_image].materials.append(mtl.name)
-                                    theimgnodes[this_image].nodes.append(node.name)
-                                    theimgnodes[this_image].objects.append(ob.name)
-                                    theimgnodes[this_image].to_socket.append(this_to_socket)
+                                    theimgnodes[this_image]['materials'].append(mtl.name)
+                                    theimgnodes[this_image]['nodes'].append(node.name)
+                                    theimgnodes[this_image]['objects'].append(ob.name)
+                                    theimgnodes[this_image]['to_socket'].append(this_to_socket)
                                 else:
-                                    theimgnodes[this_image] = {'materials':(mtl.name),'nodes':(node.name), 'objects':(ob.name), 'to_socket':(this_to_socket)}
+                                    theimgnodes[this_image] = {'materials':[mtl.name],'nodes':[node.name], 'objects':[ob.name], 'to_socket':[this_to_socket]}
                                 if not(node.image in theimgs) and not(node.image.name in imgignorelist):
                                     if node.image.packed_file or os.path.exists(node.image.filepath):
                                         theimgs.append(node.image)
