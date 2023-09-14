@@ -74,7 +74,7 @@ turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/pr
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
-vsn = '0.2.5'
+vsn = '0.2.5a'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -889,8 +889,8 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
         asset_name = bpy.context.scene.ttutils_alist
         bpy.context.scene.assetname = bpy.context.scene.ttutils_alist
         theoutpath = set_output_path(asset_name, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
-        if (bpy.context.scene.ttutils_alist in thisfilename and 
-            bpy.context.scene.ttutils_alist in thisoutputpath and
+        if (bpy.context.scene.ttutils_alist.lower() in thisfilename.lower() and 
+            bpy.context.scene.ttutils_alist.lower() in thisoutputpath.lower() and
             thisfilename[-8:] == "tt.blend"):
             sendDeadlineCmd()
             if bpy.context.scene.ttutils_xcode == True:
