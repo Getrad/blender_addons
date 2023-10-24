@@ -249,7 +249,8 @@ def xcodeH264():
         f.write(f"OutputDirectory0={dlOutputPath}\n")
         f.write(f"OutputFilename0={outmovname}.mov\n")
         f.write(f"MachineLimit=1\n")
-        f.write(f"Allowlist=Darren\n") #FIXME: remove this line when running in prod on the server
+        f.write(f"Group=xcode\n")
+        #f.write(f"Allowlist=Darren\n") #FIXME: remove this line when running in prod on the server
         f.write(f"ExtraInfo6={dlSceneFile}\n")
 
         #if args["createSgVersion"] == True:
