@@ -229,7 +229,7 @@ def xcodeH264():
         dlOutputFile = Path(thisoutputpath).as_posix()
         dlOutputPath = Path(os.path.dirname(thisoutputpath)).as_posix()
         outmovname = os.path.basename(thisfilename)[:-6]
-    dlFrames = '0-121'
+    dlFrames = '0-123'
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
     jobPrio = str(bpy.context.preferences.addons[__name__].preferences.defaultpriority)
