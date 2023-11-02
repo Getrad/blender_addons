@@ -26,12 +26,13 @@
 # 0.2.7 - BUGFIX - updated top/btm angles are keyed in base tt file - so user angle must be updated on keys
 # 0.2.8 - BUGFIX - something broken in path reconstruction - repaired
 # 0.2.9 - FEATURE - add plain append feature button
+# 0.3.0 - FEATURE - add plain link feature button
 
 
 bl_info = {
     "name": "Turntable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 2, 9),
+    "version": (0, 3, 0),
     "blender": (3, 3, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -81,7 +82,7 @@ deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
 thekeyframes_cam = [121,122,123]
-vsn = '0.2.9'
+vsn = '0.3.01'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -433,7 +434,7 @@ def get_asset(asset_name, asset_dept, asset_stage):
 
 def append_asset(asset_name, asset_dept, asset_stage):
     #print("ENTER get_asset FUNCTION", asset_name)
-    remove_any_existing_asset()
+    asset_stage = "publish"
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
                        'prp':'props', 
@@ -453,20 +454,39 @@ def append_asset(asset_name, asset_dept, asset_stage):
         for coll in data_dst.collections:
             the_topnodes = []
             if coll.name == "asset_prod":
-                bpy.context.scene.collection.children.link(coll)
-            for colobj in coll.all_objects:
-                if not(colobj.parent):
-                    colobj.parent = bpy.data.objects['AnimGrp.asset']
-    else:
-        if bpy.context.scene.ttutils_task == '30_texture':
-            mytask = "Texture"
-        else:
-            mytask = "Model"
-        # return messagebox showing filepath and message that it can't be found
-        ttutils_messagebox(("Cannot find Path:    " + the_asset_dir + "    check if   " + mytask + "   " + bpy.context.scene.ttutils_stage + "   are set correctly."), "Missing Path")
-        #print("CANNOT FIND PATH: ", the_asset_dir)
+                newcoll = coll
+                bpy.context.scene.collection.children.link(newcoll)
+                newcoll.name = "asset_prod_appended"
+
     return 0
 
+def link_asset(asset_name, asset_dept, asset_stage):
+    #print("ENTER get_asset FUNCTION", asset_name)
+    asset_stage = "publish"
+    chm_assetprefix = {'chr':'characters', 
+                       'env':'environments', 
+                       'prp':'props', 
+                       'prx':'proxies',
+                       'sky':'skies'}
+    the_asset_type = chm_assetprefix[asset_name[:3]]
+    the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_assetssubtree,asset_stage)
+    #print("the_asset_dir:", the_asset_dir)
+    the_asset_path = find_latest_workfile(the_asset_dir)
+    #print("the_asset_path:", the_asset_path)
+    if os.path.exists(the_asset_path):
+        # LINK FROM LATEST WORKFILE
+        # initialize
+        with bpy.data.libraries.load(the_asset_path, link=True) as (data_src, data_dst):
+            data_dst.collections = data_src.collections
+        # link collections
+        for coll in data_dst.collections:
+            the_topnodes = []
+            if coll.name == "asset_prod":
+                newcoll = coll
+                bpy.context.scene.collection.children.link(newcoll)
+                newcoll.name = "asset_prod_linked"
+
+    return 0
 
 def open_assetfile(asset_name, asset_dept, asset_stage):
     chm_assetprefix = {'chr':'characters', 
@@ -666,7 +686,6 @@ class ttutilsPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "assetroot")
         layout.prop(self, "defaultangle")
         layout.prop(self, "defaultpriority")
-        
 
 class OBJECT_OT_ttutils_preferences(bpy.types.Operator):
     bl_idname = "object.ttutils_preferences"
@@ -872,7 +891,7 @@ class BUTTON_OT_set_cam_loc(bpy.types.Operator):
 
 # OPERATOR BUTTON_OT_get_asset
 class BUTTON_OT_get_asset(bpy.types.Operator):
-    '''Append the asset_prod collection from the latest asset'''
+    '''REPLACE the asset_prod collection from the latest asset from selected stage; then link asset to turntable helpers.'''
     bl_idname = "ttutils.get_asset"
     bl_label = "Get Asset"
     bl_options = {'REGISTER', 'UNDO'}
@@ -888,7 +907,7 @@ class BUTTON_OT_get_asset(bpy.types.Operator):
 
 # OPERATOR BUTTON_OT_append_asset
 class BUTTON_OT_append_asset(bpy.types.Operator):
-    '''Append the asset_prod collection from the latest asset'''
+    '''APPEND the asset_prod collection from the latest PUBLISHED asset'''
     bl_idname = "ttutils.append_asset"
     bl_label = "Append Asset"
     bl_options = {'REGISTER', 'UNDO'}
@@ -896,6 +915,45 @@ class BUTTON_OT_append_asset(bpy.types.Operator):
     def execute(self, context):
         bpy.context.scene.assetname = bpy.context.scene.ttutils_alist
         append_asset(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        return{'FINISHED'}
+
+# OPERATOR BUTTON_OT_get_asset_list - currently not used
+class BUTTON_OT_get_asset_list(bpy.types.Operator):
+    '''Return the latest asset - see console'''
+    bl_idname = "ttutils.get_asset_list"
+    bl_label = "Get Asset List"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        #print("EXECUTE BUTTON_OT_get_asset_list OPERATOR CLASS")
+        the_asset_list = get_asset_list(bpy.context.scene.ttutils_stage)
+        #print("the_asset_list: ")
+        #for i in the_asset_list:
+            #print( i[0])
+        return{'FINISHED'}
+
+# OPERATOR BUTTON_OT_append_asset
+class BUTTON_OT_append_asset(bpy.types.Operator):
+    '''APPEND the asset_prod collection from the latest PUBLISHED asset'''
+    bl_idname = "ttutils.append_asset"
+    bl_label = "Append Asset"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        bpy.context.scene.assetname = bpy.context.scene.ttutils_alist
+        append_asset(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        return{'FINISHED'}
+
+# OPERATOR BUTTON_OT_link_asset
+class BUTTON_OT_link_asset(bpy.types.Operator):
+    '''LINK the asset_prod collection from the latest PUBLISHED asset'''
+    bl_idname = "ttutils.link_asset"
+    bl_label = "Link Asset"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        bpy.context.scene.assetname = bpy.context.scene.ttutils_alist
+        link_asset(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_get_asset_list - currently not used
@@ -999,7 +1057,11 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         layout.operator("ttutils.exploreasset", text=(BUTTON_OT_exploreAsset.bl_label))
         layout.operator("ttutils.openasset", text=(BUTTON_OT_openAsset.bl_label))
         layout.operator("ttutils.get_asset", text=(BUTTON_OT_get_asset.bl_label))
-        layout.operator("ttutils.append_asset", text=(BUTTON_OT_append_asset.bl_label))
+        split = layout.split(factor=0.5, align=True)
+        col = split.column(align=True)
+        col.operator("ttutils.append_asset", text=(BUTTON_OT_append_asset.bl_label))
+        col = split.column(align=True)
+        col.operator("ttutils.link_asset", text=(BUTTON_OT_link_asset.bl_label))
         layout.prop(bpy.context.scene, "ttutils_overscan")
         layout.operator("ttutils.set_cam_loc", text=(BUTTON_OT_set_cam_loc.bl_label))
         layout.operator("ttutils.tilt_cam", text=(BUTTON_OT_tilt_cam.bl_label))
@@ -1021,7 +1083,8 @@ classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel,
             BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam,
             BUTTON_OT_openAsset, BUTTON_OT_submit_tt,
             ttutilsPreferences, OBJECT_OT_ttutils_preferences,
-            BUTTON_OT_ttutils_refresh, BUTTON_OT_append_asset]
+            BUTTON_OT_ttutils_refresh, BUTTON_OT_append_asset,
+            BUTTON_OT_link_asset]
 
 def register():
     from bpy.utils import register_class

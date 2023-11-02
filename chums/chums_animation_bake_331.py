@@ -3,7 +3,7 @@
 bl_info = {
     "name": "Animation Bake",
     "author": "conrad dueck",
-    "version": (0,2,3),
+    "version": (0,2,4),
     "blender": (3, 30, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Bake multiple objects at once.",
@@ -17,7 +17,7 @@ from mathutils import Matrix
 
 
 ####    GLOBAL VARIABLES    ####
-vsn='2.3'
+vsn='2.4b'
 
 
 ####    FUNCTIONS    ####
@@ -426,15 +426,16 @@ class BUTTON_OT_animbakebake(bpy.types.Operator):
                             if scene.animbake_particles_mesh:
                                 if prtsys.settings.render_type == 'OBJECT':
                                     theinstanceobj = prtsys.settings.instance_object.name
-                                    thedata = bpy.data.objects[theinstanceobj].data
+                                    thedata = depsgraph_01.objects[theinstanceobj].data
                                     newempty = bpy.data.objects.new(newname, thedata)
                                     print('NEW object duplicate CREATED: ', newname)
-                                elif prtsys.settings.render_type == 'GROUP':
+                                elif prtsys.settings.render_type == 'COLLECTION':
                                     thisgroup = prtsys.settings.instance_collection
                                     therand = random.randint(0,(len(thisgroup.objects)-1))
-                                    theobjs = [thisgroup.name].objects
+                                    #theobjs = bpy.data.collections[thisgroup.name].objects
+                                    theobjs = thisgroup.objects
                                     thisobj = theobjs[therand]
-                                    thedata = thisobj.data
+                                    thedata = thisobj.data.copy()
                                     newempty = bpy.data.objects.new(newname, thedata)
                                     if len(thisobj.modifiers) >= 1:
                                         copymods(thisobj, newempty)
