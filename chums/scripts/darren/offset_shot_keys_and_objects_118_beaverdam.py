@@ -3,13 +3,19 @@ import maya.cmds as cmds
 ANCHOR_COORDS = {'pos': [-11.939, 0, 12.117], 'rot': [0, 53.041, 0]}
 REPO_COORDS = {'pos': [-11.939, 0, 12.117], 'rot': [0, 53.041, 0]}
 
-# Get current selected rig GOD node
-# Capture pos and rot - source_coords
+# Function to get the coordinates of an object by its name
+def get_coordinates(object_name):
+    if cmds.objExists(object_name):
+        pos = cmds.xform(object_name, query=True, translation=True)
+        rot = cmds.xform(object_name, query=True, rotation=True)
+        scale = cmds.xform(object_name, query=True, scale=True)
+        coordinates = {'pos': pos, 'rot': rot, 'scale': scale}
+        return coordinates
 
-# Find matching zero shot asset GOD node
-# Capture pos and rot - target_coords
-
-# Use source_coords and target_coords to determine repo_coords
+# Get current selected object to set base source object andget ANCHOR_COORDS
+selected = cmds.ls(sl=True, long=True)[0]
+selco = get_coordinates(selected)
+ANCHOR_COORDS = {'pos': selco['pos'], 'rot': selco['rot']}
 
 
 def removeRef(reference_name): 
@@ -32,16 +38,10 @@ def importRef():
 
 importRef()
 
-# Function to get the coordinates of an object by its name
-def get_coordinates(object_name):
-    if cmds.objExists(object_name):
-        pos = cmds.xform(object_name, query=True, translation=True)
-        rot = cmds.xform(object_name, query=True, rotation=True)
-        scale = cmds.xform(object_name, query=True, scale=True)
-        coordinates = {'pos': pos, 'rot': rot, 'scale': scale}
-        return coordinates
+# If selected name 
         
 
+# Match two object transforms - target to source
 def match_transforms(source_object, target_object):
     try:
         # Get the translation, rotation, and scale of the source object
@@ -53,13 +53,6 @@ def match_transforms(source_object, target_object):
         cmds.xform(target_object, rotation=rotation, worldSpace=True)
     except Exception as e:
         print(f"An error occurred: {e}")
-        
-# Get current selected object to set base source object andget ANCHOR_COORDS
-selected = cmds.ls(sl=True, long=True)[0]
-selco = get_coordinates(selected)
-ANCHOR_COORDS = {'pos': selco['pos'], 'rot': selco['rot']}
-
-# Get repo coords
 
 # Create a new empty group
 xformGrpName = "grp_repo_xform_tmp"
