@@ -12,9 +12,9 @@ def get_coordinates(object_name):
         coordinates = {'pos': pos, 'rot': rot, 'scale': scale}
         return coordinates
 
-# Get current selected object to set base source object andget ANCHOR_COORDS
-selected = cmds.ls(sl=True, long=True)[0]
-selco = get_coordinates(selected)
+# Get current selected_obj object to set base source object andget ANCHOR_COORDS
+selected_obj = cmds.ls(sl=True, long=True)[0]
+selco = get_coordinates(selected_obj)
 ANCHOR_COORDS = {'pos': selco['pos'], 'rot': selco['rot']}
 
 
@@ -38,8 +38,12 @@ def importRef():
 
 importRef()
 
-# If selected name 
-        
+# If selected_obj to capture diff_coords
+selected_obj = cmds.ls(sl=True, long=True)[0]
+selco = get_coordinates(selected_obj)
+DIFF_COORDS = {'pos': selco['pos'], 'rot': selco['rot']}
+prin(DIFF_CCORDS)
+
 
 # Match two object transforms - target to source
 def match_transforms(source_object, target_object):
