@@ -82,7 +82,7 @@ deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
 frameRate = 23.976
 thekeyframes_cam = [121,122,123]
-vsn = '0.3.01'
+vsn = '0.3.03'
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -434,7 +434,7 @@ def get_asset(asset_name, asset_dept, asset_stage):
 
 def append_asset(asset_name, asset_dept, asset_stage):
     #print("ENTER get_asset FUNCTION", asset_name)
-    asset_stage = "publish"
+    #asset_stage = "publish"
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
                        'prp':'props', 
@@ -446,18 +446,12 @@ def append_asset(asset_name, asset_dept, asset_stage):
     the_asset_path = find_latest_workfile(the_asset_dir)
     #print("the_asset_path:", the_asset_path)
     if os.path.exists(the_asset_path):
-        # LINK FROM LATEST WORKFILE
-        # initialize
         with bpy.data.libraries.load(the_asset_path, link=False) as (data_src, data_dst):
             data_dst.collections = data_src.collections
-        # link collections
         for coll in data_dst.collections:
-            the_topnodes = []
-            if coll.name == "asset_prod":
-                newcoll = coll
-                bpy.context.scene.collection.children.link(newcoll)
-                newcoll.name = "asset_prod_appended"
-
+            if "asset_prod" in coll.name:
+                coll.name = (asset_name + "_asset_prod_appended")
+                bpy.context.scene.collection.children.link(coll)
     return 0
 
 def link_asset(asset_name, asset_dept, asset_stage):
@@ -474,13 +468,9 @@ def link_asset(asset_name, asset_dept, asset_stage):
     the_asset_path = find_latest_workfile(the_asset_dir)
     #print("the_asset_path:", the_asset_path)
     if os.path.exists(the_asset_path):
-        # LINK FROM LATEST WORKFILE
-        # initialize
         with bpy.data.libraries.load(the_asset_path, link=True) as (data_src, data_dst):
             data_dst.collections = data_src.collections
-        # link collections
         for coll in data_dst.collections:
-            the_topnodes = []
             if coll.name == "asset_prod":
                 newcoll = coll
                 bpy.context.scene.collection.children.link(newcoll)

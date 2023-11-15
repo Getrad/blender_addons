@@ -91,7 +91,8 @@ print("new_sel_namespace: ", new_sel_namespace)
 new_sel_coords = get_coordinates(new_sel_obj)
 NEW_OBJ_COORDS = {'pos': new_sel_coords['pos'], 'rot': new_sel_coords['rot']}
 print("NEW_OBJ_COORDS: ", NEW_OBJ_COORDS)
-REPO_COORDS = get_offsets(NEW_OBJ_COORDS, ANCHOR_COORDS)
+#REPO_COORDS = get_offsets(NEW_OBJ_COORDS, ANCHOR_COORDS)
+REPO_COORDS = NEW_OBJ_COORDS
 print("REPO_COORDS: ", REPO_COORDS)
 
 # Create a new empty group
