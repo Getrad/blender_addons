@@ -109,6 +109,7 @@ class BUTTON_OT_applymodwshapekeysapplymodifier(bpy.types.Operator):
                     for key in obj.data.shape_keys.key_blocks:
                         obj.shape_key_remove(key)
                     bpy.context.view_layer.objects.active = obj
+                    obj.select_set(True)
                     bpy.ops.object.modifier_apply(modifier=modToApply.name)
             
             ### Re-add shapekeys, set selected and active objects for join_shapes Operator
