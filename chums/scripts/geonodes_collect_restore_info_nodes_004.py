@@ -20,9 +20,10 @@ def gn_gather_deps(gntree):
                 node.label = str(node.inputs[0].default_value)
                 node.inputs[0].default_value = ''
             else:
-                gn_deps.append((node.name, node.inputs[0].default_value.name))
-                node.label = node.inputs[0].default_value.name
-                node.inputs[0].default_value = None
+                if (node.inputs[0].default_value is not None) and len(node.label) == 0:
+                    gn_deps.append((node.name, node.inputs[0].default_value.name))
+                    node.label = node.inputs[0].default_value.name
+                    node.inputs[0].default_value = None
         
     return gn_deps
 
@@ -51,7 +52,7 @@ def gn_restore_deps(gntree):
 for ob in bpy.context.selected_objects:
     for mod in ob.modifiers:
         if mod.type == 'NODES':
-            #break_dependency = gn_gather_deps(mod.node_group)
-            restore_dependency = gn_restore_deps(mod.node_group)
+            break_dependency = gn_gather_deps(mod.node_group)
+            #restore_dependency = gn_restore_deps(mod.node_group)
 
 print("FINISHED")
