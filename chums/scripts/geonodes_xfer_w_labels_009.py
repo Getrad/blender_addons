@@ -1,6 +1,6 @@
 import bpy
 
-gather_restore = 1  #gather(0) restore(1) update(2)
+gather_restore = 0  #gather(0) restore(1) update(2)
 
 print("\n\nSTART")
 # node_types = ['OBJECT_INFO','COLLECTION_INFO','STORE_NAMED_ATTRIBUTE','INPUT_ATTRIBUTE']
@@ -58,23 +58,30 @@ def gn_gather_deps(gntree):
                     node.label = node.inputs[2].default_value
                     node.inputs[2].default_value = ''
             elif node.type == 'INPUT_ATTRIBUTE':
+                print("\t", node.name, node.type)
                 if (len(node.inputs[0].default_value) > 1):
-                    print('\t',node.label, node.inputs[0].identifier, node.inputs[0].default_value)
+                    #print('\t',node.label, node.inputs[0].identifier, node.inputs[0].default_value)
                     gn_deps.append((node.name, node.inputs[0].default_value))
                     node.label = str(node.inputs[0].default_value)
                     node.inputs[0].default_value = ''
             elif (node.inputs[0].default_value is not None):
+                print("\t", node.name, node.type)
                 gn_deps.append((node.name, node.inputs[0].default_value.name))
-                node.label = node.inputs[0].default_value.name
+                #node.label = node.inputs[0].default_value.name
                 if node.type == node_types[1]:
+                    if not(node.label == 'heatmapCollection'):
+                        node.label = node.inputs[0].default_value.name
+                    else:
+                        node.label = 'heatmapCollection'
                     colls.append(node.label)
                 elif node.type == node_types[0]:
+                    node.label = node.inputs[0].default_value.name
                     objs.append(node.label)
                 node.inputs[0].default_value = None
             elif node.type == 'GROUP' and node.node_tree is not None:
                 gn_gather_deps(node.node_tree)
             else:
-                print('\t',node.name, ' not managed - skipping')
+                print('\t',node.name, ' not managed or empty and unused - skipping')
     return (colls, objs)
 
 def gn_restore_deps(gntree):
@@ -89,10 +96,15 @@ def gn_restore_deps(gntree):
                 except:
                     objs.append(node.label)
             elif node.type == 'COLLECTION_INFO':
-                try:
-                    node.inputs[0].default_value = bpy.data.collections[node.label]
-                except:
-                    colls.append(node.label)
+                if node.label == 'heatmapCollection':
+                    if bpy.data.collections['sh000_heatmaps_base']:
+                        node.inputs[0].default_value = bpy.data.collections['sh000_heatmaps_base']
+                    colls.append('sh000_heatmaps_base')
+                else:
+                    try:
+                        node.inputs[0].default_value = bpy.data.collections[node.label]
+                    except:
+                        colls.append(node.label)
             elif node.type == 'STORE_NAMED_ATTRIBUTE':
                 node.inputs[2].default_value = node.label
             elif node.type == 'INPUT_ATTRIBUTE':
@@ -108,7 +120,7 @@ for ob in bpy.context.selected_objects:
     myobjs = []
     for mod in ob.modifiers:
         if mod.type == 'NODES':
-            print(mod.name, mod.node_group)
+            print(mod.name, mod.node_group.name)
             if gather_restore == 0:
                 break_dependency = gn_gather_deps(mod.node_group)
                 mycolls.extend(break_dependency[0])
