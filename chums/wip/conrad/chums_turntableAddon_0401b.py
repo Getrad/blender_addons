@@ -128,6 +128,10 @@ def getMachineName():
 
 def sendDeadlineCmd():
     #print("RUNNING SUBMIT TO DEADLINE")
+    #410 X:\projects\chums_season2\onsite\renders\_prod\assets\props\prp_cdtest_01\30_texture\work\v001
+    #    <chm_renderroot> <asset_type> <asset_name> <asset_task> <asset_stage> <asset_version>
+    #331 Y:\projects\CHUMS_Onsite\renders\_prod\assets\characters\chr_emiree\v013
+    #    <chm_renderroot> <asset_type> <asset_name> <asset_version>
     tmpDir = Path(getPipelineTmpFolder()).joinpath('dlJobFiles')
     thisfilename = bpy.data.filepath
     thisoutputpath = bpy.context.scene.render.filepath
@@ -141,33 +145,31 @@ def sendDeadlineCmd():
                         'prx':'proxies',
                         'sky':'skies'}
     asset_type = chm_assetprefix[asset_name[:3]]
-    the_outpath_base = os.path.join(chm_renderroot, 
-                                asset_type,
-                                asset_name,
-                                asset_task,
-                                asset_stage)
     if os.path.basename(thisfilename) == os.path.basename(turntable_filepath):
         if bpy.app.version == (4, 1, 0):
             the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,asset_stage,chm_assetssubtree).replace("/","\\")
+            the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,asset_stage).replace("/","\\")
+            the_comment = "4.1.0 Turntable"
         else:
             the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,asset_stage).replace("/","\\")
+            the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name).replace("/","\\")
+            the_comment = "3.3.1 Turntable"
         latest_asset_workfile = find_latest_workfile(the_workpath)
-        if "workfiles" in latest_asset_workfile:
-            the_outpath = latest_asset_workfile.replace("workfiles", "turntables")
-        else:
-            the_outpath = latest_asset_workfile.replace("work", "work\\turntables")
-        the_outfilepath = the_outfilepath.replace("publish", "publish\\turntables")
-        the_outfilepath = the_outfilepath.replace(".blend",("_tt.blend"))
         latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
         latest_asset_filename = os.path.basename(latest_asset_workfile)
+        if "workfiles" in latest_asset_workfile:
+            the_outpath_base = latest_asset_workfile.replace("workfiles", "turntables")
+        else:
+            the_outpath_base = latest_asset_workfile.replace("work", "work\\turntables")
+        the_outpath_base = the_outpath_base.replace("publish", "publish\\turntables")
         the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
         if not(os.path.exists(the_outpath_base)):
             os.makedirs(the_outpath_base)
         outname = latest_asset_filename.replace(".blend",".####.png")
-        the_outpath = os.path.join(the_outpath_base, outname)
-        dlName = os.path.basename(the_outfilepath)[:-6]
-        dlSceneFile = Path(the_outfilepath).as_posix()
-        dlOutputFile = Path(the_outpath).as_posix()
+        thisoutputpath = os.path.join(the_outpath_base, outname)
+        dlName = os.path.basename(thisfilename)[:-6]
+        dlSceneFile = Path(thisfilename).as_posix()
+        dlOutputFile = Path(thisoutputpath).as_posix()
     else:
         dlName = os.path.basename(thisfilename)[:-6]
         dlSceneFile = Path(thisfilename).as_posix()
@@ -185,7 +187,7 @@ def sendDeadlineCmd():
         f.write(f"Department=Assets\n")
         f.write(f"Priority={jobPrio}\n")
         f.write(f"ChunkSize=10\n")
-        f.write(f"Comment=Turntable\n")
+        f.write(f"Comment={the_comment}\n")
         f.write(f"Frames={dlFrames}\n")
         f.write(f"UserName={getCurrentUser()}\n")
         f.write(f"MachineName={getMachineName()}\n")
@@ -246,8 +248,10 @@ def xcodeH264():
     if os.path.basename(thisfilename) == os.path.basename(turntable_filepath):
         if bpy.app.version == (4, 1, 0):
             the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,asset_stage,chm_assetssubtree).replace("/","\\")
+            the_comment = "4.1.0 Turntable"
         else:
             the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,asset_stage).replace("/","\\")
+            the_comment = "3.3.1 Turntable"
         latest_asset_workfile = find_latest_workfile(the_workpath)
         if "workfiles" in latest_asset_workfile:
             the_outpath = latest_asset_workfile.replace("workfiles", "turntables")
@@ -283,7 +287,7 @@ def xcodeH264():
         f.write(f"BatchName={dlName}\n")
         f.write(f"ChunkSize=1000000\n")
         f.write(f"JobDependency0={blendJobId}\n")
-        f.write(f"Comment=Turntable\n")
+        f.write(f"Comment={the_comment}\n")
         f.write(f"Department=Assets\n")
         f.write(f"Priority={jobPrio}\n")
         f.write(f"Frames={dlFrames}\n")
@@ -597,8 +601,11 @@ def open_turntable():
     else:
         ttutils_messagebox("Turntable cannot be found here:    " + str(turntable_filepath) + "\nPlease check path manually and notify your supervisor if you can see and open the file directly.", "Turntable Missing")
 
-def set_output_path(asset_name, asset_task, asset_stage):
-    #new goal: Y:\projects\CHUMS_Onsite\renders\assets\<asset type>\<asset name>\<v###>
+def set_output_path(asset_root, render_root, asset_name, asset_task, asset_stage):
+    #410 X:\projects\chums_season2\onsite\renders\_prod\assets\props\prp_cdtest_01\30_texture\work\v001
+    #    <chm_renderroot> <asset_type> <asset_name> <asset_task> <asset_stage> <asset_version>
+    #331 Y:\projects\CHUMS_Onsite\renders\_prod\assets\characters\chr_emiree\v013
+    #    <chm_renderroot> <asset_type> <asset_name> <asset_version>
     the_outpath = ""
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
@@ -607,29 +614,25 @@ def set_output_path(asset_name, asset_task, asset_stage):
                        'sky':'skies'}
     asset_type = chm_assetprefix[asset_name[:3]]
     if bpy.app.version == (4, 1, 0):
-        the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,asset_stage,chm_assetssubtree).replace("/","\\")
+        the_workpath = os.path.join(asset_root,asset_type,asset_name,asset_task,asset_stage,chm_assetssubtree).replace("/","\\")
+        #    <chm_renderroot> <asset_type> <asset_name> <asset_task> <asset_stage> <asset_version>
+        the_outpath_base = os.path.join(render_root,asset_type,asset_name,asset_task,asset_stage).replace("/","\\")
     else:
-        the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,chm_assetssubtree,asset_stage).replace("/","\\")
+        the_workpath = os.path.join(asset_root,asset_type,asset_name,asset_task,chm_assetssubtree,asset_stage).replace("/","\\")
+        #    <chm_renderroot> <asset_type> <asset_name> <asset_version>
+        the_outpath_base = os.path.join(render_root,asset_type,asset_name).replace("/","\\")
+    latest_asset_workfile = find_latest_workfile(the_workpath)
+    latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
+    latest_asset_filename = os.path.basename(latest_asset_workfile)
+    the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
+    print("the_workpath: ", the_workpath)
+    print("latest_asset_workfile: ", latest_asset_workfile)
     print("the_outpath_base: ", the_outpath_base)
-    #print("the_workpath: ", the_workpath)
-    if os.path.exists(the_outpath_base):
-        latest_asset_workfile = find_latest_workfile(the_outpath_base)
-        #print("latest_asset_workfile: ", latest_asset_workfile)
-        latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
-        latest_asset_filename = os.path.basename(latest_asset_workfile)
-        the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
-        if "workfiles" in latest_asset_workfile:
-            the_outpath = latest_asset_workfile.replace("workfiles", "turntables")
-        else:
-            the_outpath = latest_asset_workfile.replace("work", "work\\turntables")
-        print("the_outpath_base: ", the_outpath_base)
-        if not(os.path.exists(the_outpath_base)):
-            os.makedirs(the_outpath_base)
-        outname = latest_asset_filename.replace(".blend",".####.png")
-        the_outpath = os.path.join(the_outpath_base, outname)
-        #print("outpath: ", the_outpath)
-    else:
-        ttutils_messagebox(("Cannot find Path:    " + str(the_outpath_base)), "Error Setting Output")
+    if not(os.path.exists(the_outpath_base)):
+        os.makedirs(the_outpath_base)
+    outname = latest_asset_filename.replace(".blend",".####.png")
+    the_outpath = os.path.join(the_outpath_base, outname)
+    
     return the_outpath
 
 def clean_up_after_blender_save(save_path):
@@ -903,7 +906,7 @@ class BUTTON_OT_set_out_filepath(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        theoutpath = set_output_path(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        theoutpath = set_output_path(chm_assetroot, chm_renderroot, bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         #print("theoutpath: ", theoutpath)
         bpy.context.scene.render.filepath = theoutpath
         return{'FINISHED'}
@@ -1071,7 +1074,7 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
         thisoutputpath = bpy.context.scene.render.filepath
         asset_name = bpy.context.scene.ttutils_alist
         bpy.context.scene.assetname = bpy.context.scene.ttutils_alist
-        theoutpath = set_output_path(asset_name, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
+        theoutpath = set_output_path(chm_assetroot, chm_renderroot, asset_name, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         if (bpy.context.scene.ttutils_alist.lower() in thisfilename.lower() and 
             bpy.context.scene.ttutils_alist.lower() in thisoutputpath.lower() and
             thisfilename[-8:] == "tt.blend"):
