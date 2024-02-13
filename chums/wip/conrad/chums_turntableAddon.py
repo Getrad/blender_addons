@@ -79,13 +79,12 @@ chm_assetssubtree = 'projects/blender'
 chm_assetturntables = '30_texture/projects/blender/turntables'
 thecam_name = "cam.ttCamera"
 blender_version = bpy.app.version
-#turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable.blend"
 match blender_version:
     case (3, 3, 1):
         turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_331.blend"
     case (4, 1, 0):
         turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_410.blend"
-    case (4, 1, 0):
+    case _:
         turntable_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable.blend"
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 tunes = "Y:/projects/CHUMS_Onsite/pipeline/software/tools/blender/addons/conrad/audio/LosStraitjacketsSardinianHoliday.mp3"
