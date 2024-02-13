@@ -60,7 +60,7 @@ import subprocess
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.4.1b'
+vsn = '0.4.1d'
 
 # BASEFILE SPECIFIC 
 thecam_name = "cam.ttCamera"
@@ -484,7 +484,7 @@ def append_asset(asset_name, asset_dept, asset_stage):
 
 def link_asset(asset_name, asset_dept, asset_stage):
     #print("ENTER get_asset FUNCTION", asset_name)
-    #asset_stage = "publish"
+    asset_stage = "publish"
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
                        'prp':'props', 
@@ -492,9 +492,9 @@ def link_asset(asset_name, asset_dept, asset_stage):
                        'sky':'skies'}
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if bpy.app.version == (4, 1, 0):
-        the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,asset_stage,chm_assetssubtree).replace("/","\\")
+        the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,asset_stage,chm_assetssubtree)
     else:
-        the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_assetssubtree,asset_stage).replace("/","\\")
+        the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_assetssubtree,asset_stage)
     #print("the_asset_dir:", the_asset_dir)
     the_asset_path = find_latest_workfile(the_asset_dir)
     #print("the_asset_path:", the_asset_path)
@@ -502,9 +502,11 @@ def link_asset(asset_name, asset_dept, asset_stage):
         with bpy.data.libraries.load(the_asset_path, link=True) as (data_src, data_dst):
             data_dst.collections = data_src.collections
         for coll in data_dst.collections:
-            if "asset_prod" in coll.name:
-                coll.name = (asset_name + "_asset_prod_appended")
-                bpy.context.scene.collection.children.link(coll)
+            if coll.name == "asset_prod":
+                newcoll = coll
+                bpy.context.scene.collection.children.link(newcoll)
+                newcoll.name = "asset_prod_linked"
+
     return 0
 
 def open_assetfile(asset_name, asset_dept, asset_stage):
