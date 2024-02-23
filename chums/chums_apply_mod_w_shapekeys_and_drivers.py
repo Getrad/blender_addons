@@ -1,8 +1,8 @@
 bl_info = {
     "name": "Apply Mod w/Shapekeys",
     "author": "james paskaruk, conrad dueck",
-    "version": (0,1,0),
-    "blender": (3, 30, 1),
+    "version": (0,1,1),
+    "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Apply Modifier when shapekeys/drivers exist.",
     "warning": "",
@@ -11,11 +11,9 @@ bl_info = {
     
 import bpy
 
-### Functions 
-
 
 ### Classes
-#   OPERATOR applymodwshapekeys APPLY
+#   OPERATOR BUTTON_OT_applymodwshapekeysapplymodifier APPLY
 class BUTTON_OT_applymodwshapekeysapplymodifier(bpy.types.Operator):
     '''apply Modifier'''
     bl_idname = "applymodwshapekeys.applymodifier" 
@@ -55,6 +53,7 @@ class BUTTON_OT_applymodwshapekeysapplymodifier(bpy.types.Operator):
             return {'CANCELLED'}
         else:
             count = 0
+            shapekey_values = {}
             for prop in proplist:
                 if prop == True:
                     modToApply = bpy.context.active_object.modifiers[count]
@@ -86,8 +85,10 @@ class BUTTON_OT_applymodwshapekeysapplymodifier(bpy.types.Operator):
             print(targetObject.data.shape_keys.key_blocks.items())
             for key in targetObject.data.shape_keys.key_blocks:
                 if key.name == basisname:
+                    shapekey_values[key.name] = key.value
                     pass
                 else:
+                    shapekey_values[key.name] = key.value
                     bpy.ops.object.select_all(action='DESELECT')
                     targetObject.select_set(True)
                     bpy.ops.object.duplicate()
@@ -149,6 +150,10 @@ class BUTTON_OT_applymodwshapekeysapplymodifier(bpy.types.Operator):
                     targetObject.data.shape_keys.animation_data.drivers[count].driver.variables[0].targets[0].id = drivers[shky]['vartargetid']
                     targetObject.data.shape_keys.animation_data.drivers[count].driver.variables[0].targets[0].data_path = drivers[shky]['vartargetdata_path']
                     count += 1
+            
+            ### Restore shape key values
+            for shky in shapekey_values.keys():
+                targetObject.data.shape_keys.key_blocks[shky].value = shapekey_values[shky]
 
         self.prop0 = False
         self.prop1 = False
@@ -215,10 +220,8 @@ class BUTTON_OT_applymodwshapekeysapplymodifier(bpy.types.Operator):
             self.layout.prop(self, "prop9", text=modlist[9])
         except:
             pass
-        
-    
-                
-#   PANEL applymodwshapekeys
+
+#   PANEL VIEW3D_PT_applymodwshapekeys
 class VIEW3D_PT_applymodwshapekeys(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
