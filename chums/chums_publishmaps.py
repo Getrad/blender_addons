@@ -24,7 +24,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.1a'
+vsn='5.1b'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
@@ -70,13 +70,17 @@ def get_node_target(the_node):
     the_next_type = 'none'
     the_next_node = 'none'
     the_id = ''
-    for the_out in the_node.outputs:
-        if the_out.is_linked:
-            for link in the_out.links:
-                the_next_type = link.to_node.type
-                the_next_node = link.to_node
-                the_id = link.to_socket.identifier
-    return the_next_type, the_next_node, the_id
+    if the_node and the_node is not 'none':
+        for the_out in the_node.outputs:
+            if the_out.is_linked:
+                for link in the_out.links:
+                    the_next_type = link.to_node.type
+                    the_next_node = link.to_node
+                    the_id = link.to_socket.identifier
+        return the_next_type, the_next_node, the_id
+    else:
+        print("\"the_node\" is returning a string none")
+
 
 def trace_to_shader(image,object):
     my_maptype = 'nonetype'
@@ -88,13 +92,13 @@ def trace_to_shader(image,object):
                     if the_out.is_linked:
                         for link in the_out.links:
                             tgt_link = get_node_target(node)
-                            while tgt_link[0] != 'BSDF_PRINCIPLED':
-                                tgt_link = get_node_target(tgt_link[1])
-                                my_maptype = tgt_link
+                            try:
+                                while tgt_link[0] != 'BSDF_PRINCIPLED':
+                                    tgt_link = get_node_target(tgt_link[1])
+                                    my_maptype = tgt_link
+                            except:
+                                print("FAILED ON: ", node)
                             break
-    return my_maptype
-
-    
     print(image.name + "\n" + 'trace_to_shader returns (my_maptype): ', my_maptype)
     return my_maptype
 
@@ -183,7 +187,10 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                                 this_image = os.path.basename(node.image.filepath)
                                 img = node.image
                                 thismaptype = trace_to_shader(img,ob)
-                                this_to_socket = thismaptype[2].replace(' ','_')
+                                try:
+                                    this_to_socket = thismaptype[2].replace(' ','_')
+                                except:
+                                    print("FAIL ON: ", thismaptype) 
                                 if this_image in theimgnodes.keys():
                                     theimgnodes[this_image]['materials'].append(mtl.name)
                                     theimgnodes[this_image]['nodes'].append(node.name)
