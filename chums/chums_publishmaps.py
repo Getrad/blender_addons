@@ -24,7 +24,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.1'
+vsn='5.1a'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
@@ -65,6 +65,8 @@ def compare2files(f1, f2):
     return replaceold
 
 def get_node_target(the_node):
+    print("ENTER get_node_targetFUNCTION with: ", the_node)
+    #if the_node is not 'none':
     the_next_type = 'none'
     the_next_node = 'none'
     the_id = ''
@@ -81,7 +83,7 @@ def trace_to_shader(image,object):
     for mt in object.material_slots:
         mtl = mt.material
         for node in mtl.node_tree.nodes:
-            if node.type == 'TEX_IMAGE' and node.image == image:
+            if node is not None and node is not 'none' and node.type == 'TEX_IMAGE' and node.image == image:
                 for the_out in node.outputs:
                     if the_out.is_linked:
                         for link in the_out.links:
