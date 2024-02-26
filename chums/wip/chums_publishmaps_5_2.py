@@ -8,7 +8,7 @@
 bl_info = {
     "name": "Publish Maps",
     "author": "conrad dueck",
-    "version": (0,5,1),
+    "version": (0,5,2),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Collect image maps to publish directory and back up any maps that already exist there.",
@@ -24,7 +24,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.1b'
+vsn='5.2'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
@@ -123,6 +123,45 @@ def convert_to_exr(image):
         print("convert_to_exr returning: ", image)
         return (image)
 
+def images_from_node_tree(obj, nodetree, my_mtl, my_ignorelist, my_imgs, my_imgtypes, my_oldpaths, my_objects):
+    collected_images = {}
+    for node in nodetree.nodes:
+        print("NODE: ", node.name, " is TYPE: ",node.type)
+        if node.type == 'TEX_IMAGE':
+            if node.image.packed_file:
+                print("FOUND PACKED: ", node.name, my_mtl.name)
+                anypacks += 1
+            this_image = os.path.basename(node.image.filepath)
+            img = node.image
+            thismaptype = trace_to_shader(img,obj)
+            try:
+                this_to_socket = thismaptype[2].replace(' ','_')
+            except:
+                print("FAIL ON: ", thismaptype) 
+            if this_image in collected_images.keys():
+                collected_images[this_image]['materials'].append(my_mtl.name)
+                collected_images[this_image]['nodes'].append(node.name)
+                collected_images[this_image]['objects'].append(obj.name)
+                collected_images[this_image]['to_socket'].append(this_to_socket)
+            else:
+                collected_images[this_image] = {'materials':[my_mtl.name],'nodes':[node.name], 'objects':[obj.name], 'to_socket':[this_to_socket]}
+            if not(node.image in my_imgs) and not(node.image.name in my_ignorelist):
+                if node.image.packed_file or os.path.exists(node.image.filepath):
+                    my_imgs.append(node.image)
+                    my_oldpaths.append(node.image.filepath)
+                    my_imgtypes.append(node.image.source)
+                    my_objects.append(obj.name)
+                else:
+                    print('MISSING: ', node.image.filepath)
+        elif node.type == 'GROUP':
+            print("RECURSIVE LOOP")
+            images_from_node_tree(obj, node.node_tree, my_mtl, my_ignorelist, my_imgs, my_imgtypes, my_oldpaths, my_objects)
+            
+    return collected_images
+                                
+                                
+                                
+                                
 ####    CLASSES    ####
 #   OPERATOR publishmapspublish PUBLISH MAPS
 class BUTTON_OT_publishmapspublish(bpy.types.Operator):
@@ -179,36 +218,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             for ob in oblist:
                 for mtl in ob.material_slots:
                     if mtl.material.use_nodes:
-                        for node in mtl.material.node_tree.nodes:
-                            print("NODE: ", node.name, " is TYPE: ",node.type)
-                            if node.type == 'TEX_IMAGE':
-                                if node.image.packed_file:
-                                    print("FOUND PACKED: ", node.name, mtl.name)
-                                    anypacks += 1
-                                this_image = os.path.basename(node.image.filepath)
-                                img = node.image
-                                thismaptype = trace_to_shader(img,ob)
-                                try:
-                                    this_to_socket = thismaptype[2].replace(' ','_')
-                                except:
-                                    print("FAIL ON: ", thismaptype) 
-                                if this_image in theimgnodes.keys():
-                                    theimgnodes[this_image]['materials'].append(mtl.name)
-                                    theimgnodes[this_image]['nodes'].append(node.name)
-                                    theimgnodes[this_image]['objects'].append(ob.name)
-                                    theimgnodes[this_image]['to_socket'].append(this_to_socket)
-                                else:
-                                    theimgnodes[this_image] = {'materials':[mtl.name],'nodes':[node.name], 'objects':[ob.name], 'to_socket':[this_to_socket]}
-                                if not(node.image in theimgs) and not(node.image.name in imgignorelist):
-                                    if node.image.packed_file or os.path.exists(node.image.filepath):
-                                        theimgs.append(node.image)
-                                        theoldpaths.append(node.image.filepath)
-                                        theimgtypes.append(node.image.source)
-                                        theobjects.append(ob.name)
-                                    else:
-                                        print('MISSING: ', node.image.filepath)
-                            elif node.type == 'GROUP':
-                                
+                        images_from_node_tree(ob, mtl.material.node_tree, mtl, imgignorelist, theimgs, theimgtypes, theoldpaths, theobjects)
             print('\nList to process:\n ', theimgs)
             print('anypacks = ', anypacks)
             
