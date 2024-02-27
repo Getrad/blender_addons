@@ -2,13 +2,14 @@
 # The eventual need to collect and repath image maps during the publishing process
 # TARGETS v5.0
 ## completely remove Restore functionality; keep logging (for now)
-# v5.0
-#
+# v5.2
+# significant cleanup to remove legacy features
+# reintroduced hash checks and cleaned up duplicate incrementation code
 
 bl_info = {
     "name": "Publish Maps",
     "author": "conrad dueck",
-    "version": (0,5,1),
+    "version": (0,5,2),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Collect image maps to publish directory and back up any maps that already exist there.",
@@ -24,7 +25,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.1b'
+vsn='5.2'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
@@ -32,7 +33,7 @@ clean_export_filedepth = '16'
 clean_export_imagick = 'zip'
 clean_export_filecodec = 'ZIP'
 imagick = Path("C:/Program Files/ImageMagick-6.9.13-Q16-HDRI/convert.exe")
-number_digits = "0123456789"
+number_digits = "0123456789_"
 
 ####    FUNCTIONS    ####
 def make_path_absolute(self, context):
@@ -53,20 +54,20 @@ def removedigits(thestring):
 # sha256 hash compare 2 files
 def compare2files(f1, f2):
     import hashlib
-    replaceold = False
+    print("    compare2files: ", f1, f2)
+    replace_it = False
     absf1 = os.path.abspath(bpy.path.abspath(f1))
     absf2 = os.path.abspath(bpy.path.abspath(f2))
     hashlist = [(hashlib.sha256(open(fname, 'rb').read()).hexdigest()) for fname in (absf1, absf2)]
     if (hashlist[0] == hashlist[1]):
-        replaceold = False
+        replace_it = True
     else:
-        replaceold = True
-    print('(compare2files) sha256 hash comparison = ', replaceold)
-    return replaceold
+        replace_it = False
+    print('    (compare2files) sha256 hash comparison match = ', replace_it)
+    return replace_it
 
 def get_node_target(the_node):
-    print("ENTER get_node_targetFUNCTION with: ", the_node)
-    #if the_node is not 'none':
+    #print("ENTER get_node_target FUNCTION with: ", the_node)
     the_next_type = 'none'
     the_next_node = 'none'
     the_id = ''
@@ -77,38 +78,32 @@ def get_node_target(the_node):
                     the_next_type = link.to_node.type
                     the_next_node = link.to_node
                     the_id = link.to_socket.identifier
-        return the_next_type, the_next_node, the_id
-    else:
-        print("\"the_node\" is returning a string none")
+                break
+    #print("EXIT get_node_target FUNCTION returning (the_next_type, the_next_node, the_id): ", the_next_type, the_next_node, the_id)
+    return the_next_type, the_next_node, the_id
 
-
-def trace_to_shader(image,object):
-    my_maptype = 'nonetype'
+def trace_to_shader(image, object):
+    #print("ENTER trace_to_shader FUNCTION with: ", image, object)
+    my_shader_input = ''
     for mt in object.material_slots:
         mtl = mt.material
         for node in mtl.node_tree.nodes:
             if node and node.type == 'TEX_IMAGE' and node.image == image:
                 for the_out in node.outputs:
                     if the_out.is_linked:
-                        for link in the_out.links:
-                            tgt_link = get_node_target(node)
-                            try:
-                                while tgt_link[0] != 'BSDF_PRINCIPLED':
-                                    tgt_link = get_node_target(tgt_link[1])
-                                    my_maptype = tgt_link
-                            except:
-                                print("FAILED ON: ", node)
-                            break
-    print(image.name + "\n" + 'trace_to_shader returns (my_maptype): ', my_maptype)
-    return my_maptype
+                        tgt_link = get_node_target(node)
+                        my_shader_input = tgt_link[2]
+                        break
+    #print("EXIT trace_to_shader returns (my_shader_input): ", my_shader_input)
+    return my_shader_input
 
 def convert_to_exr(image):
     import os
-    convert_cleanpath = image.replace('\\','/')
+    print("convert_to_exr(image): ", image)
+    convert_cleanpath = image
     cleanpath_dir = os.path.dirname(convert_cleanpath)
     cleanpath_file = (os.path.basename(convert_cleanpath))
     targetpath_file = ("autoconvert_" + os.path.basename(convert_cleanpath))
-    convert_cleanpath = os.path.join(cleanpath_dir, cleanpath_file)
     convert_tgt_path = (targetpath_file[:-4] + ".exr")
     #print('convert_tgt_path = ',convert_tgt_path)
     convert_img_cmd = ("\"" + str(imagick) + "\" \"" + str(Path(convert_cleanpath)) + "\" -compress zip -depth 16 \"" + str(Path(convert_tgt_path)) + "\"")
@@ -117,12 +112,65 @@ def convert_to_exr(image):
     running.wait()
     print(running.returncode)
     if os.path.exists(convert_tgt_path):
-        print("convert_to_exr returning: ", convert_tgt_path)
+        print("convert_to_exr returning (successs): ", convert_tgt_path)
         return convert_tgt_path
     else:
-        print("convert_to_exr returning: ", image)
+        print("convert_to_exr returning (original): ", image)
         return (image)
 
+def unpack_image(packed_img):
+    thefilepath = os.path.dirname(bpy.data.filepath)
+    unpacktarget = os.path.join(thefilepath, 'unpacked')
+    imageformats = {'BMP':'.bmp','PNG':'.png','JPEG':'.jpg','JPEG2000':'.jpg',
+                    'TARGA':'.tga','TARGA_RAW':'.tga','CINEON':'.cin','DPX':'.dpx',
+                    'OpenEXR':'.exr','OPEN_EXR_MULTILAYER':'.exr','OPEN_EXR':'.exr',
+                    'HDR':'.hdr','TIFF':'.tif','AVI_JPEG':'.avi','AVI_RAW':'.avi'}
+    #   handle missing unpack folder if there are any packed files
+    if not(os.path.exists(unpacktarget)):
+        os.mkdir(unpacktarget, 0o777)
+        #print('\n      Unpack folder NOT found. Created: ' + unpacktarget)
+    srcformat = packed_img.file_format
+    curformat = bpy.context.scene.render.image_settings.file_format
+    bpy.context.scene.render.image_settings.file_format = srcformat
+    theext = imageformats[srcformat]
+    srcfilename = (packed_img.name + theext)
+    newpath = os.path.join(unpacktarget, srcfilename)
+    #print('      FIRST existence check - newpath = ', newpath)
+    thisversion = 0
+    while os.path.exists(newpath):
+        #print('      ITERATIVE existence check - newpath = ', newpath)
+        tempname = (srcfilename[:-4] + '_' + str(thisversion).zfill(3) + theext)
+        newpath = os.path.join(unpacktarget, tempname)
+        thisversion += 1
+    print('      FINAL UNPACK PATH (newpath) = ', newpath)
+    packed_img.save_render(newpath, scene=bpy.context.scene)
+    packed_img.filepath = newpath
+    packed_img.unpack(method='USE_ORIGINAL')
+    bpy.context.scene.render.image_settings.file_format = curformat
+
+    return 0
+
+def images_from_node_tree(my_mtl, my_obj, my_imglist, my_sockets):
+    #print("\nENTER images_from_node_tree FUNCTION with: ", my_mtl.name, my_obj.name)
+    local_sockets = my_sockets
+    for node in my_mtl.node_tree.nodes:
+        if node.type == 'TEX_IMAGE':
+            img = node.image
+            if img.packed_file:
+                #print("   FOUND PACKED: ", node.name, my_mtl.name)
+                unpack_image(img)
+            thismaps_shader = trace_to_shader(img, my_obj)
+            shader_socket = thismaps_shader.replace(' ','_')
+            if not(img in my_imglist):
+                my_imglist.append(img)
+                local_sockets.append(shader_socket)
+            my_sockets = local_sockets
+        elif node.type == 'GROUP':
+            print("GROUP NODE: ", node.name)
+            images_from_node_tree(my_mtl,my_obj,my_imglist,local_sockets)
+    #print("EXIT images_from_node_tree FUNCTION with (my_imglist, my_sockets)")
+    return (my_imglist, my_sockets)
+    
 ####    CLASSES    ####
 #   OPERATOR publishmapspublish PUBLISH MAPS
 class BUTTON_OT_publishmapspublish(bpy.types.Operator):
@@ -133,33 +181,27 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
     
     def execute(self, context):
         print('\n\nSTART PUBLISH')
-        #   set initial variables and empty lists
-        theobjects = []     # dict of objects and materials
-        theimgs = []     # list of images to process
-        theimgtypes = [] # list of image types mapped to theimgs
-        theoldpaths = [] # list of image paths used by theimgs
-        tgtpaths = [] # list of the new paths to which the images will be published
-        theimgnodes = {} # img_name: node_material, node_name, to_socket
-        totalpubs = 0
-        anypacks = 0
+        #   initialize operational variables and empty lists
+        oblist = []         # list of objects to process
+        mtl_objs = {}       # dict of materials - [material name]:[object_user, images_list, sockets_list]
+        tgtpaths = []       # list of the new paths to which the images will be published
+        imgdict = {}        # master dict where { image_name : object_user, material_user, socket_user}
         totalconfirmedpaths = 0
+        theimgs = []
+
+        #   switch to absolute paths
+        print('Set all files to absolute...')
+        bpy.ops.file.make_paths_absolute()
+        
+        #   initialize context dependent variables (theFile, theasset)
         theFile = os.path.basename(bpy.data.filepath)[:-6]
-        thefilepath = os.path.dirname(bpy.data.filepath)
         if len(theFile) >= 4 and len(theFile.split("_")) > 2:
             theasset = theFile[:-5]
         else:
             theasset = "unknown"
-        unpacktarget = os.path.join(thefilepath, 'unpacked')
-        imageformats = {'BMP':'.bmp','PNG':'.png','JPEG':'.jpg','JPEG2000':'.jpg',
-                        'TARGA':'.tga','TARGA_RAW':'.tga','CINEON':'.cin','DPX':'.dpx',
-                        'OpenEXR':'.exr','OPEN_EXR_MULTILAYER':'.exr','OPEN_EXR':'.exr',
-                        'HDR':'.hdr','TIFF':'.tif','AVI_JPEG':'.avi','AVI_RAW':'.avi'}
+        print('theasset = ', theasset)
         
-        #   switch to absolute paths
-        print('Set all files to absolute.')
-        bpy.ops.file.make_paths_absolute()
-        
-        #   get the destination/publish path from the UI
+        #   get the destination/publish path from the UI (thepath)
         thepath = os.path.abspath(bpy.path.abspath(bpy.context.scene.publishmaps_to))
         if (len(bpy.context.scene.publishmaps_to) >= 1) and (os.path.exists(bpy.context.scene.publishmaps_to)):
             thepath = os.path.abspath(bpy.path.abspath(bpy.context.scene.publishmaps_to))
@@ -168,151 +210,93 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             print('\nPublish folder NOT found: ', thepath)
             thepath = ''
         
-        #   if the path is defined
         if len(thepath) >= 1:
-            #   gather up a list of the images to process
+            #   get the objects to process (oblist)
             if bpy.context.scene.publishmaps_selected:
                 oblist = bpy.context.selected_objects
             else:
                 oblist = bpy.data.objects
             
+            #   gather a dict of the unique materials to process and their object assignments (mtl_objs)
             for ob in oblist:
                 for mtl in ob.material_slots:
                     if mtl.material.use_nodes:
-                        for node in mtl.material.node_tree.nodes:
-                            print("NODE: ", node.name, " is TYPE: ",node.type)
-                            if node.type == 'TEX_IMAGE':
-                                if node.image.packed_file:
-                                    print("FOUND PACKED: ", node.name, mtl.name)
-                                    anypacks += 1
-                                this_image = os.path.basename(node.image.filepath)
-                                img = node.image
-                                thismaptype = trace_to_shader(img,ob)
-                                try:
-                                    this_to_socket = thismaptype[2].replace(' ','_')
-                                except:
-                                    print("FAIL ON: ", thismaptype) 
-                                if this_image in theimgnodes.keys():
-                                    theimgnodes[this_image]['materials'].append(mtl.name)
-                                    theimgnodes[this_image]['nodes'].append(node.name)
-                                    theimgnodes[this_image]['objects'].append(ob.name)
-                                    theimgnodes[this_image]['to_socket'].append(this_to_socket)
-                                else:
-                                    theimgnodes[this_image] = {'materials':[mtl.name],'nodes':[node.name], 'objects':[ob.name], 'to_socket':[this_to_socket]}
-                                if not(node.image in theimgs) and not(node.image.name in imgignorelist):
-                                    if node.image.packed_file or os.path.exists(node.image.filepath):
-                                        theimgs.append(node.image)
-                                        theoldpaths.append(node.image.filepath)
-                                        theimgtypes.append(node.image.source)
-                                        theobjects.append(ob.name)
-                                    else:
-                                        print('MISSING: ', node.image.filepath)
-                            elif node.type == 'GROUP':
-                                
-            print('\nList to process:\n ', theimgs)
-            print('anypacks = ', anypacks)
+                        if not(mtl.material.name in mtl_objs.keys()):
+                            #   gather the images used in this material and the sockets they drive
+                            this_mtl_imgs = images_from_node_tree(mtl.material, ob, [], [])
+                            mtl_objs[mtl.material.name] = [ob.name, this_mtl_imgs[0], this_mtl_imgs[1]]
+                    else:
+                        print(mtl.material.name, " is INVALID - must use nodes")
             
-            #   handle missing unpack folder if there are any packed files
-            if anypacks >= 1 and not(os.path.exists(unpacktarget)):
-                os.mkdir(unpacktarget, 0o777)
-                print('\nUnpack folder NOT found. Created: ' + unpacktarget)
+            #   gather the unique images from the mtl_objs dict (imgdict)
+            for mtl in mtl_objs.keys():
+                for imgnum, img in enumerate(mtl_objs[mtl][1]):
+                    if not(img in imgdict.keys()):
+                        imgdict[img] = [mtl_objs[mtl][0], mtl, mtl_objs[mtl][2][imgnum]]
             
-            #   cycle thru images and collect original paths (theoldpaths) and generate the new image paths (tgtpaths)
-            for imgnum, img in enumerate(theimgs):
-                #img = theimgs[imgnum]
-                thisobject = theobjects[imgnum]
-                srcfile = theoldpaths[imgnum]
-                srcpath = os.path.dirname(srcfile)
+            #   PUBLISH images in image dictionary
+            print("The collected imgdict has ", len(imgdict.keys()), " images to process")
+            
+            for imgnum, img in enumerate(imgdict.keys()):
+                print("\nCommence processing:")
+                print("    img.name: ", img.name)
+                proc_img = bpy.data.images[img.name]
+                srcfile = proc_img.filepath
+                srcfilepath = os.path.dirname(srcfile)
                 srcfilename = os.path.basename(srcfile)
                 srcfilebase = srcfilename.split(".")[0]
-                clean_export_fileext = 'exr'
+                srcformat = srcfilename.split(".")[-1]
+                img_socket = imgdict[img][2]
                 
-                print('imgnum = ', imgnum)
-                print('img = ', img)
-                print('commence processing ', img.name)
-                
-                tgtformat = img.file_format
-                srcformat = img.file_format
-                srctype = theimgtypes[imgnum]
-                theoldname = os.path.basename(theoldpaths[imgnum])
-                
-                #   UNPACK if the image is PACKED into the file
-                if img.packed_file:
-                    curformat = bpy.context.scene.render.image_settings.file_format
-                    bpy.context.scene.render.image_settings.file_format = srcformat
-                    theext = imageformats[srcformat]
-                    if len(srcfilename) < 1:
-                        srcfilename = (img.name + theext)
-                    newpath = os.path.join(unpacktarget, srcfilename)
-                    thisversion = 0
-                    print('FIRST existence check - newpath = ', newpath)
-                    if os.path.exists(newpath):
-                        print('EXISTS')
-                    while os.path.exists(newpath):
-                        print('ITERATIVE existence check - newpath = ', newpath)
-                        tempname = (srcfilename[:-4] + '_' + str(thisversion).zfill(3) + theext)
-                        newpath = os.path.join(unpacktarget, tempname)
-                        thisversion += 1
-                    theoldname = os.path.basename(newpath)
-                    print('theoldname = ', theoldname)
-                    print('postexistence check - newpath = ', newpath)
-                    img.save_render(newpath, scene=bpy.context.scene)
-                    theoldpaths[imgnum] = newpath
-                    img.packed_files[0].filepath = newpath
-                    img.filepath = newpath
-                    img.unpack(method='USE_ORIGINAL')
-                    srcfile = img.filepath
-                    bpy.context.scene.render.image_settings.file_format = curformat
-                
-                #   handle clean up - file name
-                #   <asset name>_<object name>_<map type>_<version#>.<ext>
                 if bpy.context.scene.publishmaps_cleanup == True:
-                    thismaptype = trace_to_shader(img,bpy.data.objects[thisobject])
-                    customname = ("autoconvert_" + srcfilebase + "." + clean_export_fileext)
+                    #thismaptype = trace_to_shader(img,bpy.data.objects[thisobject])
+                    customname = (srcfilebase + "." + clean_export_fileext)
                     tgtfilename = customname.replace(' ', '_')
                     tgtfilename = tgtfilename.replace(":","_")
                     tgtfilename_ext = tgtfilename.split(".")[-1]
                     tgtfilename = tgtfilename.replace(tgtfilename_ext,clean_export_fileext)
                 else:
-                    tgtfilename = theoldname
+                    tgtfilename = srcfilename
                 while "autoconvert_autoconvert_" in tgtfilename:
                     tgtfilename = tgtfilename.replace("autoconvert_autoconvert_", "autoconvert_")
                 dupfix = 0
                 tgtpath = os.path.join(thepath, tgtfilename)
+                tgtbase = os.path.basename(tgtpath)[:-4]
+                need_new = True
                 #   publish already exists
                 while os.path.exists(tgtpath):
-                    tgtbase = os.path.basename(tgtpath)[:-4]
-                    while tgtbase[-1] in number_digits:
-                        tgtbase = tgtbase[:-1]
-                    tgtpath = os.path.join(os.path.dirname(tgtpath),(tgtbase + str(dupfix).zfill(3) + '.' + clean_export_fileext))
-                    dupfix += 1
-                tgtpaths.append(tgtpath)
-                print('srcfile = ', srcfile,'\nsrcpath = ', srcpath,'\nsrcfilename = ', srcfilename,'\nsrcformat = ', srcformat,'\nsrctype = ', srctype, '\n')
-                print('tgtfile = ', tgtfilename, '\ntgtpath = ', tgtpath,'\ntgtfilename = ', tgtfilename,'\ntgtformat = ', tgtformat,'\ntgttype = ', srctype, '\n')
+                    # hash check tgtpath (check file)
+                    if compare2files(srcfile, tgtpath):
+                        print("    MATCHED with: ", tgtpath)
+                        need_new = False
+                        break
+                    else:
+                        if tgtbase[-4] == "_":
+                            tgtbase = tgtbase[:-4]
+                        tgtpath = os.path.join(os.path.dirname(tgtpath),(tgtbase + "_" + str(dupfix).zfill(3) + '.' + clean_export_fileext))
+                        need_new = True
+                        dupfix += 1
+                if need_new:
+                    tgtpaths.append(tgtpath)
+                #print('\nsrcfile = ', srcfile,'\nsrcpath = ', srcfilepath,'\nsrcfilename = ', srcfilename,'\nsrcformat = ', srcformat)
+                #print('\ntgtfile = ', tgtfilename, '\ntgtpath = ', tgtpath,'\ntgtfilename = ', tgtfilename,'\ntgtformat = ', clean_export_fileext)
                 
-                
-            #   process the image list
-            for imgnum, img in enumerate(theimgs):
-                srcfile = theoldpaths[imgnum]
-                print('srcfile:', srcfile)
-                srcformat = img.file_format
-                srctype = theimgtypes[imgnum]
-                theoldname = os.path.basename(theoldpaths[imgnum])
-                tgtfile = tgtpaths[imgnum]
-                tgtfilename = os.path.basename(tgtpaths[imgnum])
-                print('\nProcessing ', srcformat, ' image: ', theoldname)
+                srctype = img.source
+                tgtfile = tgtpath
+                tgtfilename = os.path.basename(tgtpath)
                 print('    src: ', srcfile)
                 print('    tgt: ', tgtfile)
+                print('    new: ', need_new)
                 
                 #   SEQUENCE
-                if srctype == 'SEQUENCE':
+                if (need_new == True) and srctype == 'SEQUENCE':
                     #   publish sequence
                     theframecount = 0
-                    srcbasename = removedigits(theoldname)
-                    print('\n    srcbasename = ', srcbasename)
-                    for fl in os.listdir(srcpath):
-                        flfullpath = os.path.join(srcpath, fl)
-                        print('\n    flfullpath = ', flfullpath)
+                    srcbasename = removedigits(srcfile)
+                    #print('\n    srcbasename = ', srcbasename)
+                    for fl in os.listdir(srcfilepath):
+                        flfullpath = os.path.join(srcfilepath, fl)
+                        #print('\n    flfullpath = ', flfullpath)
                         if (os.path.isfile(flfullpath)) and not('humbs.db' in fl):
                             if removedigits(fl) == srcbasename:
                                 print('    will need to publish', flfullpath)
@@ -323,17 +307,18 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                                     shutil.copy2(flfullpath, thepath)
                                 theframecount += 1
                     img.filepath = tgtfile
-                    totalpubs += 1
                 #   SINGLE
                 else:
                     #   publish single
-                    if bpy.context.scene.publishmaps_cleanup == True:
-                        newfile = convert_to_exr(srcfile)
-                    else:
-                        newfile = srcfile
-                    shutil.copy2(newfile, tgtfile)
-                    img.filepath = tgtfile
-                    totalpubs += 1
+                    if (need_new == True):
+                        if bpy.context.scene.publishmaps_cleanup == True:
+                            newfile = convert_to_exr(Path(srcfile))
+                        else:
+                            newfile = srcfile
+                        shutil.copy2(newfile, tgtfile)
+                        img.filepath = tgtfile
+                theimgs.append(img)
+                    
                 
             #   ensure file paths are absolute
             bpy.ops.file.make_paths_absolute()
@@ -343,12 +328,12 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 img = theimgs[imgnum]
                 if not(img.name in imgignorelist):
                     thisrealpath = os.path.realpath(bpy.path.abspath(img.filepath))
-                    if not(os.path.exists(os.path.realpath(bpy.path.abspath(img.filepath)))):
-                        print('\n    FAILED to find: ' + os.path.realpath(bpy.path.abspath(img.filepath)))
+                    if not(os.path.exists(thisrealpath)):
+                        print('\n    FAILED to find: ' + thisrealpath)
                     else:
                         print('\n    FOUND: ' + thisrealpath)
                         totalconfirmedpaths += 1
-                
+            
             print('Done.')
         print('COMPLETE PUBLISH')
         return{'FINISHED'}
