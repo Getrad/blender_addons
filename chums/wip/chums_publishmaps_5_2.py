@@ -150,6 +150,7 @@ def unpack_image(packed_img):
 
 def images_from_node_tree(my_mtl, my_obj, my_imglist, my_sockets):
     #print("\nENTER images_from_node_tree FUNCTION with: ", my_mtl.name, my_obj.name)
+    local_sockets = my_sockets
     for node in my_mtl.node_tree.nodes:
         if node.type == 'TEX_IMAGE':
             img = node.image
@@ -157,13 +158,14 @@ def images_from_node_tree(my_mtl, my_obj, my_imglist, my_sockets):
                 #print("   FOUND PACKED: ", node.name, my_mtl.name)
                 unpack_image(img)
             thismaps_shader = trace_to_shader(img, my_obj)
-            shader_socket = thismaps_shader[2].replace(' ','_')
+            shader_socket = thismaps_shader.replace(' ','_')
             if not(img in my_imglist):
                 my_imglist.append(img)
-                my_sockets.append(shader_socket)
+                local_sockets.append(shader_socket)
+            my_sockets = local_sockets
         elif node.type == 'GROUP':
-            images_from_node_tree(my_mtl,my_obj,my_imglist,my_sockets)
-    
+            print("GROUP NODE: ", node.name)
+            images_from_node_tree(my_mtl,my_obj,my_imglist,local_sockets)
     #print("EXIT images_from_node_tree FUNCTION with (my_imglist, my_sockets)")
     return (my_imglist, my_sockets)
     
