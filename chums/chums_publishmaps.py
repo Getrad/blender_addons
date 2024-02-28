@@ -25,8 +25,9 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.2'
+vsn='5.2e'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
+grpignorelist = ['ZenUV_Override']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
 clean_export_filedepth = '16'
@@ -58,7 +59,10 @@ def compare2files(f1, f2):
     replace_it = False
     absf1 = os.path.abspath(bpy.path.abspath(f1))
     absf2 = os.path.abspath(bpy.path.abspath(f2))
+    print("    compare2files: ", absf1, absf2)
     hashlist = [(hashlib.sha256(open(fname, 'rb').read()).hexdigest()) for fname in (absf1, absf2)]
+    print("hashlist[0]: ", hashlist[0])
+    print("hashlist[1]: ", hashlist[1])
     if (hashlist[0] == hashlist[1]):
         replace_it = True
     else:
@@ -71,7 +75,7 @@ def get_node_target(the_node):
     the_next_type = 'none'
     the_next_node = 'none'
     the_id = ''
-    if the_node and the_node is not 'none':
+    if the_node and (the_node is not 'none'):
         for the_out in the_node.outputs:
             if the_out.is_linked:
                 for link in the_out.links:
@@ -165,7 +169,7 @@ def images_from_node_tree(my_mtl, my_obj, my_imglist, my_sockets):
                 my_imglist.append(img)
                 local_sockets.append(shader_socket)
             my_sockets = local_sockets
-        elif node.type == 'GROUP':
+        elif node.type == 'GROUP' and not (node.name in grpignorelist):
             print("GROUP NODE: ", node.name)
             images_from_node_tree(my_mtl,my_obj,my_imglist,local_sockets)
     #print("EXIT images_from_node_tree FUNCTION with (my_imglist, my_sockets)")
@@ -269,6 +273,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                     if compare2files(srcfile, tgtpath):
                         print("    MATCHED with: ", tgtpath)
                         need_new = False
+                        img.filepath = tgtpath
                         break
                     else:
                         if tgtbase[-4] == "_":
@@ -289,35 +294,36 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 print('    new: ', need_new)
                 
                 #   SEQUENCE
-                if (need_new == True) and srctype == 'SEQUENCE':
-                    #   publish sequence
-                    theframecount = 0
-                    srcbasename = removedigits(srcfile)
-                    #print('\n    srcbasename = ', srcbasename)
-                    for fl in os.listdir(srcfilepath):
-                        flfullpath = os.path.join(srcfilepath, fl)
-                        #print('\n    flfullpath = ', flfullpath)
-                        if (os.path.isfile(flfullpath)) and not('humbs.db' in fl):
-                            if removedigits(fl) == srcbasename:
-                                print('    will need to publish', flfullpath)
-                                if bpy.context.scene.publishmaps_cleanup == True:
-                                    cleanfullpath = convert_to_exr(Path(srcfile))
-                                    shutil.copy2(cleanfullpath, thepath)
-                                else:
-                                    shutil.copy2(flfullpath, thepath)
-                                theframecount += 1
-                    img.filepath = tgtfile
-                #   SINGLE
-                else:
-                    #   publish single
-                    if (need_new == True):
-                        if bpy.context.scene.publishmaps_cleanup == True:
-                            newfile = convert_to_exr(Path(srcfile))
-                        else:
-                            newfile = srcfile
-                        shutil.copy2(newfile, tgtfile)
+                if (need_new == True):
+                    if srctype == 'SEQUENCE':
+                        #   publish sequence
+                        theframecount = 0
+                        srcbasename = removedigits(srcfile)
+                        #print('\n    srcbasename = ', srcbasename)
+                        for fl in os.listdir(srcfilepath):
+                            flfullpath = os.path.join(srcfilepath, fl)
+                            #print('\n    flfullpath = ', flfullpath)
+                            if (os.path.isfile(flfullpath)) and not('humbs.db' in fl):
+                                if removedigits(fl) == srcbasename:
+                                    print('    will need to publish', flfullpath)
+                                    if bpy.context.scene.publishmaps_cleanup == True:
+                                        cleanfullpath = convert_to_exr(Path(srcfile))
+                                        shutil.copy2(cleanfullpath, thepath)
+                                    else:
+                                        shutil.copy2(flfullpath, thepath)
+                                    theframecount += 1
                         img.filepath = tgtfile
-                theimgs.append(img)
+                    #   SINGLE
+                    else:
+                        #   publish single
+                        if (need_new == True):
+                            if bpy.context.scene.publishmaps_cleanup == True:
+                                newfile = convert_to_exr(Path(srcfile))
+                            else:
+                                newfile = srcfile
+                            shutil.copy2(newfile, tgtfile)
+                            img.filepath = tgtfile
+                    theimgs.append(img)
                     
                 
             #   ensure file paths are absolute
