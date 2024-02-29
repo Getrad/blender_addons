@@ -25,7 +25,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.2g'
+vsn='5.2h'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 grpignorelist = ['ZenUV_Override']
 clean_export_fileformat = 'OPEN_EXR'
@@ -239,8 +239,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             print([("\n   " + bb.name) for bb in imgdict.keys()])
             
             for imgnum, img in enumerate(imgdict.keys()):
-                print("Commence processing:")
-                print("    img.name: ", img.name)
+                print("Commence processing: ", img.name)
                 proc_img = bpy.data.images[img.name]
                 srcfile = proc_img.filepath
                 srcfilepath = os.path.dirname(srcfile)
@@ -261,7 +260,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                     else:
                         my_ext = srcfiletype
                     # <asset name>_<material>_<map type>_<version#>.<ext>
-                    tgtfilename = (theasset+"_"+img_material+"_"+img_socket+"_"+srcfileversion+"."+my_ext)
+                    tgtfilename = (theasset+"_"+img_material.split(":")[-1].replace("_", "").lower()+"_"+(img_socket.replace("_", "")).lower()+"_"+srcfileversion+"."+my_ext)
                     tgtfilename = tgtfilename.replace(' ', '_')
                     print("publishmaps_rename using: ", tgtfilename)
                 else:
