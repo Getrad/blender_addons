@@ -4,6 +4,7 @@
 ## completely remove Restore functionality; keep logging (for now)
 # v5.2
 # significant cleanup to remove legacy features
+# reintroduced hash checks and cleaned up duplicate incrementation code
 
 bl_info = {
     "name": "Publish Maps",
@@ -24,8 +25,9 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.2c'
+vsn='5.2e'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
+grpignorelist = ['ZenUV_Override']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
 clean_export_filedepth = '16'
@@ -39,9 +41,6 @@ def make_path_absolute(self, context):
     if self.publishmaps_to:
         if self.publishmaps_to.startswith('//'):
             self.publishmaps_to = (os.path.abspath(bpy.path.abspath(self.publishmaps_to)))
-    if self.publishmaps_restore:
-        if self.publishmaps_restore.startswith('//'):
-            self.publishmaps_restore = (os.path.abspath(bpy.path.abspath(self.publishmaps_restore)))
     return None
 
 def removedigits(thestring):
@@ -53,23 +52,27 @@ def removedigits(thestring):
 # sha256 hash compare 2 files
 def compare2files(f1, f2):
     import hashlib
-    replaceold = False
+    print("    compare2files: ", f1, f2)
+    replace_it = False
     absf1 = os.path.abspath(bpy.path.abspath(f1))
     absf2 = os.path.abspath(bpy.path.abspath(f2))
+    print("    compare2files: ", absf1, absf2)
     hashlist = [(hashlib.sha256(open(fname, 'rb').read()).hexdigest()) for fname in (absf1, absf2)]
+    print("hashlist[0]: ", hashlist[0])
+    print("hashlist[1]: ", hashlist[1])
     if (hashlist[0] == hashlist[1]):
-        replaceold = False
+        replace_it = True
     else:
-        replaceold = True
-    print('(compare2files) sha256 hash comparison = ', replaceold)
-    return replaceold
+        replace_it = False
+    print('    (compare2files) sha256 hash comparison match = ', replace_it)
+    return replace_it
 
 def get_node_target(the_node):
     #print("ENTER get_node_target FUNCTION with: ", the_node)
     the_next_type = 'none'
     the_next_node = 'none'
     the_id = ''
-    if the_node and the_node is not 'none':
+    if the_node and (the_node is not 'none'):
         for the_out in the_node.outputs:
             if the_out.is_linked:
                 for link in the_out.links:
@@ -95,13 +98,16 @@ def trace_to_shader(image, object):
     #print("EXIT trace_to_shader returns (my_shader_input): ", my_shader_input)
     return my_shader_input
 
+def construct_name(my_image, myfile, mymaterial):
+    newname = ""
+    return newname
+
+
 def convert_to_exr(image):
     import os
-    convert_cleanpath = image.replace('\\','/')
-    cleanpath_dir = os.path.dirname(convert_cleanpath)
-    cleanpath_file = (os.path.basename(convert_cleanpath))
+    print("convert_to_exr(image): ", image)
+    convert_cleanpath = image
     targetpath_file = ("autoconvert_" + os.path.basename(convert_cleanpath))
-    convert_cleanpath = os.path.join(cleanpath_dir, cleanpath_file)
     convert_tgt_path = (targetpath_file[:-4] + ".exr")
     #print('convert_tgt_path = ',convert_tgt_path)
     convert_img_cmd = ("\"" + str(imagick) + "\" \"" + str(Path(convert_cleanpath)) + "\" -compress zip -depth 16 \"" + str(Path(convert_tgt_path)) + "\"")
@@ -110,10 +116,10 @@ def convert_to_exr(image):
     running.wait()
     print(running.returncode)
     if os.path.exists(convert_tgt_path):
-        print("convert_to_exr returning: ", convert_tgt_path)
+        print("convert_to_exr returning (successs): ", convert_tgt_path)
         return convert_tgt_path
     else:
-        print("convert_to_exr returning: ", image)
+        print("convert_to_exr returning (original): ", image)
         return (image)
 
 def unpack_image(packed_img):
@@ -163,10 +169,10 @@ def images_from_node_tree(my_mtl, my_obj, my_imglist, my_sockets):
                 my_imglist.append(img)
                 local_sockets.append(shader_socket)
             my_sockets = local_sockets
-        elif node.type == 'GROUP':
+        elif node.type == 'GROUP' and not (node.name in grpignorelist):
             print("GROUP NODE: ", node.name)
             images_from_node_tree(my_mtl,my_obj,my_imglist,local_sockets)
-    #print("EXIT images_from_node_tree FUNCTION with (my_imglist, my_sockets)")
+    print("EXIT images_from_node_tree FUNCTION with (my_imglist, my_sockets)")
     return (my_imglist, my_sockets)
     
 ####    CLASSES    ####
@@ -181,7 +187,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         print('\n\nSTART PUBLISH')
         #   initialize operational variables and empty lists
         oblist = []         # list of objects to process
-        mtllist = []        # list of materials to process
+        mtl_objs = {}       # dict of materials - [material name]:[object_user, images_list, sockets_list]
         tgtpaths = []       # list of the new paths to which the images will be published
         imgdict = {}        # master dict where { image_name : object_user, material_user, socket_user}
         totalconfirmedpaths = 0
@@ -191,9 +197,8 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         print('Set all files to absolute...')
         bpy.ops.file.make_paths_absolute()
         
-        #   initialize context dependent variables (theFile, thefilepath, theasset)
+        #   initialize context dependent variables (theFile, theasset)
         theFile = os.path.basename(bpy.data.filepath)[:-6]
-        thefilepath = os.path.dirname(bpy.data.filepath)
         if len(theFile) >= 4 and len(theFile.split("_")) > 2:
             theasset = theFile[:-5]
         else:
@@ -217,7 +222,6 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 oblist = bpy.data.objects
             
             #   gather a dict of the unique materials to process and their object assignments (mtl_objs)
-            mtl_objs = {}
             for ob in oblist:
                 for mtl in ob.material_slots:
                     if mtl.material.use_nodes:
@@ -228,32 +232,27 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                     else:
                         print(mtl.material.name, " is INVALID - must use nodes")
             
-            #   gather the unique images from the mtl_objs dict
+            #   gather the unique images from the mtl_objs dict (imgdict)
             for mtl in mtl_objs.keys():
                 for imgnum, img in enumerate(mtl_objs[mtl][1]):
                     if not(img in imgdict.keys()):
                         imgdict[img] = [mtl_objs[mtl][0], mtl, mtl_objs[mtl][2][imgnum]]
             
+            #   PUBLISH images in image dictionary
             print("The collected imgdict has ", len(imgdict.keys()), " images to process")
+            
             for imgnum, img in enumerate(imgdict.keys()):
                 print("\nCommence processing:")
-                #print("    img: ", img)
                 print("    img.name: ", img.name)
-                #print("    img.filepath: ", img.filepath)
                 proc_img = bpy.data.images[img.name]
                 srcfile = proc_img.filepath
-                #print("    srcfile: ", srcfile)
                 srcfilepath = os.path.dirname(srcfile)
-                #print("    srcpath: ", srcfilepath)
                 srcfilename = os.path.basename(srcfile)
-                #print("    srcfilename: ", srcfilename)
                 srcfilebase = srcfilename.split(".")[0]
-                #print("    srcfilebase: ", srcfilebase)
                 srcformat = srcfilename.split(".")[-1]
-                #print("    srcformat: ", srcformat)
                 img_socket = imgdict[img][2]
                 
-                if bpy.context.scene.publishmaps_cleanup == True:
+                if bpy.context.scene.publishmaps_convert == True:
                     #thismaptype = trace_to_shader(img,bpy.data.objects[thisobject])
                     customname = (srcfilebase + "." + clean_export_fileext)
                     tgtfilename = customname.replace(' ', '_')
@@ -267,14 +266,23 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 dupfix = 0
                 tgtpath = os.path.join(thepath, tgtfilename)
                 tgtbase = os.path.basename(tgtpath)[:-4]
+                need_new = True
                 #   publish already exists
                 while os.path.exists(tgtpath):
-                    dupfix_string = ("_" + str(dupfix).zfill(3))
-                    if tgtbase[-4] == "_":
-                        tgtbase = tgtbase[:-4]
-                    tgtpath = os.path.join(os.path.dirname(tgtpath),(tgtbase + "_" + str(dupfix).zfill(3) + '.' + clean_export_fileext))
-                    dupfix += 1
-                tgtpaths.append(tgtpath)
+                    # hash check tgtpath (check file)
+                    if compare2files(srcfile, tgtpath):
+                        print("    MATCHED with: ", tgtpath)
+                        need_new = False
+                        img.filepath = tgtpath
+                        break
+                    else:
+                        if tgtbase[-4] == "_":
+                            tgtbase = tgtbase[:-4]
+                        tgtpath = os.path.join(os.path.dirname(tgtpath),(tgtbase + "_" + str(dupfix).zfill(3) + '.' + clean_export_fileext))
+                        need_new = True
+                        dupfix += 1
+                if need_new:
+                    tgtpaths.append(tgtpath)
                 #print('\nsrcfile = ', srcfile,'\nsrcpath = ', srcfilepath,'\nsrcfilename = ', srcfilename,'\nsrcformat = ', srcformat)
                 #print('\ntgtfile = ', tgtfilename, '\ntgtpath = ', tgtpath,'\ntgtfilename = ', tgtfilename,'\ntgtformat = ', clean_export_fileext)
                 
@@ -283,36 +291,39 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 tgtfilename = os.path.basename(tgtpath)
                 print('    src: ', srcfile)
                 print('    tgt: ', tgtfile)
+                print('    new: ', need_new)
                 
                 #   SEQUENCE
-                if srctype == 'SEQUENCE':
-                    #   publish sequence
-                    theframecount = 0
-                    srcbasename = removedigits(srcfile)
-                    #print('\n    srcbasename = ', srcbasename)
-                    for fl in os.listdir(srcfilepath):
-                        flfullpath = os.path.join(srcfilepath, fl)
-                        #print('\n    flfullpath = ', flfullpath)
-                        if (os.path.isfile(flfullpath)) and not('humbs.db' in fl):
-                            if removedigits(fl) == srcbasename:
-                                print('    will need to publish', flfullpath)
-                                if bpy.context.scene.publishmaps_cleanup == True:
-                                    cleanfullpath = convert_to_exr(Path(srcfile))
-                                    shutil.copy2(cleanfullpath, thepath)
-                                else:
-                                    shutil.copy2(flfullpath, thepath)
-                                theframecount += 1
-                    img.filepath = tgtfile
-                #   SINGLE
-                else:
-                    #   publish single
-                    if bpy.context.scene.publishmaps_cleanup == True:
-                        newfile = convert_to_exr(srcfile)
+                if (need_new == True):
+                    if srctype == 'SEQUENCE':
+                        #   publish sequence
+                        theframecount = 0
+                        srcbasename = removedigits(srcfile)
+                        #print('\n    srcbasename = ', srcbasename)
+                        for fl in os.listdir(srcfilepath):
+                            flfullpath = os.path.join(srcfilepath, fl)
+                            #print('\n    flfullpath = ', flfullpath)
+                            if (os.path.isfile(flfullpath)) and not('humbs.db' in fl):
+                                if removedigits(fl) == srcbasename:
+                                    print('    will need to publish', flfullpath)
+                                    if bpy.context.scene.publishmaps_convert == True:
+                                        cleanfullpath = convert_to_exr(Path(srcfile))
+                                        shutil.copy2(cleanfullpath, thepath)
+                                    else:
+                                        shutil.copy2(flfullpath, thepath)
+                                    theframecount += 1
+                        img.filepath = tgtfile
+                    #   SINGLE
                     else:
-                        newfile = srcfile
-                    shutil.copy2(newfile, tgtfile)
-                    img.filepath = tgtfile
-                theimgs.append(img)
+                        #   publish single
+                        if (need_new == True):
+                            if bpy.context.scene.publishmaps_convert == True:
+                                newfile = convert_to_exr(Path(srcfile))
+                            else:
+                                newfile = srcfile
+                            shutil.copy2(newfile, tgtfile)
+                            img.filepath = tgtfile
+                    theimgs.append(img)
                     
                 
             #   ensure file paths are absolute
@@ -323,8 +334,8 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 img = theimgs[imgnum]
                 if not(img.name in imgignorelist):
                     thisrealpath = os.path.realpath(bpy.path.abspath(img.filepath))
-                    if not(os.path.exists(os.path.realpath(bpy.path.abspath(img.filepath)))):
-                        print('\n    FAILED to find: ' + os.path.realpath(bpy.path.abspath(img.filepath)))
+                    if not(os.path.exists(thisrealpath)):
+                        print('\n    FAILED to find: ' + thisrealpath)
                     else:
                         print('\n    FOUND: ' + thisrealpath)
                         totalconfirmedpaths += 1
@@ -347,7 +358,8 @@ class VIEW3D_PT_publishmaps(bpy.types.Panel):
         scene = context.scene
         layout.prop(scene, "publishmaps_selected")
         layout.prop(scene, "publishmaps_to", text="")
-        layout.prop(scene, "publishmaps_cleanup")
+        layout.prop(scene, "publishmaps_convert")
+        layout.prop(scene, "publishmaps_rename")
         layout.operator("publishmaps.publish", text=(BUTTON_OT_publishmapspublish.bl_label))
         
 
@@ -365,11 +377,6 @@ def register():
         description = "Uses object selection to determine maps to publish.",
         default = True)
     
-    bpy.types.Scene.relative_paths = bpy.props.BoolProperty(
-        name = "Relative Paths",
-        description = "Use file relative paths for images.",
-        default = False)
-    
     bpy.types.Scene.publishmaps_to = bpy.props.StringProperty(
         name="Publish To:",
         description="Output Directory",
@@ -378,18 +385,16 @@ def register():
         update = make_path_absolute,
         subtype='DIR_PATH')
     
-    bpy.types.Scene.publishmaps_cleanup = bpy.props.BoolProperty(
-        name = "Clean Up (exr)",
-        description = "Replace spaces with underscores and convert to EXR",
+    bpy.types.Scene.publishmaps_convert = bpy.props.BoolProperty(
+        name = "Auro Convert (to EXR)",
+        description = "Automatically convert to 16-bit, zip compressed EXR",
         default = True)
     
-    bpy.types.Scene.publishmaps_restore = bpy.props.StringProperty(
-        name="Restore From:",
-        description="Log File",
-        default="",
-        maxlen=1024,
-        update = make_path_absolute,
-        subtype='FILE_PATH')
+    bpy.types.Scene.publishmaps_rename = bpy.props.BoolProperty(
+        name = "Auto Rename",
+        description = "Automatically rename maps to follow abstraction <asset name>_<material>_<map type>_<version#>.<ext>",
+        default = True)
+    
 
 def unregister():
     from bpy.utils import unregister_class
@@ -398,8 +403,8 @@ def unregister():
     
     del bpy.types.Scene.publishmaps_selected
     del bpy.types.Scene.publishmaps_to
-    del bpy.types.Scene.publishmaps_cleanup
-    del bpy.types.Scene.publishmaps_restore
+    del bpy.types.Scene.publishmaps_convert
+    del bpy.types.Scene.publishmaps_rename
     
     
 if __name__ == "__main__":
