@@ -9,7 +9,7 @@
 bl_info = {
     "name": "Publish Maps",
     "author": "conrad dueck",
-    "version": (0,5,3),
+    "version": (0,5,4),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Collect image maps to publish directory and back up any maps that already exist there.",
@@ -25,7 +25,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.3a'
+vsn='5.4'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 grpignorelist = ['ZenUV_Override']
 clean_export_fileformat = 'OPEN_EXR'
@@ -66,38 +66,6 @@ def compare2files(f1, f2):
         replace_it = False
     print('    compare2files: sha256 hash comparison match = ', replace_it)
     return replace_it
-
-def get_node_target(the_node):
-    #print("ENTER get_node_target FUNCTION with: ", the_node)
-    for the_out in the_node.outputs:
-        if the_out.is_linked:
-            the_id = ''
-            for link in the_out.links:
-                if link.to_node.type == "BSDF_PRINCIPLED":
-                    the_id = link.to_socket.name
-                    print("the_id: ", the_id)
-                    break
-                else:
-                    get_node_target(link.to_node)
-            if len(the_id) > 1:
-                break
-    print("EXIT get_node_target FUNCTION returning (the_id): ", the_id)
-    return the_id
-
-def trace_to_shader(image, object):
-    #print("ENTER trace_to_shader FUNCTION with: ", image, object)
-    my_shader_input = ''
-    for mt in object.material_slots:
-        mtl = mt.material
-        for node in mtl.node_tree.nodes:
-            if node and node.type == 'TEX_IMAGE' and node.image == image:
-                for the_out in node.outputs:
-                    if the_out.is_linked:
-                        my_shader_input = get_node_target(node)
-                        print("my_shader_input: ", my_shader_input)
-                        break
-    print("EXIT trace_to_shader returns (my_shader_input): ", my_shader_input)
-    return my_shader_input
 
 def convert_to_exr(image):
     import os
@@ -156,33 +124,62 @@ def unpack_image(packed_img):
 
     return 0
 
-def get_imgs_from_mtl(my_mtl, my_obj, my_imglist, my_sockets):
-    #print("\nENTER get_imgs_from_mtl FUNCTION with: ", my_mtl.name, my_obj.name)
-    local_sockets = my_sockets
-    for node in my_mtl.node_tree.nodes:
-        if node.type == 'TEX_IMAGE':
-            img = node.image
-            if img.packed_file:
-                #print("   FOUND PACKED: ", node.name, my_mtl.name)
-                unpack_image(img)
-            this_img_shader = trace_to_shader(img, my_obj)
-            this_img_shader = this_img_shader.replace(' ','_')
-            if not(img in my_imglist):
-                my_imglist.append(img)
-                local_sockets.append(this_img_shader)
-            my_sockets = local_sockets
-        elif node.type == 'GROUP' and not (node.name in grpignorelist):
-            print("GROUP NODE: ", node.name)
-            get_imgs_from_mtl(my_mtl,my_obj,my_imglist,local_sockets)
-    #print("EXIT get_imgs_from_mtl FUNCTION with (my_imglist, my_sockets)")
-    return (my_imglist, my_sockets)
-
 def cleanup_string(my_string):
     my_string = my_string.replace(" ", "")
     my_string = my_string.replace(".", "")
     my_string = my_string.replace("_", "")
     
     return my_string
+
+def get_imgs_from_mtl(my_mtl, my_imglist):
+    for node in my_mtl.node_tree.nodes:
+        if node.type == 'TEX_IMAGE':
+            img = node.image
+            if img.packed_file:
+                unpack_image(img)
+            if not(img in my_imglist):
+                my_imglist.append(img)
+        elif node.type == 'GROUP' and not (node.name in grpignorelist):
+            get_imgs_from_mtl(my_mtl,my_imglist)
+    #print("fn get_imgs_from_mtl (my_imglist): ", my_imglist)
+    return (my_imglist)
+
+def get_node_target(the_node):
+    the_id = None
+    theouts = [a for a in the_node.outputs if a.is_linked == True]
+    target_found = False
+    for thisout in theouts:
+        if target_found:
+            break  # Break out of the outer loop if target is found
+        for link in thisout.links:
+            if link.to_node.type == 'BSDF_PRINCIPLED':
+                the_id = link.to_socket.name
+                target_found = True  # Set the flag to True
+                break  # Break out of the inner loop
+            else:
+                the_id = get_node_target(link.to_node)  # Recursively call the function
+                if the_id:  # If the_id is not None, target is found
+                    target_found = True
+                    break  # Break out of the inner loop
+    #print("fn get_node_target (the_id): ", the_id)
+    return the_id
+
+def trace_to_shader(image, mtl):
+    target_found = False
+    for node in bpy.data.materials[mtl].node_tree.nodes:
+        if node.type == 'TEX_IMAGE' and node.image == image:
+            #print("found the image node ", node.name, " in material ", mtl)
+            for the_out in node.outputs:
+                if target_found:
+                    break  # Break out of the outer loop if target is found
+                if the_out.is_linked:
+                    this_shader_input = get_node_target(node)
+                    #print("my_shader_input: ", this_shader_input)
+                    target_found = True
+                    break
+            break
+    #print("fn trace_to_shader (this_shader_input): ", this_shader_input)
+    return this_shader_input
 
 #   my_imgs : PUBLISH images in image dictionary, returning the list of published images
 def publish_images_from_dict(my_dict,target_path):
@@ -193,14 +190,14 @@ def publish_images_from_dict(my_dict,target_path):
         theasset = thefilebase[:-5]
     else:
         theasset = "unknown"
-    print('theasset = ', theasset)
+    print('   theasset = ', theasset)
     #   PUBLISH images in image dictionary
-    print("\n   The collected my_dict has the following ", len(my_dict.keys()), " image(s) to process")
+    print("\n   collected my_dict has the following ", len(my_dict.keys()), " image(s) to process")
     for bb in my_dict.keys():
-        print("      ", bb.name) 
+        print("      ", bb) 
     for imgnum, img in enumerate(my_dict.keys()):
-        print("   Commence processing: ", img.name)
-        proc_img = bpy.data.images[img.name]
+        print("   Commence processing: ", img)
+        proc_img = bpy.data.images[img]
         srcfile = proc_img.filepath
         srcfilepath = os.path.dirname(srcfile)
         srcfilename = os.path.basename(srcfile)
@@ -240,7 +237,7 @@ def publish_images_from_dict(my_dict,target_path):
             if compare2files(srcfile, tgtpath):
                 print("      MATCHED with: ", tgtpath)
                 need_new = False
-                img.filepath = tgtpath
+                proc_img.filepath = tgtpath
                 break
             else:
                 if tgtbase[-4] == "_":
@@ -248,7 +245,7 @@ def publish_images_from_dict(my_dict,target_path):
                 tgtpath = os.path.join(os.path.dirname(tgtpath), (tgtbase + "_" + str(dupfix).zfill(3) + '.' + clean_export_fileext))
                 need_new = True
                 dupfix += 1
-        srctype = img.source
+        srctype = proc_img.source
         tgtfile = tgtpath
         print('      src: ', srcfile)
         print('      tgt: ', tgtfile)
@@ -271,7 +268,7 @@ def publish_images_from_dict(my_dict,target_path):
                             else:
                                 shutil.copy2(flfullpath, target_path)
                             theframecount += 1
-                img.filepath = tgtfile
+                proc_img.filepath = tgtfile
             else:
                 #   publish SINGLE
                 if (need_new == True):
@@ -280,25 +277,9 @@ def publish_images_from_dict(my_dict,target_path):
                     else:
                         newfile = srcfile
                     shutil.copy2(newfile, tgtfile)
-                    img.filepath = tgtfile
-            my_imgs.append(img)
+                    proc_img.filepath = tgtfile
+            my_imgs.append(proc_img)
     return my_imgs
-
-def get_mtls_from_objects(objs):
-    obj_mtls = {}
-    oblist = objs
-    for ob in oblist:
-        for mtl in ob.material_slots:
-            if mtl.material.use_nodes:
-                if not(mtl.material.name in obj_mtls.keys()):
-                    #   gather the images used in this material and the sockets they drive
-                    this_mtl_imgs = get_imgs_from_mtl(mtl.material, ob, [], [])
-                    obj_mtls[mtl.material.name] = [ob.name, this_mtl_imgs[0], this_mtl_imgs[1]]
-                    print(("mtl_objs["+mtl.material.name+"]: "), obj_mtls[mtl.material.name])
-            else:
-                print(mtl.material.name, " is INVALID - must use nodes")
-    
-    return obj_mtls
 
 ####    CLASSES    ####
 #   OPERATOR publishmapspublish PUBLISH MAPS
@@ -312,11 +293,11 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         print('\n\nSTART PUBLISH')
         #   initialize operational variables and empty lists
         oblist = []         # list of objects to process
-        mtl_objs = {}       # dict of materials - [material name]:[object_user, images_list, sockets_list]
-        #tgtpaths = []       # list of the new paths to which the images will be published
+        mtl_imgs = {}       # dict of materials - [material name]:[object_user, images_list, socket_list]
+        mtls = []           # list of unique materials to process
+        theimgs = []        # list of unique materials to process
         imgdict = {}        # master dict where { image_name : object_user, material_user, socket_user}
         totalconfirmedpaths = 0
-        theimgs = []
         
         #   ensure file paths are absolute
         #   switch to absolute paths
@@ -340,24 +321,39 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             else:
                 oblist = bpy.data.objects
             
-            #   mtl_objs : get the unique materials and their images for each object
+        #   mtls: get the unique materials
             for ob in oblist:
                 for mtl in ob.material_slots:
                     if mtl.material.use_nodes:
-                        if not(mtl.material.name in mtl_objs.keys()):
-                            #   gather the images used in this material and the sockets they drive
-                            this_mtl_imgs = get_imgs_from_mtl(mtl.material, ob, [], [])
-                            mtl_objs[mtl.material.name] = [ob.name, this_mtl_imgs[0], this_mtl_imgs[1]]
-                            print(("mtl_objs["+mtl.material.name+"] : "), mtl_objs[mtl.material.name])
-                    else:
-                        print(mtl.material.name, " is INVALID - must use nodes")
+                        if not(mtl.material.name in mtls):
+                            #   build list of unique materials
+                            mtls.append(mtl.name)
             
-            #   imgdict : get the unique images from the collected materials dictionary
-            for mtl in mtl_objs.keys():
-                for imgnum, img in enumerate(mtl_objs[mtl][1]):
+        #   mtl_imgs : get the unique images for each material (first mtl array)
+            for mtl in mtls:
+                this_mtl_imgs = get_imgs_from_mtl(bpy.data.materials[mtl], [])
+                for img in this_mtl_imgs:
+                    if not(mtl in mtl_imgs.keys()):
+                        mtl_imgs[mtl] = [[img], []]
+                    else:
+                        mtl_imgs[mtl][0].append(img)
+                #print("mtl_imgs[mtl]: ", mtl_imgs[mtl])
+            
+        #   mtl_imgs : get the sockets used by each unique image (second socket array)
+            for mtl in mtl_imgs.keys():
+                for img in mtl_imgs[mtl][0]:
+                    tgt_socket = trace_to_shader(img, mtl)
+                    mtl_imgs[mtl][1].append(tgt_socket)
+                #print("mtl_imgs[mtl]: ", mtl_imgs[mtl])
+
+        #   imgdict : get the unique images from the collected materials dictionary
+            for mtl in mtl_imgs.keys():
+                #print("IN mtl mtl_imgs[", mtl, "] : ", mtl_imgs[mtl])
+                for imgnum, img in enumerate(mtl_imgs[mtl][0]):
                     if not(img in imgdict.keys()):
-                        imgdict[img] = [mtl_objs[mtl][0], mtl, mtl_objs[mtl][2][imgnum]]
-                        print("imgdict[img]: ", imgdict[img])
+                        imgdict[img.name] = [mtl_imgs[mtl][0][imgnum], mtl, mtl_imgs[mtl][1][imgnum]]
+                        #print("imgdict[",img.name, "]: ", imgdict[img.name])
+                
             
             #   theimgs : PUBLISHED images from the unique images collected in imgdict
             print("\nThe collected imgdict has ", len(imgdict.keys()), " image(s) to process")

@@ -25,7 +25,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.3a'
+vsn='5.3ab'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 grpignorelist = ['ZenUV_Override']
 clean_export_fileformat = 'OPEN_EXR'
@@ -67,36 +67,63 @@ def compare2files(f1, f2):
     print('    compare2files: sha256 hash comparison match = ', replace_it)
     return replace_it
 
-def get_node_target(the_node):
-    #print("ENTER get_node_target FUNCTION with: ", the_node)
-    for the_out in the_node.outputs:
-        if the_out.is_linked:
-            the_id = ''
-            for link in the_out.links:
-                if link.to_node.type == "BSDF_PRINCIPLED":
-                    the_id = link.to_socket.name
-                    print("the_id: ", the_id)
-                    break
-                else:
-                    get_node_target(link.to_node)
-            if len(the_id) > 1:
-                break
-    print("EXIT get_node_target FUNCTION returning (the_id): ", the_id)
-    return the_id
+# 1
+def get_imgs_from_mtl(my_mtl, my_imglist, my_sockets):
+    #print("\nENTER get_imgs_from_mtl FUNCTION with: ", my_mtl.name, my_obj.name)
+    local_sockets = my_sockets
+    for node in my_mtl.node_tree.nodes:
+        if node.type == 'TEX_IMAGE':
+            img = node.image
+            if img.packed_file:
+                #print("   FOUND PACKED: ", node.name, my_mtl.name)
+                unpack_image(img)
+            #this_img_shader = trace_to_shader(img, my_mtl)
+            this_img_shader = get_node_target(node, [])
+            if this_img_shader is not None:
+                print("this_img_shader:", this_img_shader)
+                this_img_shader = this_img_shader.replace(' ','_')
+                if not(img in my_imglist):
+                    my_imglist.append(img)
+                    local_sockets.append(this_img_shader)
+                my_sockets = local_sockets
+        elif node.type == 'GROUP' and not (node.name in grpignorelist):
+            print("GROUP NODE: ", node.name)
+            get_imgs_from_mtl(my_mtl,my_imglist,local_sockets)
+    print("EXIT get_imgs_from_mtl FUNCTION with (my_imglist, my_sockets)")
+    return (my_imglist, my_sockets)
 
-def trace_to_shader(image, object):
-    #print("ENTER trace_to_shader FUNCTION with: ", image, object)
+# 2 - building imgdict data
+def get_node_target(the_node, end_goals):
+    print("\nENTER get_node_target FUNCTION with: ", the_node)
+    theouts = [a for a in the_node.outputs if a.is_linked == True]
+    print("theouts: ", theouts)
+    for thisout in theouts:
+        for link in thisout.links:
+            print(link.from_node.name, link.to_node.name)
+            #the_id = thisout.links[-1].to_socket.name
+            if link.to_node.type == 'BSDF_PRINCIPLED':
+                the_id = link.to_socket.name
+                end_goals.append(the_id)
+                my_goals = end_goals
+                print("the_id: ", the_id)
+                return the_id, my_goals
+            else:
+                my_goals = end_goals
+                get_node_target(link.to_node, my_goals)
+
+def trace_to_shader(image, mtl):
+    #print("ENTER trace_to_shader FUNCTION with: ", image, mtl.name)
     my_shader_input = ''
-    for mt in object.material_slots:
-        mtl = mt.material
-        for node in mtl.node_tree.nodes:
-            if node and node.type == 'TEX_IMAGE' and node.image == image:
-                for the_out in node.outputs:
-                    if the_out.is_linked:
-                        my_shader_input = get_node_target(node)
-                        print("my_shader_input: ", my_shader_input)
-                        break
-    print("EXIT trace_to_shader returns (my_shader_input): ", my_shader_input)
+    goals = []
+    for node in mtl.node_tree.nodes:
+        if node.type == 'TEX_IMAGE' and node.image == image:
+            for the_out in node.outputs:
+                if the_out.is_linked:
+                    this_shader_input = get_node_target(node, goals)
+                    my_shader_input = this_shader_input
+                    print("my_shader_input: ", my_shader_input)
+                    break
+    #print("EXIT trace_to_shader returns (my_shader_input): ", my_shader_input)
     return my_shader_input
 
 def convert_to_exr(image):
@@ -155,27 +182,6 @@ def unpack_image(packed_img):
     bpy.context.scene.render.image_settings.file_format = curformat
 
     return 0
-
-def get_imgs_from_mtl(my_mtl, my_obj, my_imglist, my_sockets):
-    #print("\nENTER get_imgs_from_mtl FUNCTION with: ", my_mtl.name, my_obj.name)
-    local_sockets = my_sockets
-    for node in my_mtl.node_tree.nodes:
-        if node.type == 'TEX_IMAGE':
-            img = node.image
-            if img.packed_file:
-                #print("   FOUND PACKED: ", node.name, my_mtl.name)
-                unpack_image(img)
-            this_img_shader = trace_to_shader(img, my_obj)
-            this_img_shader = this_img_shader.replace(' ','_')
-            if not(img in my_imglist):
-                my_imglist.append(img)
-                local_sockets.append(this_img_shader)
-            my_sockets = local_sockets
-        elif node.type == 'GROUP' and not (node.name in grpignorelist):
-            print("GROUP NODE: ", node.name)
-            get_imgs_from_mtl(my_mtl,my_obj,my_imglist,local_sockets)
-    #print("EXIT get_imgs_from_mtl FUNCTION with (my_imglist, my_sockets)")
-    return (my_imglist, my_sockets)
 
 def cleanup_string(my_string):
     my_string = my_string.replace(" ", "")
@@ -346,11 +352,9 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                     if mtl.material.use_nodes:
                         if not(mtl.material.name in mtl_objs.keys()):
                             #   gather the images used in this material and the sockets they drive
-                            this_mtl_imgs = get_imgs_from_mtl(mtl.material, ob, [], [])
+                            this_mtl_imgs = get_imgs_from_mtl(mtl.material, [], [])
                             mtl_objs[mtl.material.name] = [ob.name, this_mtl_imgs[0], this_mtl_imgs[1]]
                             print(("mtl_objs["+mtl.material.name+"] : "), mtl_objs[mtl.material.name])
-                    else:
-                        print(mtl.material.name, " is INVALID - must use nodes")
             
             #   imgdict : get the unique images from the collected materials dictionary
             for mtl in mtl_objs.keys():

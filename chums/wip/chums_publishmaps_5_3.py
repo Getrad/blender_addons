@@ -25,7 +25,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.3a'
+vsn='5.3'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 grpignorelist = ['ZenUV_Override']
 clean_export_fileformat = 'OPEN_EXR'
@@ -69,9 +69,9 @@ def compare2files(f1, f2):
 
 def get_node_target(the_node):
     #print("ENTER get_node_target FUNCTION with: ", the_node)
+    the_id = ""
     for the_out in the_node.outputs:
         if the_out.is_linked:
-            the_id = ''
             for link in the_out.links:
                 if link.to_node.type == "BSDF_PRINCIPLED":
                     the_id = link.to_socket.name
@@ -79,21 +79,19 @@ def get_node_target(the_node):
                     break
                 else:
                     get_node_target(link.to_node)
-            if len(the_id) > 1:
-                break
     print("EXIT get_node_target FUNCTION returning (the_id): ", the_id)
     return the_id
 
-def trace_to_shader(image, object):
-    #print("ENTER trace_to_shader FUNCTION with: ", image, object)
+def trace_to_shader(image, mtl):
+    print("ENTER trace_to_shader FUNCTION with: ", image, mtl.name)
     my_shader_input = ''
-    for mt in object.material_slots:
-        mtl = mt.material
-        for node in mtl.node_tree.nodes:
-            if node and node.type == 'TEX_IMAGE' and node.image == image:
-                for the_out in node.outputs:
-                    if the_out.is_linked:
-                        my_shader_input = get_node_target(node)
+    for node in mtl.node_tree.nodes:
+        if node and node.type == 'TEX_IMAGE' and node.image == image:
+            for the_out in node.outputs:
+                if the_out.is_linked:
+                    this_shader_input = get_node_target(node)
+                    if len(this_shader_input) > 1:
+                        my_shader_input = this_shader_input
                         print("my_shader_input: ", my_shader_input)
                         break
     print("EXIT trace_to_shader returns (my_shader_input): ", my_shader_input)
@@ -165,7 +163,8 @@ def get_imgs_from_mtl(my_mtl, my_obj, my_imglist, my_sockets):
             if img.packed_file:
                 #print("   FOUND PACKED: ", node.name, my_mtl.name)
                 unpack_image(img)
-            this_img_shader = trace_to_shader(img, my_obj)
+            #this_img_shader = trace_to_shader(img, my_obj)
+            this_img_shader = trace_to_shader(img, my_mtl)
             this_img_shader = this_img_shader.replace(' ','_')
             if not(img in my_imglist):
                 my_imglist.append(img)
