@@ -133,7 +133,7 @@ def cleanup_string(my_string):
 
 def get_imgs_from_mtl(my_mtl, my_imglist):
     for node in my_mtl.node_tree.nodes:
-        if node.type == 'TEX_IMAGE':
+        if node.type == 'TEX_IMAGE' and node.image.source in ['SEQUENCE', 'FILE']:
             img = node.image
             if img.packed_file:
                 unpack_image(img)
@@ -165,20 +165,24 @@ def get_node_target(the_node):
     return the_id
 
 def trace_to_shader(image, mtl):
+    print("fn trace_to_shader - get (this_shader_input) from (image, mtl): ", image, mtl)
     target_found = False
+    this_shader_input = None
     for node in bpy.data.materials[mtl].node_tree.nodes:
         if node.type == 'TEX_IMAGE' and node.image == image:
-            #print("found the image node ", node.name, " in material ", mtl)
             for the_out in node.outputs:
                 if target_found:
                     break  # Break out of the outer loop if target is found
                 if the_out.is_linked:
                     this_shader_input = get_node_target(node)
+                    print("this output: ", the_out, "is linked to", this_shader_input)
                     #print("my_shader_input: ", this_shader_input)
                     target_found = True
                     break
             break
-    #print("fn trace_to_shader (this_shader_input): ", this_shader_input)
+    if this_shader_input == None:
+        this_shader_input = "NotConnected"
+    print("fn trace_to_shader (this_shader_input) returns: ", this_shader_input)
     return this_shader_input
 
 #   my_imgs : PUBLISH images in image dictionary, returning the list of published images
@@ -206,6 +210,7 @@ def publish_images_from_dict(my_dict,target_path):
         srcfile = proc_img.filepath
         srcfilepath = os.path.dirname(srcfile)
         srcfilename = os.path.basename(srcfile)
+        print("               srcfile: ", srcfile)
         srcfilebase = srcfilename.split(".")[0]
         srcfiletype = srcfilename.split(".")[1]
         if (len(srcfilebase.split("_")[-1]) == 4) and srcfilebase.split("_")[-1][0] == "v":
@@ -275,14 +280,16 @@ def publish_images_from_dict(my_dict,target_path):
                             theframecount += 1
                 proc_img.filepath = tgtfile
             else:
-                #   publish SINGLE
-                if (need_new == True):
-                    if bpy.context.scene.publishmaps_convert == True:
-                        newfile = convert_to_exr(Path(srcfile))
-                    else:
-                        newfile = srcfile
-                    shutil.copy2(newfile, tgtfile)
-                    proc_img.filepath = tgtfile
+                if srctype == 'FILE':
+                    if (need_new == True):
+                        if bpy.context.scene.publishmaps_convert == True:
+                            newfile = convert_to_exr(Path(srcfile))
+                        else:
+                            newfile = srcfile
+                        shutil.copy2(newfile, tgtfile)
+                        proc_img.filepath = tgtfile
+                else:
+                    print("NOT SUPPORTEED IMAGE TYPE: ", srctype, " - SKIPPED")
             my_imgs.append(proc_img)
     return my_imgs
 
