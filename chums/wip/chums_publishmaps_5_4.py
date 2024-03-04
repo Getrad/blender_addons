@@ -187,7 +187,12 @@ def publish_images_from_dict(my_dict,target_path):
     thefilebase = os.path.basename(bpy.data.filepath)[:-6]
     #   theasset
     if len(thefilebase) >= 4 and len(thefilebase.split("_")) > 2:
-        theasset = thefilebase[:-5]
+        theasset = thefilebase.split("_")[0]
+        for tk in thefilebase.split("_")[1:]:
+            if tk[0] == "v" and tk[1] in number_digits:
+                break
+            else:
+                theasset += ("_" + tk)
     else:
         theasset = "unknown"
     print('   theasset = ', theasset)
@@ -301,7 +306,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         
         #   ensure file paths are absolute
         #   switch to absolute paths
-        print('Set all files to absolute...')
+        #print('Set all files to absolute...')
         bpy.ops.file.make_paths_absolute()
 
         #   thepath
@@ -309,9 +314,9 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         if (len(bpy.context.scene.publishmaps_to) >= 1) and \
             (os.path.exists(bpy.context.scene.publishmaps_to)):
             thepath = os.path.abspath(bpy.path.abspath(bpy.context.scene.publishmaps_to))
-            print('\nPublish folder found: ', thepath)
+            #print('\nPublish folder found: ', thepath)
         else:
-            print('\nPublish folder NOT found: ', thepath)
+            #print('\nPublish folder NOT found: ', thepath)
             thepath = ''
         
         if len(thepath) >= 1:
@@ -360,15 +365,15 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
             theimgs = publish_images_from_dict(imgdict,thepath)
                 
             #   confirm all image file paths in file
-            print("Checking for published images")
+            print("\nChecking for published images")
             for imgnum, img in enumerate(theimgs):
                 img = theimgs[imgnum]
                 if not(img.name in imgignorelist):
                     thisrealpath = os.path.realpath(bpy.path.abspath(img.filepath))
                     if not(os.path.exists(thisrealpath)):
-                        print('\n    FAILED to find: ' + thisrealpath)
+                        print('    FAILED to find: ' + thisrealpath)
                     else:
-                        print('\n    FOUND: ' + thisrealpath)
+                        print('    FOUND: ' + thisrealpath)
                         totalconfirmedpaths += 1
             
             print('Done.')
