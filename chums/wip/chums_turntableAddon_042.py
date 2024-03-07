@@ -36,7 +36,7 @@
 bl_info = {
     "name": "Turntable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 4, 1),
+    "version": (0, 4, 2),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -61,7 +61,7 @@ import subprocess
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.4.1'
+vsn = '0.4.2'
 
 # BASEFILE SPECIFIC 
 thecam_name = "cam.ttCamera"
@@ -76,27 +76,6 @@ thekeyframes_cam = [121,122,123]
 # GET BLENDER VERSION
 blender_version = bpy.app.version
 
-# SET DEPENDENT ROOT PATHS
-match blender_version[0]:
-    case 3:
-        chm_assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
-        turntable_filepath = Path(str(chm_assetroot + "helpers\\turntable\\projects\\blender\\turntable_331.blend"))
-        chm_renderroot = "Y:\\projects\\CHUMS_Onsite\\renders\\_prod\\assets\\"
-        chm_assetssubtree = "projects\\blender"
-        chm_assetturntables = "\\projects\\blender\\turntables"
-    case 4:
-        chm_assetroot = "X:\\projects\\chums_season2\\onsite\\_prod\\assets"
-        turntable_filepath = Path(str(chm_assetroot + "\\helpers\\turntable\\publish\\blender\\turntable_410.blend"))
-        chm_renderroot = "X:\\projects\\chums_season2\\onsite\\renders\\_prod\\assets"
-        chm_assetssubtree = "blender"
-        chm_assetturntables = "turntables"
-    case _:
-        chm_assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
-        turntable_filepath = Path(str(chm_assetroot + "helpers\\turntable\\projects\\blender\\turntable_331.blend"))
-        chm_renderroot = "Y:\\projects\\CHUMS_Onsite\\renders\\_prod\\assets\\"
-        chm_assetssubtree = "projects\\blender"
-        chm_assetturntables = "\\projects\\blender\\turntables"
-
 # DEFINE ASSET TYPE PREFIXES
 chm_assetprefix = {'chr':'characters', 
                     'env':'environments', 
@@ -110,10 +89,30 @@ chm_omitlist = (['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirre
                 'prp_AAAtemplate', 'prp_bush_romperPopout_01', 'prp_tree_hollowknot',
                 'prx_AAAtemplate', 'prx_treeObstacle_Source'])
 
-# INIT COLLECT ASSET LIST IF ASSET ROOT EXISTS
-if os.path.exists(chm_assetroot):
-    chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
-                  os.path.isdir(os.path.join(chm_assetroot, f))])
+def update_base_settings():
+    override_version = bpy.context.preferences.addons[__name__].preferences.ttutils_override_version
+    match override_version:
+        case '3.x':
+            chm_assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
+            turntable_filepath = Path(str(chm_assetroot + "helpers\\turntable\\projects\\blender\\turntable_331.blend"))
+            chm_renderroot = "Y:\\projects\\CHUMS_Onsite\\renders\\_prod\\assets\\"
+            chm_assetssubtree = "projects\\blender"
+            chm_assetturntables = "\\projects\\blender\\turntables"
+        case '4.x':
+            chm_assetroot = "X:\\projects\\chums_season2\\onsite\\_prod\\assets"
+            turntable_filepath = Path(str(chm_assetroot + "\\helpers\\turntable\\publish\\blender\\turntable_410.blend"))
+            chm_renderroot = "X:\\projects\\chums_season2\\onsite\\renders\\_prod\\assets"
+            chm_assetssubtree = "blender"
+            chm_assetturntables = "turntables"
+        case _:
+            chm_assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
+            turntable_filepath = Path(str(chm_assetroot + "helpers\\turntable\\projects\\blender\\turntable_331.blend"))
+            chm_renderroot = "Y:\\projects\\CHUMS_Onsite\\renders\\_prod\\assets\\"
+            chm_assetssubtree = "projects\\blender"
+            chm_assetturntables = "\\projects\\blender\\turntables"
+            bpy.types.Scene.ttutils_stage.items=[('publish', "Publish", ""),
+                        ('workfiles', "Workfiles", "")]
+    print(chm_assetroot)
 
 def make_path_absolute(self, context):
     if self.publishmaps_to:
@@ -320,13 +319,10 @@ def get_assetroot():
     #print("\nENTER get_assetroot FUNCTION")
     assetroot = ''
     try:
-        assetroot = chm_assetroot
-    except:
         assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
-    
-    if not(os.path.exists(assetroot)):
-        assetroot = 'C:/temp/'
-    
+    except:
+        assetroot = chm_assetroot
+    print("fn get_assetroot returns ", assetroot)
     return assetroot
         
 def get_selection_bounds(thesel):
@@ -686,15 +682,15 @@ def queryAssetList():
         #print("\nENTER queryAssetList FUNCTION")
         chm_assetroot = get_assetroot()
         anames = []
-        chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
-                  os.path.isdir(os.path.join(chm_assetroot, f))])
-        for atype in chm_assettypes:
-            thistype = os.path.join(chm_assetroot, atype)
-            anames += ([(aname,aname,'') for aname in os.listdir(thistype) if 
+        if os.path.exists(chm_assetroot):
+            chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
+                    os.path.isdir(os.path.join(chm_assetroot, f))])
+            for atype in chm_assettypes:
+                thistype = os.path.join(chm_assetroot, atype)
+                anames += ([(aname,aname,'') for aname in os.listdir(thistype) if 
                     (aname[:3] in chm_assetprefix.keys() and 
                     not(aname in chm_omitlist))])
         return anames
-
 
 # PREFERENCES ttutilsPreferences
 class ttutilsPreferences(bpy.types.AddonPreferences):
@@ -717,9 +713,17 @@ class ttutilsPreferences(bpy.types.AddonPreferences):
         default=60,
     )
 
+    ttutils_override_version: bpy.props.EnumProperty(
+        name="Override Version",
+        description="Override version defaults",
+        items=[('3.x','3.x',''),('4.x','4.x','')],
+        default = '3.x',
+    )
+
     def draw(self, context):
         layout = self.layout
         layout.label(text="This is a preferences view for our add-on")
+        layout.prop(self, "ttutils_override_version")
         layout.prop(self, "assetroot")
         layout.prop(self, "defaultangle")
         layout.prop(self, "defaultpriority")
@@ -733,8 +737,7 @@ class OBJECT_OT_ttutils_preferences(bpy.types.Operator):
         preferences = context.preferences
         addon_prefs = preferences.addons["Turntable Tools"].preferences
 
-        info = ("Path: %s, Number: %d, Boolean %r" %
-                (addon_prefs.filepath, addon_prefs.number, addon_prefs.boolean))
+        info = ("")
 
         self.report({'INFO'}, info)
         #print(info)
@@ -764,6 +767,7 @@ class ttutilsProperties(bpy.types.PropertyGroup):
                ],
         default = "30_texture"
         )
+    '''
     if bpy.app.version == (3, 3, 1):
         bpy.types.Scene.ttutils_stage = bpy.props.EnumProperty(
             name="",
@@ -782,6 +786,7 @@ class ttutilsProperties(bpy.types.PropertyGroup):
                 ],
             default = "work"
             )
+    '''
     bpy.types.Scene.ttutils_custom = bpy.props.StringProperty(
         name="Custom:",
         description="",
@@ -821,6 +826,14 @@ class ttutilsProperties(bpy.types.PropertyGroup):
         items=queryAssetList(),
         default = None
         )
+    bpy.types.Scene.ttutils_override_asset = bpy.props.StringProperty(
+        name="Override Asset",
+        description="Asset Directory",
+        default="",
+        maxlen=1024,
+        update = make_path_absolute,
+        subtype='DIR_PATH')
+    
     
 # OPERATOR BUTTON_OT_openTT
 class BUTTON_OT_openTT(bpy.types.Operator):
@@ -858,10 +871,10 @@ class BUTTON_OT_ttutils_refresh(bpy.types.Operator):
             items=queryAssetList(),
             default = None
             )
-        if (len(bpy.context.scene.ttutils_override) > 1) and (os.path.exists(bpy.context.scene.ttutils_override)):
-            override_asset = get_asset_from_path(bpy.context.scene.ttutils_override)
-            bpy.context.scene.ttutils_alist.items.append([override_asset,override_asset,''])
-            bpy.context.scene.ttutils_alist = override_asset
+        #if (len(bpy.context.scene.ttutils_override_asset) > 1) and (os.path.exists(bpy.context.scene.ttutils_override_asset)):
+        #    override_asset = get_asset_from_path(bpy.context.scene.ttutils_override_asset)
+        #    #bpy.context.scene.ttutils_alist.items += ([override_asset,override_asset,''])
+        #    bpy.context.scene.ttutils_alist = override_asset
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_exploreAsset
@@ -872,6 +885,7 @@ class BUTTON_OT_exploreAsset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
+        update_base_settings(bpy.context.scene.ttutils_override_version)
         explore_asset(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task,bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
@@ -1007,21 +1021,6 @@ class BUTTON_OT_link_asset(bpy.types.Operator):
         link_asset(bpy.context.scene.ttutils_alist, bpy.context.scene.ttutils_task, bpy.context.scene.ttutils_stage)
         return{'FINISHED'}
 
-# OPERATOR BUTTON_OT_get_asset_list - currently not used
-class BUTTON_OT_get_asset_list(bpy.types.Operator):
-    '''Return the latest asset - see console'''
-    bl_idname = "ttutils.get_asset_list"
-    bl_label = "Get Asset List"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        #print("EXECUTE BUTTON_OT_get_asset_list OPERATOR CLASS")
-        the_asset_list = get_asset_list(bpy.context.scene.ttutils_stage)
-        #print("the_asset_list: ")
-        #for i in the_asset_list:
-            #print( i[0])
-        return{'FINISHED'}
-
 # OPERATOR BUTTON_OT_tilt_cam
 class BUTTON_OT_tilt_cam(bpy.types.Operator):
     '''Select the camera tilt control'''
@@ -1105,7 +1104,7 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         col.prop(bpy.context.scene, "ttutils_alist")
         col = split.column(align=True)
         col.operator("ttutils.refresh", text=(BUTTON_OT_ttutils_refresh.bl_label))
-        layout.prop(bpy.context.scene, "ttutils_override")
+        layout.prop(bpy.context.scene, "ttutils_override_asset")
         layout.operator("ttutils.exploreasset", text=(BUTTON_OT_exploreAsset.bl_label))
         layout.operator("ttutils.openasset", text=(BUTTON_OT_openAsset.bl_label))
         layout.operator("ttutils.get_asset", text=(BUTTON_OT_get_asset.bl_label))
@@ -1126,6 +1125,15 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         col.prop(bpy.context.scene, "ttutils_xcode")
         col = split.column(align=True)
         col.prop(bpy.context.scene, "ttutils_draft")
+        update_base_settings()
+
+# INIT COLLECT ASSET LIST IF ASSET ROOT EXISTS
+chm_assetroot = get_assetroot()
+if os.path.exists(chm_assetroot):
+    chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
+                  os.path.isdir(os.path.join(chm_assetroot, f))])
+
+
 
 #   REGISTER
 classes = [ ttutilsProperties, VIEW3D_PT_ttutils_panel, 
@@ -1143,20 +1151,13 @@ def register():
     for cls in classes:
         #print(cls)
         register_class(cls)
-    bpy.types.Scene.ttutils_override = bpy.props.StringProperty(
-        name="OVERRIDE",
-        description="Asset Directory",
-        default="",
-        maxlen=1024,
-        update = make_path_absolute,
-        subtype='DIR_PATH')
 
 #   UNREGISTER
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
-    del bpy.types.Scene.ttutils_override
+    
   
 
 if __name__ == "__main__":
