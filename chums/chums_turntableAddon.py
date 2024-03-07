@@ -29,8 +29,6 @@
 # 0.3.0 - FEATURE - add plain link feature button
 # 0.4.0 - UPDATE - to Blender version 4.x
 # 0.4.1 - UPDATE - removed tunes; set default paths when not 331 or 410 to use 331
-# 0.4.2 - FEATURE - string field asset override
-#       - MAYBE - add full asset override
 
 
 bl_info = {
@@ -114,17 +112,6 @@ chm_omitlist = (['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirre
 if os.path.exists(chm_assetroot):
     chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
                   os.path.isdir(os.path.join(chm_assetroot, f))])
-
-def make_path_absolute(self, context):
-    if self.publishmaps_to:
-        if self.publishmaps_to.startswith('//'):
-            self.publishmaps_to = (os.path.abspath(bpy.path.abspath(self.publishmaps_to)))
-    return None
-
-def get_asset_from_path(path):
-    asset_name = ""
-    asset_name = path.split("\\")[-1]
-    return asset_name
 
 def getPipelineTmpFolder():
     tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
@@ -858,10 +845,6 @@ class BUTTON_OT_ttutils_refresh(bpy.types.Operator):
             items=queryAssetList(),
             default = None
             )
-        if (len(bpy.context.scene.ttutils_override) > 1) and (os.path.exists(bpy.context.scene.ttutils_override)):
-            override_asset = get_asset_from_path(bpy.context.scene.ttutils_override)
-            bpy.context.scene.ttutils_alist.items.append([override_asset,override_asset,''])
-            bpy.context.scene.ttutils_alist = override_asset
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_exploreAsset
@@ -1105,7 +1088,6 @@ class VIEW3D_PT_ttutils_panel(bpy.types.Panel):
         col.prop(bpy.context.scene, "ttutils_alist")
         col = split.column(align=True)
         col.operator("ttutils.refresh", text=(BUTTON_OT_ttutils_refresh.bl_label))
-        layout.prop(bpy.context.scene, "ttutils_override")
         layout.operator("ttutils.exploreasset", text=(BUTTON_OT_exploreAsset.bl_label))
         layout.operator("ttutils.openasset", text=(BUTTON_OT_openAsset.bl_label))
         layout.operator("ttutils.get_asset", text=(BUTTON_OT_get_asset.bl_label))
@@ -1143,20 +1125,13 @@ def register():
     for cls in classes:
         #print(cls)
         register_class(cls)
-    bpy.types.Scene.ttutils_override = bpy.props.StringProperty(
-        name="OVERRIDE",
-        description="Asset Directory",
-        default="",
-        maxlen=1024,
-        update = make_path_absolute,
-        subtype='DIR_PATH')
+    
 
 #   UNREGISTER
 def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
-    del bpy.types.Scene.ttutils_override
   
 
 if __name__ == "__main__":
