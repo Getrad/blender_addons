@@ -177,10 +177,14 @@ def trace_to_shader(image, mtl):
 def get_asset_from_filename():
     my_version = ""
     thefilebase = os.path.basename(bpy.data.filepath)[:-6]
+    print("thefilebase: ", thefilebase)
     if len(thefilebase) >= 4 and len(thefilebase.split("_")) > 2:
         my_asset = thefilebase.split("_")[0]
         my_version = thefilebase.split("_")[-1]
+        print("my_asset: ", my_asset)
+        print("my_version: ", my_version)
         for tk in thefilebase.split("_")[1:]:
+            print("tk: ", tk)
             if tk[0] == "v" and (tk[1] in range(10)):
                 break
             else:
@@ -325,10 +329,6 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         #print('Set all files to absolute...')
         bpy.ops.file.make_paths_absolute()
 
-        #   get_asset_from_filename()
-        assetname = get_asset_from_filename()[0]
-        print("assetname: ", assetname)
-
         #   thepath
         #thepath = os.path.abspath(bpy.path.abspath(bpy.context.scene.publishmaps_to))
         if (len(bpy.context.scene.publishmaps_to) >= 1):
@@ -423,6 +423,11 @@ class VIEW3D_PT_publishmaps(bpy.types.Panel):
         layout.prop(scene, "publishmaps_skiphangers")
         layout.operator("publishmaps.publish", text=(BUTTON_OT_publishmapspublish.bl_label))
 
+#   get_asset_from_filename()
+assetname = get_asset_from_filename()[0]
+assetversion = get_asset_from_filename()[1]
+print("assetname: ", assetname)
+print("assetversion: ", assetversion)
 
 ####    REGISTRATION    ####
 
