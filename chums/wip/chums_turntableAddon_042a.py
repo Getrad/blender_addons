@@ -76,6 +76,30 @@ thekeyframes_cam = [121,122,123]
 # GET BLENDER VERSION
 blender_version = bpy.app.version
 chm_assetroot = ''
+'''
+match blender_version[0]: #(chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage)
+    case 3:
+        chm_assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
+        turntable_filepath = Path(str(chm_assetroot + "helpers\\turntable\\projects\\blender\\turntable_331.blend"))
+        chm_renderroot = "Y:\\projects\\CHUMS_Onsite\\renders\\_prod\\assets\\"
+        chm_assetssubtree = "projects\\blender"
+        chm_assetturntables = "\\projects\\blender\\turntables"
+        tt_tools_stage = 'workfiles'
+    case 4:
+        chm_assetroot = "X:\\projects\\chums_season2\\onsite\\_prod\\assets"
+        turntable_filepath = Path(str(chm_assetroot + "\\helpers\\turntable\\publish\\blender\\turntable_410.blend"))
+        chm_renderroot = "X:\\projects\\chums_season2\\onsite\\renders\\_prod\\assets"
+        chm_assetssubtree = "blender"
+        chm_assetturntables = "turntables"
+        tt_tools_stage = 'work'
+    case _:
+        chm_assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
+        turntable_filepath = Path(str(chm_assetroot + "helpers\\turntable\\projects\\blender\\turntable_331.blend"))
+        chm_renderroot = "Y:\\projects\\CHUMS_Onsite\\renders\\_prod\\assets\\"
+        chm_assetssubtree = "projects\\blender"
+        chm_assetturntables = "\\projects\\blender\\turntables"
+        tt_tools_stage = 'workfiles'
+'''
 
 # DEFINE ASSET TYPE PREFIXES
 chm_assetprefix = {'chr':'characters', 
@@ -91,13 +115,15 @@ chm_omitlist = (['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirre
                 'prx_AAAtemplate', 'prx_treeObstacle_Source'])
 
 def update_base_settings(): #(chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage)
-    if "Turntable Tools" in bpy.context.preferences.addons.keys():
+    if "chums_turntableAddon_042a" in bpy.context.preferences.addons.keys():
         override_version = bpy.context.preferences.addons[__name__].preferences.tt_tools_override_version
         if len(bpy.context.preferences.addons[__name__].preferences.assetroot) > 0:
             pref_assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
+        print("update FROM PREFERENCES and is using \noverride_version: ", override_version, "\npref_assetroot: ", pref_assetroot)
     else:
         override_version = (str(blender_version[0]) + ".x")
         pref_assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
+        print("update FROM DEFAULTS and is using \n:   override_version: ", override_version, "\n   pref_assetroot: ", pref_assetroot)
     match override_version:
         case '3.x':
             pref_assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
@@ -429,7 +455,6 @@ def find_latest_workfile(input_path):
 
 def get_assetroot():
     #print("\nENTER get_assetroot FUNCTION")
-    assetroot = ''
     try:
         assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
     except:
@@ -471,6 +496,7 @@ def explore_asset(asset_name, asset_dept, asset_stage):
                     'prx':'proxies',
                     'sky':'skies'}
     chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage = update_base_settings()
+    print(chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage)
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if bpy.app.version == (4, 1, 0):
         the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,asset_stage,chm_assetssubtree).replace("/","\\")
@@ -883,7 +909,13 @@ class BUTTON_OT_exploreAsset(bpy.types.Operator):
     
     def execute(self, context):
         chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage = update_base_settings()
-        print(chm_assetroot, "\n", turntable_filepath, "\n", chm_renderroot, "\n", chm_assetssubtree, "\n", chm_assetturntables, "\n", tt_tools_stage)
+        print("chm_assetroot: ", chm_assetroot)
+        print("turntable_filepath: ", turntable_filepath)
+        print("chm_renderroot: ", chm_renderroot)
+        print("chm_assetssubtree: ", chm_assetssubtree)
+        print("chm_assetturntables: ", chm_assetturntables)
+        print("tt_tools_stage: ", tt_tools_stage)
+        #print(chm_assetroot, "\n", turntable_filepath, "\n", chm_renderroot, "\n", chm_assetssubtree, "\n", chm_assetturntables, "\n", tt_tools_stage)
         explore_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, tt_tools_stage)
         return{'FINISHED'}
 
@@ -1122,7 +1154,6 @@ class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
         col.prop(bpy.context.scene, "tt_tools_xcode")
         col = split.column(align=True)
         col.prop(bpy.context.scene, "tt_tools_draft")
-        update_base_settings()
 
 # INIT COLLECT ASSET LIST IF ASSET ROOT EXISTS
 chm_assetroot = get_assetroot()

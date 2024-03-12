@@ -61,7 +61,7 @@ import subprocess
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.4.2c'
+vsn = '0.4.2b'
 
 # BASEFILE SPECIFIC 
 thecam_name = "cam.ttCamera"
@@ -72,6 +72,12 @@ deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 # OUTPUT PARAMETERS
 frameRate = 23.976
 thekeyframes_cam = [121,122,123]
+
+# CUSTOM PATHS
+custom_assetroot = ""
+custom_tt_tools_override_ttfile = ""
+custom_tt_tools_override_outpath = ""
+custom_tt_tools_override_ttsave = ""
 
 # GET BLENDER VERSION
 blender_version = bpy.app.version
@@ -90,42 +96,29 @@ chm_omitlist = (['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirre
                 'prp_AAAtemplate', 'prp_bush_romperPopout_01', 'prp_tree_hollowknot',
                 'prx_AAAtemplate', 'prx_treeObstacle_Source'])
 
-def update_scene_variable():
-    chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage, tt_tools_version = update_base_settings()
-    return 0
-
 def update_base_settings(): #(chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage)
     try:
         override_version = bpy.context.preferences.addons[__name__].preferences.tt_tools_override_version
         if len(bpy.context.preferences.addons[__name__].preferences.assetroot) > 0:
             pref_assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
-            bpy.context.scene.assetroot = pref_assetroot
-        if len(bpy.context.preferences.addons[__name__].preferences.tt_tools_override_ttfile) > 0:
-            pref_tt_filepath = bpy.context.preferences.addons[__name__].preferences.tt_tools_override_ttfile
-            bpy.context.scene.tt_tools_override_ttfile = pref_tt_filepath
-        if len(bpy.context.preferences.addons[__name__].preferences.tt_tools_override_outpath) > 0:
-            pref_renderroot = bpy.context.preferences.addons[__name__].preferences.tt_tools_override_outpath
-            bpy.context.scene.tt_tools_override_outpath = pref_renderroot
-        print("update FROM PREFERENCES and is using \noverride_version: ", override_version, "\npref_assetroot: ", pref_assetroot, "\npref_tt_filepath: ", pref_tt_filepath, "\npref_renderroot: ", pref_renderroot)
+        print("update FROM PREFERENCES and is using \noverride_version: ", override_version, "\npref_assetroot: ", pref_assetroot)
     except:
         override_version = (str(blender_version[0]) + ".x")
-        pref_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
-        pref_tt_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_331.blend"
-        pref_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
-        print("update FROM DEFAULTS and is using \noverride_version: ", override_version, "\npref_assetroot: ", pref_assetroot, "\npref_tt_filepath: ", pref_tt_filepath, "\npref_renderroot: ", pref_renderroot)
+        pref_assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
+        print("update FROM DEFAULTS and is using \noverride_version: ", override_version, "\npref_assetroot: ", pref_assetroot)
     match override_version:
         case '3.x':
-            pref_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
-            pref_tt_filepath = Path(str(pref_assetroot + "helpers/turntable/projects/blender/turntable_331.blend"))
-            pref_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
-            pref_assetssubtree = "projects/blender"
-            pref_assetturntables = "/projects/blender/turntables"
+            pref_assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
+            pref_tt_filepath = Path(str(pref_assetroot + "helpers\\turntable\\projects\\blender\\turntable_331.blend"))
+            pref_renderroot = "Y:\\projects\\CHUMS_Onsite\\renders\\_prod\\assets\\"
+            pref_assetssubtree = "projects\\blender"
+            pref_assetturntables = "\\projects\\blender\\turntables"
             pref_tt_stage = 'workfiles'
             pref_override_version = override_version
         case '4.x':
-            pref_assetroot = "X:/projects/chums_season2/onsite/_prod/assets"
-            pref_tt_filepath = Path(str(pref_assetroot + "/helpers/turntable/publish/blender/turntable_410.blend"))
-            pref_renderroot = "X:/projects/chums_season2/onsite/renders/_prod/assets"
+            pref_assetroot = "X:\\projects\\chums_season2\\onsite\\_prod\\assets"
+            pref_tt_filepath = Path(str(pref_assetroot + "\\helpers\\turntable\\publish\\blender\\turntable_410.blend"))
+            pref_renderroot = "X:\\projects\\chums_season2\\onsite\\renders\\_prod\\assets"
             pref_assetssubtree = "blender"
             pref_assetturntables = "turntables"
             pref_tt_stage = 'work'
@@ -134,16 +127,16 @@ def update_base_settings(): #(chm_assetroot, turntable_filepath, chm_renderroot,
             pref_assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
             pref_tt_filepath = bpy.context.preferences.addons[__name__].preferences.tt_tools_override_ttfile
             pref_renderroot = bpy.context.preferences.addons[__name__].preferences.tt_tools_override_outpath
-            pref_assetssubtree = "projects/blender"
-            pref_assetturntables = "/projects/blender/turntables"
+            pref_assetssubtree = "projects\\blender"
+            pref_assetturntables = "\\projects\\blender\\turntables"
             pref_tt_stage = 'workfiles'
             pref_override_version = override_version
         case _:
-            pref_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
-            pref_tt_filepath = Path(str(pref_assetroot + "helpers/turntable/projects/blender/turntable_331.blend"))
-            pref_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
-            pref_assetssubtree = "projects/blender"
-            pref_assetturntables = "/projects/blender/turntables"
+            pref_assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
+            pref_tt_filepath = Path(str(pref_assetroot + "helpers\\turntable\\projects\\blender\\turntable_331.blend"))
+            pref_renderroot = "Y:\\projects\\CHUMS_Onsite\\renders\\_prod\\assets\\"
+            pref_assetssubtree = "projects\\blender"
+            pref_assetturntables = "\\projects\\blender\\turntables"
             pref_tt_stage = 'workfiles'
             pref_override_version = override_version
     
@@ -159,21 +152,27 @@ def set_version_override_paths(self, context):
     if self.tt_tools_override_version:
         match self.tt_tools_override_version:
             case '3.x':
-                self.assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
-                self.tt_tools_override_ttfile = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_331.blend"
-                self.tt_tools_override_outpath = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
+                self.assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
+                self.tt_tools_override_ttfile = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\helpers\\turntable\\projects\\blender\\turntable_331.blend"
+                self.tt_tools_override_outpath = "Y:\\projects\\CHUMS_Onsite\\renders\\_prod\\assets\\"
             case '4.x':
-                self.assetroot = "X:/projects/chums_season2/onsite/_prod/assets/"
-                self.tt_tools_override_ttfile = "X:/projects/chums_season2/onsite/_prod/assets/helpers/turntable/publish/blender/turntable_410.blend"
-                self.tt_tools_override_outpath = "X:/projects/chums_season2/onsite/renders/_prod/assets"
+                self.assetroot = "X:\\projects\\chums_season2\\onsite\\_prod\\assets\\"
+                self.tt_tools_override_ttfile = "X:\\projects\\chums_season2\\onsite\\_prod\\assets\\helpers\\turntable\\publish\\blender\\turntable_410.blend"
+                self.tt_tools_override_outpath = "X:\\projects\\chums_season2\\onsite\\renders\\_prod\\assets"
             case "Custom":
-                self.assetroot = bpy.context.scene.assetroot
-                self.tt_tools_override_ttfile = bpy.context.scene.tt_tools_override_ttfile
-                self.tt_tools_override_outpath = bpy.context.scene.tt_tools_override_outpath
+                #self.assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
+                #self.tt_tools_override_ttfile = bpy.context.preferences.addons[__name__].preferences.tt_tools_override_ttfile
+                #self.tt_tools_override_outpath = bpy.context.preferences.addons[__name__].preferences.tt_tools_override_outpath
+                self.assetroot = custom_assetroot
+                self.tt_tools_override_ttfile = custom_tt_tools_override_ttfile
+                self.tt_tools_override_outpath = custom_tt_tools_override_outpath
+                custom_assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
+                custom_tt_tools_override_ttfile = bpy.context.preferences.addons[__name__].preferences.tt_tools_override_ttfile
+                custom_tt_tools_override_outpath = bpy.context.preferences.addons[__name__].preferences.tt_tools_override_outpath
             case _:
-                self.assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
-                self.tt_tools_override_ttfile = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_331.blend"
-                self.tt_tools_override_outpath = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
+                self.assetroot = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\"
+                self.tt_tools_override_ttfile = "Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\helpers\\turntable\\projects\\blender\\turntable_331.blend"
+                self.tt_tools_override_outpath = "Y:\\projects\\CHUMS_Onsite\\renders\\_prod\\assets\\"
     return None
 
 def get_asset_from_path(path):
@@ -731,7 +730,7 @@ def save_tt_file(asset_name, asset_task, asset_stage):
                        'prx':'proxies',
                        'sky':'skies'}
     chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage, tt_tools_version = update_base_settings()
-    asset_type = chm_assetprefix[asset_name[:3]]
+    the_asset_type = chm_assetprefix[asset_name[:3]]
     if tt_tools_version == "4.x":
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,tt_tools_stage,chm_assetssubtree).replace("/","\\")
     else:
@@ -758,8 +757,6 @@ def tt_tools_messagebox(message, title):
         self.layout.label(text=message)
     bpy.context.window_manager.popup_menu(draw, title = title, icon='ERROR')
 
-
-
 # PREFERENCES tt_toolsPreferences
 class tt_toolsPreferences(bpy.types.AddonPreferences):
     #bl_idname = "Turntable Tools"
@@ -772,7 +769,7 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
     )
 
     tt_tools_override_ttfile: bpy.props.StringProperty(
-        name="Turntable Base File",
+        name="Turntable base file",
         subtype='FILE_PATH',
         default= ("Y:\\projects\\CHUMS_Onsite\\_prod\\assets\\helpers\\turntable\\projects\\blender\\turntable_331.blend"),
     )
@@ -805,9 +802,9 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "tt_tools_override_version")
-        layout.prop(self, "assetroot")
         layout.prop(self, "tt_tools_override_ttfile")
         layout.prop(self, "tt_tools_override_outpath")
+        layout.prop(self, "assetroot")
         layout.prop(self, "defaultangle")
         layout.prop(self, "defaultpriority")
 
@@ -823,10 +820,9 @@ class OBJECT_OT_tt_tools_preferences(bpy.types.Operator):
         info = ("")
 
         self.report({'INFO'}, info)
-        print("info: ", info)
+        #print(info)
 
         return {'FINISHED'}
-
 
 
 # PROPERTY GROUP tt_toolsProperties
@@ -841,28 +837,9 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         (
           name = "Asset Root",
           description = "Asset Root",
-          default = "Y:/projects/CHUMS_Onsite/_prod/assets/"
+          default = 'Y:/projects/CHUMS_Onsite/_prod/assets/'
         )
-    bpy.types.Scene.tt_tools_override_ttfile = bpy.props.StringProperty \
-        (
-          name = "Turntable Base File",
-          description = "Turntable Base File",
-          default = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_331.blend"
-        )
-    bpy.types.Scene.tt_tools_override_outpath = bpy.props.StringProperty \
-        (
-          name = "Output Directory",
-          description = "Output Directory",
-          default = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
-        )
-    bpy.types.Scene.tt_tools_override_ttsave = bpy.props.StringProperty \
-        (
-          name = "",
-          description = "Turntable Blender File Folder",
-          default = ""
-        )
-    bpy.types.Scene.tt_tools_task = bpy.props.EnumProperty \
-        (
+    bpy.types.Scene.tt_tools_task = bpy.props.EnumProperty(
         name="",
         description="Use latest model or texture version.",
         items=[ ('20_model', "Model", ""),
@@ -870,6 +847,12 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
                ],
         default = "30_texture"
         )
+    bpy.types.Scene.tt_tools_custom = bpy.props.StringProperty(
+        name="Custom:",
+        description="",
+        default="",
+        maxlen=1024,
+        subtype='FILE_PATH')
     bpy.types.Scene.tt_tools_overscan = bpy.props.FloatProperty \
         (
           name = "Overscan %",
@@ -897,13 +880,19 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
           description = "Deadline Draft.",
           default = False
         )
-    bpy.types.Scene.tt_tools_alist = bpy.props.EnumProperty \
-        (
+    bpy.types.Scene.tt_tools_alist = bpy.props.EnumProperty(
         name="",
         description="Asset List",
         items=queryAssetList(),
         default = None
         )
+    bpy.types.Scene.tt_tools_override_asset = bpy.props.StringProperty(
+        name="Override Asset",
+        description="Asset Directory",
+        default="",
+        maxlen=1024,
+        update = make_path_absolute,
+        subtype='DIR_PATH')
 
 # OPERATOR BUTTON_OT_openTT
 class BUTTON_OT_openTT(bpy.types.Operator):
@@ -941,7 +930,10 @@ class BUTTON_OT_tt_tools_refresh(bpy.types.Operator):
             items=queryAssetList(),
             default = None
             )
-        bpy.context.scene.assetroot = bpy.context.preferences.addons[__name__].preferences.assetroot
+        #if (len(bpy.context.scene.tt_tools_override_asset) > 1) and (os.path.exists(bpy.context.scene.tt_tools_override_asset)):
+        #    override_asset = get_asset_from_path(bpy.context.scene.tt_tools_override_asset)
+        #    #bpy.context.scene.tt_tools_alist.items += ([override_asset,override_asset,''])
+        #    bpy.context.scene.tt_tools_alist = override_asset
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_exploreAsset
@@ -1033,6 +1025,18 @@ class BUTTON_OT_get_asset_list(bpy.types.Operator):
         #print("the_asset_list: ")
         #for i in the_asset_list:
             #print( i[0])
+        return{'FINISHED'}
+
+# OPERATOR BUTTON_OT_append_asset
+class BUTTON_OT_append_asset(bpy.types.Operator):
+    '''APPEND the asset_prod collection from the latest PUBLISHED asset'''
+    bl_idname = "tt_tools.append_asset"
+    bl_label = "Append Asset"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
+        append_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, tt_tools_stage)
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_link_asset
@@ -1187,7 +1191,7 @@ class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
         col.prop(bpy.context.scene, "tt_tools_draft")
 
 # INIT COLLECT ASSET LIST IF ASSET ROOT EXISTS
-#chm_assetroot = get_assetroot()
+chm_assetroot = get_assetroot()
 chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage, tt_tools_version = update_base_settings()
     
 if os.path.exists(chm_assetroot):
