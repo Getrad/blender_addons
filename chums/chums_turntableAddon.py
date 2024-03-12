@@ -204,7 +204,6 @@ def sendDeadlineCmd():
     thisoutputpath = bpy.context.scene.render.filepath
     asset_name = bpy.context.scene.tt_tools_alist
     bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
-    asset_stage = tt_tools_stage
     asset_task = bpy.context.scene.tt_tools_task
     chm_assetprefix = {'chr':'characters', 
                         'env':'environments', 
@@ -212,12 +211,13 @@ def sendDeadlineCmd():
                         'prx':'proxies',
                         'sky':'skies'}
     asset_type = chm_assetprefix[asset_name[:3]]
+    chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage, tt_tools_version = update_base_settings()
     if bpy.app.version == (4, 1, 0):
-        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,asset_stage,chm_assetssubtree).replace("/","\\")
-        the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,asset_stage).replace("/","\\")
+        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,tt_tools_stage,chm_assetssubtree).replace("/","\\")
+        the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,tt_tools_stage).replace("/","\\")
         the_comment = "4.1.0 Turntable"
     else:
-        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,asset_stage).replace("/","\\")
+        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,tt_tools_stage,chm_assetssubtree,tt_tools_stage).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name).replace("/","\\")
         the_comment = "3.3.1 Turntable"
     if "workfiles" in the_outpath_base:
@@ -294,7 +294,6 @@ def xcodeH264():
     thisoutputpath = bpy.context.scene.render.filepath
     asset_name = bpy.context.scene.tt_tools_alist
     bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
-    asset_stage = tt_tools_stage
     asset_task = bpy.context.scene.tt_tools_task
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
@@ -302,12 +301,13 @@ def xcodeH264():
                        'prx':'proxies',
                        'sky':'skies'}
     asset_type = chm_assetprefix[asset_name[:3]]
+    chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage, tt_tools_version = update_base_settings()
     if bpy.app.version == (4, 1, 0):
-        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,asset_stage,chm_assetssubtree).replace("/","\\")
-        the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,asset_stage).replace("/","\\")
+        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,tt_tools_stage,chm_assetssubtree).replace("/","\\")
+        the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,tt_tools_stage).replace("/","\\")
         the_comment = "4.1.0 Turntable"
     else:
-        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,asset_stage).replace("/","\\")
+        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,tt_tools_stage).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name).replace("/","\\")
         the_comment = "3.3.1 Turntable"
     if "workfiles" in the_outpath_base:
