@@ -24,7 +24,8 @@ from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
 vsn='5.8'
-imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
+imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png', 'lsTex']
+nodeignorelist = ['Render Result', 'Viewer Node', 'lsTex']
 grpignorelist = ['ZenUV_Override']
 clean_export_fileformat = 'OPEN_EXR'
 clean_export_fileext = 'exr'
@@ -119,14 +120,17 @@ def cleanup_string(my_string):
 
 def get_imgs_from_mtl(my_mtl, my_imglist):
     for node in my_mtl.node_tree.nodes:
-        if node.type == 'TEX_IMAGE' and node.image.source in ['SEQUENCE', 'FILE']:
-            img = node.image
-            if img.packed_file:
-                unpack_image(img)
-            if not(img in my_imglist):
-                my_imglist.append(img)
-        elif node.type == 'GROUP' and not (node.name in grpignorelist):
-            get_imgs_from_mtl(my_mtl,my_imglist)
+        if node.name in nodeignorelist:
+            print("SKIPPING ignore list node: ", node.name)
+        else:
+            if node.type == 'TEX_IMAGE' and node.image.source in ['SEQUENCE', 'FILE']:
+                img = node.image
+                if img.packed_file:
+                    unpack_image(img)
+                if not(img in my_imglist):
+                    my_imglist.append(img)
+            elif node.type == 'GROUP' and not (node.name in grpignorelist):
+                get_imgs_from_mtl(my_mtl,my_imglist)
     #print("fn get_imgs_from_mtl (my_imglist): ", my_imglist)
     return (my_imglist)
 

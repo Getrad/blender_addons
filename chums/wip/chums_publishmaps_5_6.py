@@ -7,7 +7,7 @@
 bl_info = {
     "name": "Publish Maps",
     "author": "conrad dueck",
-    "version": (0,5,6),
+    "version": (0,5,7),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Collect image maps to publish directory and back up any maps that already exist there.",
@@ -23,7 +23,7 @@ import subprocess
 from pathlib import Path
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.6'
+vsn='5.7'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png']
 grpignorelist = ['ZenUV_Override']
 clean_export_fileformat = 'OPEN_EXR'
@@ -32,7 +32,6 @@ clean_export_filedepth = '16'
 clean_export_imagick = 'zip'
 clean_export_filecodec = 'ZIP'
 imagick = Path("C:/Program Files/ImageMagick-6.9.13-Q16-HDRI/convert.exe")
-number_digits = "0123456789_"
 
 ####    FUNCTIONS    ####
 def make_path_absolute(self, context):
@@ -176,36 +175,94 @@ def trace_to_shader(image, mtl):
 
 def get_asset_from_filename():
     my_version = ""
+    number_digits = "0123456789_"
     thefilebase = os.path.basename(bpy.data.filepath)[:-6]
-    print("thefilebase: ", thefilebase)
     if len(thefilebase) >= 4 and len(thefilebase.split("_")) > 2:
         my_asset = thefilebase.split("_")[0]
         my_version = thefilebase.split("_")[-1]
-        print("my_asset: ", my_asset)
-        print("my_version: ", my_version)
-        for tk in thefilebase.split("_")[1:]:
-            print("tk: ", tk)
-            if tk[0] == "v" and (tk[1] in range(10)):
+        for tkn in thefilebase.split("_")[1:]:
+            if tkn[0] == "v" and (tkn[1] in number_digits):
+                my_version = tkn
                 break
             else:
-                my_asset += ("_" + tk)
+                my_asset += ("_" + tkn)
                 my_version = "000"
     else:
         my_asset = "unknown"
         my_version = "000"
-    
     return my_asset, my_version
 
-def define_new_path():
-    thispath = os.path.dirname(bpy.path.filepath)
-    if os.path.isdir(thispath):
-        this_dirname = thispath.split("\\")[-1]
+
+
+
+#   mtls: get the unique materials
+def collect_materials(objlist):
+    my_mtls = []
+    for ob in objlist:
+        for mtl in ob.material_slots:
+            if mtl.material.use_nodes:
+                if not(mtl.material.name in my_mtls):
+                    #   build list of unique materials
+                    my_mtls.append(mtl.name)
+    return my_mtls
+
+#   my_mtl_imgs : get the unique images for each material (first mtl array)
+def build_image_dict(my_mtls):
+    my_mtl_imgs = {}
+    for mtl in my_mtls:
+        this_mtl_imgs = get_imgs_from_mtl(bpy.data.materials[mtl], [])
+        for img in this_mtl_imgs:
+            if not(mtl in my_mtl_imgs.keys()):
+                my_mtl_imgs[mtl] = [[img], []]
+            else:
+                my_mtl_imgs[mtl][0].append(img)
+        #print("my_mtl_imgs[mtl]: ", my_mtl_imgs[mtl])
+    return my_mtl_imgs
+
+#   mtl_imgs : get the sockets used by each unique image (second socket array)
+def build_image_socket_dict(my_mtl_imgs):
+    for mtl in my_mtl_imgs.keys():
+        for img in my_mtl_imgs[mtl][0]:
+            tgt_socket = trace_to_shader(img, mtl)
+            my_mtl_imgs[mtl][1].append(tgt_socket)
+        #print("my_mtl_imgs[mtl]: ", my_mtl_imgs[mtl])
+    return my_mtl_imgs
+
+#   imgdict : get the unique images from the collected materials dictionary
+def build_imgdict(my_mtl_imgs):
+    my_imgdict = {}
+    for mtl in my_mtl_imgs.keys():
+        print("\nIN mtl my_mtl_imgs[", mtl, "] : ", my_mtl_imgs[mtl])
+        for imgnum, img in enumerate(my_mtl_imgs[mtl][0]):
+            if not(img in my_imgdict.keys()):
+                if bpy.context.scene.publishmaps_skiphangers == True:
+                    if (my_mtl_imgs[mtl][1][imgnum] == "NotConnected"):
+                        print("SKIPPED not connected: ", img)
+                    else:
+                        my_imgdict[img.name] = [mtl, my_mtl_imgs[mtl][1][imgnum]]
+                else:
+                    my_imgdict[img.name] = [mtl, my_mtl_imgs[mtl][1][imgnum]]
+                #print("my_imgdict[",img.name, "]: ", my_imgdict[img.name])
+    return my_imgdict
+
+
+
 
 
 # construct a path from assetname and assetversion
 def automatic_publish_path(assetname, assetversion):
-    thepath = ''
-    return thepath
+    thetexroot = ''
+    thefiledir = os.path.dirname(bpy.data.filepath)
+    for tkn in thefiledir.split("\\"):
+        if not(tkn == "30_texture"):
+            if tkn[-1] == ":":
+                tkn += "\\"
+            thetexroot = os.path.join(thetexroot, tkn)
+            #print("thetexroot: ", thetexroot, os.path.exists(thetexroot))
+        else:
+            thetexroot = os.path.join(thetexroot, tkn, "textures", "production", assetversion)
+            break
+    return thetexroot
 
 #   my_imgs : PUBLISH images in image dictionary, returning the list of published images
 def publish_images_from_dict(my_dict,target_path):
@@ -347,48 +404,52 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
                 oblist = bpy.data.objects
             
         #   mtls: get the unique materials
-            for ob in oblist:
-                for mtl in ob.material_slots:
-                    if mtl.material.use_nodes:
-                        if not(mtl.material.name in mtls):
-                            #   build list of unique materials
-                            mtls.append(mtl.name)
-            
+            #for ob in oblist:
+            #    for mtl in ob.material_slots:
+            #        if mtl.material.use_nodes:
+            #            if not(mtl.material.name in mtls):
+            #                #   build list of unique materials
+            #                mtls.append(mtl.name)
+            mtls = collect_materials(oblist)
+
         #   mtl_imgs : get the unique images for each material (first mtl array)
-            for mtl in mtls:
-                this_mtl_imgs = get_imgs_from_mtl(bpy.data.materials[mtl], [])
-                for img in this_mtl_imgs:
-                    if not(mtl in mtl_imgs.keys()):
-                        mtl_imgs[mtl] = [[img], []]
-                    else:
-                        mtl_imgs[mtl][0].append(img)
-                #print("mtl_imgs[mtl]: ", mtl_imgs[mtl])
-            
+            #for mtl in mtls:
+            #    this_mtl_imgs = get_imgs_from_mtl(bpy.data.materials[mtl], [])
+            #    for img in this_mtl_imgs:
+            #        if not(mtl in mtl_imgs.keys()):
+            #           mtl_imgs[mtl] = [[img], []]
+            #       else:
+            #            mtl_imgs[mtl][0].append(img)
+            #    #print("mtl_imgs[mtl]: ", mtl_imgs[mtl])
+            mtl_imgs = build_image_dict(my_mtls)
+
         #   mtl_imgs : get the sockets used by each unique image (second socket array)
-            for mtl in mtl_imgs.keys():
-                for img in mtl_imgs[mtl][0]:
-                    tgt_socket = trace_to_shader(img, mtl)
-                    mtl_imgs[mtl][1].append(tgt_socket)
-                #print("mtl_imgs[mtl]: ", mtl_imgs[mtl])
+            #for mtl in mtl_imgs.keys():
+            #    for img in mtl_imgs[mtl][0]:
+            #        tgt_socket = trace_to_shader(img, mtl)
+            #        mtl_imgs[mtl][1].append(tgt_socket)
+            #    #print("mtl_imgs[mtl]: ", mtl_imgs[mtl])
+            mtl_imgs = build_image_socket_dict(mtl_imgs)
 
         #   imgdict : get the unique images from the collected materials dictionary
-            for mtl in mtl_imgs.keys():
-                print("\nIN mtl mtl_imgs[", mtl, "] : ", mtl_imgs[mtl])
-                for imgnum, img in enumerate(mtl_imgs[mtl][0]):
-                    if not(img in imgdict.keys()):
-                        if bpy.context.scene.publishmaps_skiphangers == True:
-                            if (mtl_imgs[mtl][1][imgnum] == "NotConnected"):
+            #for mtl in mtl_imgs.keys():
+            #    print("\nIN mtl mtl_imgs[", mtl, "] : ", mtl_imgs[mtl])
+            #    for imgnum, img in enumerate(mtl_imgs[mtl][0]):
+            #        if not(img in imgdict.keys()):
+            #            if bpy.context.scene.publishmaps_skiphangers == True:
+            #                if (mtl_imgs[mtl][1][imgnum] == "NotConnected"):
                                 print("SKIPPED not connected: ", img)
-                            else:
-                                imgdict[img.name] = [mtl, mtl_imgs[mtl][1][imgnum]]
-                        else:
-                            imgdict[img.name] = [mtl, mtl_imgs[mtl][1][imgnum]]
-                        #print("imgdict[",img.name, "]: ", imgdict[img.name])
-            
+            #                else:
+            #                    imgdict[img.name] = [mtl, mtl_imgs[mtl][1][imgnum]]
+            #            else:
+            #                imgdict[img.name] = [mtl, mtl_imgs[mtl][1][imgnum]]
+            #            #print("imgdict[",img.name, "]: ", imgdict[img.name])
+            imgdict = def build_imgdict(mtl_imgs)
+
             #   theimgs : PUBLISHED images from the unique images collected in imgdict
             print("\nThe collected imgdict has ", len(imgdict.keys()), " image(s) to process")
             theimgs = publish_images_from_dict(imgdict,thepath)
-                
+            
             #   confirm all image file paths in file
             print("\nChecking for published images")
             for imgnum, img in enumerate(theimgs):
@@ -403,7 +464,7 @@ class BUTTON_OT_publishmapspublish(bpy.types.Operator):
         
         print('COMPLETE PUBLISH')
         return{'FINISHED'}
-   
+
 #   PANEL publishmaps
 class VIEW3D_PT_publishmaps(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
@@ -428,9 +489,11 @@ assetname = get_asset_from_filename()[0]
 assetversion = get_asset_from_filename()[1]
 print("assetname: ", assetname)
 print("assetversion: ", assetversion)
+my_path = automatic_publish_path(assetname, assetversion)
+print("my_path: ", my_path)
+
 
 ####    REGISTRATION    ####
-
 classes = ( BUTTON_OT_publishmapspublish, VIEW3D_PT_publishmaps )
 
 def register():
