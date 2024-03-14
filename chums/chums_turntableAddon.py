@@ -30,13 +30,15 @@
 # 0.4.0 - UPDATE - to Blender version 4.x
 # 0.4.1 - UPDATE - removed tunes; set default paths when not 331 or 410 to use 331
 # 0.4.2 - FEATURE - string field asset override
-#       - MAYBE - add full asset override
+#       - DEADLINE SUPPORT - BUG - comment is incorrect for custom submissions
+#       - BUG - custom properties don't update scene vars automatically - need to hit refresh button
+# 0.4.3 - FEATURE - add enum filter
 
 
 bl_info = {
     "name": "Turntable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 4, 2),
+    "version": (0, 4, 3),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -61,7 +63,7 @@ import subprocess
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.4.2c'
+vsn = '0.4.3'
 
 # BASEFILE SPECIFIC 
 thecam_name = "cam.ttCamera"
@@ -90,9 +92,9 @@ chm_omitlist = (['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirre
                 'prp_AAAtemplate', 'prp_bush_romperPopout_01', 'prp_tree_hollowknot',
                 'prx_AAAtemplate', 'prx_treeObstacle_Source'])
 
-def update_scene_variable():
-    chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage, tt_tools_version = update_base_settings()
-    return 0
+def update_scene_variable(self, context):
+    update_base_settings()
+    return None
 
 def update_base_settings(): #(chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage)
     try:
@@ -212,21 +214,27 @@ def sendDeadlineCmd():
                         'sky':'skies'}
     asset_type = chm_assetprefix[asset_name[:3]]
     chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage, tt_tools_version = update_base_settings()
-    if bpy.app.version == (4, 1, 0):
+    if tt_tools_version == "4.x":
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,tt_tools_stage,chm_assetssubtree).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,tt_tools_stage).replace("/","\\")
-        the_comment = "4.1.0 Turntable"
-    else:
-        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,tt_tools_stage,chm_assetssubtree,tt_tools_stage).replace("/","\\")
+        the_comment = "4.x Turntable"
+    elif tt_tools_version == "Custom":
+        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,tt_tools_stage).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name).replace("/","\\")
-        the_comment = "3.3.1 Turntable"
+        the_comment = "Custom Turntable"
+    else:
+        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,tt_tools_stage).replace("/","\\")
+        the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name).replace("/","\\")
+        the_comment = "3.x Turntable"
     if "workfiles" in the_outpath_base:
         the_outpath_base = the_outpath_base.replace("workfiles", "turntables")
         the_outpath_base = the_outpath_base.replace("publish", "turntables")
     else:
         the_outpath_base = the_outpath_base.replace("work", "work\\turntables")
         the_outpath_base = the_outpath_base.replace("publish", "publish\\turntables")
+    print("the_workpath: ", the_workpath)
     latest_asset_workfile = find_latest_workfile(the_workpath)
+    print("latest_asset_workfile: ", latest_asset_workfile)
     latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
     latest_asset_filename = os.path.basename(latest_asset_workfile)
     the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
@@ -302,14 +310,18 @@ def xcodeH264():
                        'sky':'skies'}
     asset_type = chm_assetprefix[asset_name[:3]]
     chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage, tt_tools_version = update_base_settings()
-    if bpy.app.version == (4, 1, 0):
+    if tt_tools_version == "4.x":
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,tt_tools_stage,chm_assetssubtree).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,tt_tools_stage).replace("/","\\")
-        the_comment = "4.1.0 Turntable"
+        the_comment = "4.x Turntable"
+    elif tt_tools_version == "Custom":
+        the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,tt_tools_stage).replace("/","\\")
+        the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name).replace("/","\\")
+        the_comment = "Custom Turntable"
     else:
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,tt_tools_stage).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name).replace("/","\\")
-        the_comment = "3.3.1 Turntable"
+        the_comment = "3.x Turntable"
     if "workfiles" in the_outpath_base:
         the_outpath_base = the_outpath_base.replace("workfiles", "turntables")
         the_outpath_base = the_outpath_base.replace("publish", "turntables")
@@ -500,6 +512,10 @@ def queryAssetList():
     chm_assetroot = get_assetroot()
     chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage, tt_tools_version = update_base_settings()
     anames = []
+    try:
+        filtstr = bpy.context.scene.tt_tools_filter
+    except:
+        filtstr = ""
     if os.path.exists(chm_assetroot):
         chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
                 os.path.isdir(os.path.join(chm_assetroot, f))])
@@ -507,7 +523,7 @@ def queryAssetList():
             thistype = os.path.join(chm_assetroot, atype)
             anames += ([(aname,aname,'') for aname in os.listdir(thistype) if 
                 (aname[:3] in chm_assetprefix.keys() and 
-                not(aname in chm_omitlist))])
+                not(aname in chm_omitlist)) and (filtstr.lower() in aname.lower())])
     return anames
 
 def explore_asset(asset_name, asset_dept, asset_stage):
@@ -758,8 +774,6 @@ def tt_tools_messagebox(message, title):
         self.layout.label(text=message)
     bpy.context.window_manager.popup_menu(draw, title = title, icon='ERROR')
 
-
-
 # PREFERENCES tt_toolsPreferences
 class tt_toolsPreferences(bpy.types.AddonPreferences):
     #bl_idname = "Turntable Tools"
@@ -833,33 +847,33 @@ class OBJECT_OT_tt_tools_preferences(bpy.types.Operator):
 class tt_toolsProperties(bpy.types.PropertyGroup):
     bpy.types.Scene.assetname = bpy.props.StringProperty \
         (
-          name = "Asset Name",
-          description = "Asset Name",
-          default = ""
+        name = "Asset Name",
+        description = "Asset Name",
+        default = ""
         )
     bpy.types.Scene.assetroot = bpy.props.StringProperty \
         (
-          name = "Asset Root",
-          description = "Asset Root",
-          default = "Y:/projects/CHUMS_Onsite/_prod/assets/"
+        name = "Asset Root",
+        description = "Asset Root",
+        default = "Y:/projects/CHUMS_Onsite/_prod/assets/"
         )
     bpy.types.Scene.tt_tools_override_ttfile = bpy.props.StringProperty \
         (
-          name = "Turntable Base File",
-          description = "Turntable Base File",
-          default = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_331.blend"
+        name = "Turntable Base File",
+        description = "Turntable Base File",
+        default = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_331.blend"
         )
     bpy.types.Scene.tt_tools_override_outpath = bpy.props.StringProperty \
         (
-          name = "Output Directory",
-          description = "Output Directory",
-          default = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
+        name = "Output Directory",
+        description = "Output Directory",
+        default = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
         )
     bpy.types.Scene.tt_tools_override_ttsave = bpy.props.StringProperty \
         (
-          name = "",
-          description = "Turntable Blender File Folder",
-          default = ""
+        name = "",
+        description = "Turntable Blender File Folder",
+        default = ""
         )
     bpy.types.Scene.tt_tools_task = bpy.props.EnumProperty \
         (
@@ -872,30 +886,30 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         )
     bpy.types.Scene.tt_tools_overscan = bpy.props.FloatProperty \
         (
-          name = "Overscan %",
-          description = "Percent of asset size to use as border",
-          min = 0.00,
-          max = 10000.0,
-          step = 0.5,
-          default = 20.0
+        name = "Overscan %",
+        description = "Percent of asset size to use as border",
+        min = 0.00,
+        max = 10000.0,
+        step = 0.5,
+        default = 20.0
         )
     bpy.types.Scene.tt_tools_newblend = bpy.props.BoolProperty \
         (
-          name = "Force New Blender",
-          description = "When opening assets or the turntable file with this enabled will launch a new Bledner session.",
-          default = True
+        name = "Force New Blender",
+        description = "When opening assets or the turntable file with this enabled will launch a new Bledner session.",
+        default = True
         )
     bpy.types.Scene.tt_tools_xcode = bpy.props.BoolProperty \
         (
-          name = "Transcode",
-          description = "Transcode H264.",
-          default = True
+        name = "Transcode",
+        description = "Transcode H264.",
+        default = True
         )
     bpy.types.Scene.tt_tools_draft = bpy.props.BoolProperty \
         (
-          name = "Draft",
-          description = "Deadline Draft.",
-          default = False
+        name = "Draft",
+        description = "Deadline Draft.",
+        default = False
         )
     bpy.types.Scene.tt_tools_alist = bpy.props.EnumProperty \
         (
@@ -903,6 +917,12 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         description="Asset List",
         items=queryAssetList(),
         default = None
+        )
+    bpy.types.Scene.tt_tools_filter = bpy.props.StringProperty \
+        (
+        name = "Filter",
+        description = "String to Isolate",
+        default = ""
         )
 
 # OPERATOR BUTTON_OT_openTT
@@ -1165,6 +1185,7 @@ class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
         col = split.column(align=True)
         col.operator("tt_tools.refresh", text=(BUTTON_OT_tt_tools_refresh.bl_label))
         #layout.prop(bpy.context.scene, "tt_tools_override_asset")
+        layout.prop(bpy.context.scene, "tt_tools_filter")
         layout.operator("tt_tools.exploreasset", text=(BUTTON_OT_exploreAsset.bl_label))
         layout.operator("tt_tools.openasset", text=(BUTTON_OT_openAsset.bl_label))
         layout.operator("tt_tools.get_asset", text=(BUTTON_OT_get_asset.bl_label))
