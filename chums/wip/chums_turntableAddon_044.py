@@ -34,6 +34,7 @@ import shutil
 import uuid
 import sys
 import subprocess
+import builtins
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
@@ -71,6 +72,10 @@ chm_omitlist = (['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirre
 LAUNCHPAD_REPOSITORY_PATH = r"X:\projects\chums_season2\onsite\pipeline\repos\launchpadRepository"
 
 # ------    FUNCTIONS    --------
+def print(*args, **kwargs):
+    kwargs['flush'] = True
+    builtins.print(*args, **kwargs)
+
 def update_scene_variable(self, context):
     update_base_settings()
     return None
@@ -474,14 +479,16 @@ def get_assetroot():
 
 def open_turntable():
     chm_assetroot, turntable_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, tt_tools_stage, tt_tools_version = update_base_settings()
-    print("open_turntable: turntable_filepath: ", turntable_filepath)
+    #print("open_turntable: turntable_filepath: ", turntable_filepath)
     if os.path.exists(turntable_filepath):
         if bpy.context.scene.tt_tools_newblend:
             if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
+                print("launching Blender from LAUNCHPAD function")
                 sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
                 from launchpad.helpers.launchers import launchBlender
-                launchBlender(scenePath=turntable_filepath, scriptPath=None, background=False, args=sys.argv)
+                newsesh = launchBlender(scenePath=turntable_filepath, scriptPath=None, background=False, args=sys.argv)
             else:
+                print("launching Blender from DIRECT local path")
                 mycmd = '\"'
                 mycmd += bpy.app.binary_path
                 mycmd += ('\" \"' + turntable_filepath.__str__() + '\"')
@@ -640,9 +647,6 @@ def link_asset(asset_name, asset_dept, asset_stage):
     return 0
 
 def open_assetfile(asset_name, asset_dept, asset_stage):
-    print("asset_name: ", asset_name)
-    print("asset_dept: ", asset_dept)
-    print("asset_stage: ", asset_stage)
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
                        'prp':'props', 
@@ -658,10 +662,17 @@ def open_assetfile(asset_name, asset_dept, asset_stage):
     the_asset_path = find_latest_workfile(the_asset_dir)
     if os.path.exists(the_asset_dir):
         if bpy.context.scene.tt_tools_newblend:
-            mycmd = '\"'
-            mycmd += bpy.app.binary_path
-            mycmd += ('\" \"' + the_asset_path + '\"')
-            os.popen(mycmd)
+            if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
+                print("opening asset in Blender from LAUNCHPAD function")
+                sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
+                from launchpad.helpers.launchers import launchBlender
+                newsesh = launchBlender(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
+            else:
+                print("opening asset in Blender from DIRECT local path")
+                mycmd = '\"'
+                mycmd += bpy.app.binary_path
+                mycmd += ('\" \"' + the_asset_path + '\"')
+                os.popen(mycmd)
         else:
             bpy.ops.wm.open_mainfile(filepath=the_asset_path)
     else:
