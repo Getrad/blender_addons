@@ -77,15 +77,6 @@ def print(*args, **kwargs):
     kwargs['flush'] = True
     builtins.print(*args, **kwargs)
 
-#def update_addon_prefs():
-#    try:
-        #bpy.context.preferences.addons[__name__].preferences.tt_override_assetroot = chm_assetroot
-        #bpy.context.preferences.addons[__name__].preferences.tt_override_filepath = chm_tt_filepath
-        #bpy.context.preferences.addons[__name__].preferences.tt_override_renderroot = chm_renderroot
-#    except:
-#        print("fail to update prefs")
-#    return None
-
 def update_base_settings(): #(chm_assetroot, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage)
     try:
         override_version = bpy.context.preferences.addons[__name__].preferences.tt_tools_override_version
@@ -94,25 +85,38 @@ def update_base_settings(): #(chm_assetroot, chm_tt_filepath, chm_renderroot, ch
             if len(bpy.context.preferences.addons[__name__].preferences.tt_override_assetroot) > 0:
                 pref_assetroot = bpy.context.preferences.addons[__name__].preferences.tt_override_assetroot
                 bpy.context.scene.tt_override_assetroot = pref_assetroot
-                print("\n   pref_assetroot:", pref_assetroot)
+                print("\n    pref_assetroot:", pref_assetroot)
             else:
                 pref_assetroot = ""
                 bpy.context.scene.tt_override_assetroot = pref_assetroot
             if len(bpy.context.preferences.addons[__name__].preferences.tt_override_filepath) > 0:
                 pref_tt_filepath = bpy.context.preferences.addons[__name__].preferences.tt_override_filepath
                 bpy.context.scene.tt_override_filepath = pref_tt_filepath
-                print("\n   pref_tt_filepath:", pref_tt_filepath)
+                print("\n    pref_tt_filepath:", pref_tt_filepath)
             else:
                 pref_tt_filepath = ""
                 bpy.context.scene.tt_override_filepath = pref_tt_filepath
             if len(bpy.context.preferences.addons[__name__].preferences.tt_override_renderroot) > 0:
                 pref_renderroot = bpy.context.preferences.addons[__name__].preferences.tt_override_renderroot
                 bpy.context.scene.tt_override_renderroot = pref_renderroot
-                print("\n   pref_renderroot:", pref_renderroot)
+                print("\n    pref_renderroot:", pref_renderroot)
             else:
                 pref_renderroot = ""
                 bpy.context.scene.tt_override_filepath = pref_renderroot
-                
+            if len(bpy.context.preferences.addons[__name__].preferences.tt_override_subtree) > 0:
+                pref_assetssubtree = bpy.context.preferences.addons[__name__].preferences.tt_override_subtree
+                bpy.context.scene.tt_override_subtree = pref_assetssubtree
+                print("\n    pref_renderroot:", pref_assetssubtree)
+            else:
+                pref_assetssubtree = ""
+                bpy.context.scene.tt_override_subtree = pref_assetssubtree
+            if len(bpy.context.preferences.addons[__name__].preferences.tt_override_stage) > 0:
+                pref_tt_stage = bpy.context.preferences.addons[__name__].preferences.tt_override_stage
+                bpy.context.scene.tt_override_stage = pref_tt_stage
+                print("\n    pref_renderroot:", pref_tt_stage)
+            else:
+                pref_tt_stage = ""
+                bpy.context.scene.tt_override_stage = pref_tt_stage
     except:
         print("FROM DEFAULTS")
         override_version = (str(blender_version[0]) + ".x")
@@ -146,22 +150,66 @@ def update_base_settings(): #(chm_assetroot, chm_tt_filepath, chm_renderroot, ch
                 pref_tt_filepath = bpy.context.scene.tt_override_filepath
             if len(bpy.context.scene.tt_override_renderroot) > 0:
                 pref_renderroot = bpy.context.scene.tt_override_renderroot
+            if len(bpy.context.scene.tt_override_stage) > 0:
+                pref_tt_stage = bpy.context.scene.tt_override_stage
+            if len(bpy.context.scene.tt_override_subtree) > 0:
+                pref_assetssubtree = bpy.context.scene.tt_override_subtree
         
     pref_override_version = override_version
     
     print("pref_assetroot:", pref_assetroot, "\npref_tt_filepath:", pref_tt_filepath, "\npref_renderroot:", pref_renderroot)
     return (pref_assetroot, pref_tt_filepath, pref_renderroot, pref_assetssubtree, pref_assetturntables, pref_tt_stage, pref_override_version)
 
-def update_addon_prefs(self, context):
-    print("self.tt_tools_override_version:", self.tt_tools_override_version)
-    print("self.tt_override_assetroot:", self.tt_override_assetroot)
-    print("self.tt_override_filepath:", self.tt_override_filepath)
-    print("self.tt_override_renderroot:", self.tt_override_renderroot)
+def update_addon_assetroot(self, context):
+    print("\nself.tt_tools_override_version:", self.tt_tools_override_version)
     try:
-        if self.tt_tools_override_version == 'Custom':
+        if self.tt_tools_override_version == "Custom":
             bpy.context.scene.tt_override_assetroot = self.tt_override_assetroot
+            print("self.tt_override_assetroot:", self.tt_override_assetroot)
+    except:
+        print("fail to update prefs")
+    
+    return None
+
+def update_addon_filepath(self, context):
+    print("\nself.tt_tools_override_version:", self.tt_tools_override_version)
+    try:
+        if self.tt_tools_override_version == "Custom":
             bpy.context.scene.tt_override_filepath = self.tt_override_filepath
+            print("self.tt_override_filepath:", self.tt_override_filepath)
+    except:
+        print("fail to update prefs")
+    
+    return None
+
+def update_addon_renderroot(self, context):
+    print("\nself.tt_tools_override_version:", self.tt_tools_override_version)
+    try:
+        if self.tt_tools_override_version == "Custom":
             bpy.context.scene.tt_override_renderroot = self.tt_override_renderroot
+            print("self.tt_override_renderroot:", self.tt_override_renderroot)
+    except:
+        print("fail to update prefs")
+    
+    return None
+
+def update_addon_stage(self, context):
+    print("\nself.tt_tools_override_version:", self.tt_tools_override_version)
+    try:
+        if self.tt_tools_override_version == "Custom":
+            bpy.context.scene.tt_override_stage = self.tt_override_stage
+            print("self.tt_override_stage:", self.tt_override_stage)
+    except:
+        print("fail to update prefs")
+    
+    return None
+
+def update_addon_subtree(self, context):
+    print("\nself.tt_tools_override_version:", self.tt_tools_override_version)
+    try:
+        if self.tt_tools_override_subtree == "Custom":
+            bpy.context.scene.tt_override_subtree = self.tt_override_subtree
+            print("self.tt_override_subtree:", self.tt_override_subtree)
     except:
         print("fail to update prefs")
     
@@ -821,14 +869,14 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
     tt_override_assetroot: bpy.props.StringProperty(
         name = "Asset Root Directory",
         subtype = 'DIR_PATH',
-        update = update_addon_prefs,
+        update = update_addon_assetroot,
         default = '',
     )
 
     tt_override_filepath: bpy.props.StringProperty(
         name = "Turntable Base File",
         subtype = 'FILE_PATH',
-        update = update_addon_prefs,
+        update = update_addon_filepath,
         default = '',
     )
 
@@ -843,8 +891,21 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
     tt_override_renderroot: bpy.props.StringProperty(
         name="Output Directory",
         subtype = 'DIR_PATH',
-        update = update_addon_prefs,
+        update = update_addon_renderroot,
         default = '',
+    )
+
+    tt_override_stage: bpy.props.StringProperty(
+        name="Stage String",
+        update = update_addon_stage,
+        default = 'workfiles',
+    )
+
+    tt_override_subtree: bpy.props.StringProperty(
+        name="Asset Subtree",
+        subtype = 'DIR_PATH',
+        update = update_addon_subtree,
+        default = "projects/blender",
     )
 
     defaultangle: bpy.props.FloatProperty(
@@ -864,6 +925,8 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "tt_override_assetroot")
         layout.prop(self, "tt_override_filepath")
         layout.prop(self, "tt_override_renderroot")
+        layout.prop(self, "tt_override_subtree")
+        layout.prop(self, "tt_override_stage")
         layout.prop(self, "defaultangle")
         layout.prop(self, "defaultpriority")
 
@@ -908,6 +971,18 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         name = "Output Directory",
         description = "Output Directory",
         default = ""
+        )
+    bpy.types.Scene.tt_override_subtree = bpy.props.StringProperty \
+        (
+        name = "Asset Subtree",
+        description = "Asset Subtree",
+        default = "projects/blender"
+        )
+    bpy.types.Scene.tt_override_stage = bpy.props.StringProperty \
+        (
+        name = "Stage",
+        description = "Stage",
+        default = "workfiles"
         )
     bpy.types.Scene.tt_tools_override_ttsave = bpy.props.StringProperty \
         (
@@ -1252,7 +1327,6 @@ classes = [ tt_toolsProperties, VIEW3D_PT_tt_tools_panel,
 def register():
     from bpy.utils import register_class
     for cls in classes:
-        #print(cls)
         register_class(cls)
 
 #   UNREGISTER
