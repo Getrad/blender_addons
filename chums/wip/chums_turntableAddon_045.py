@@ -408,7 +408,7 @@ def xcodeH264():
     the_outpath = os.path.join(the_outpath_base, outname)
     dlName = os.path.basename(thisfilename)[:-6]
     dlSceneFile = Path(thisfilename).as_posix()
-    dlOutputFile = Path(thisoutputpath).as_posix()
+    dlOutputFile = Path(the_outpath).as_posix()
     dlOutputPath = Path(the_outpath_base).as_posix()
     dlFrames = '0-123'
     filename = uuid.uuid4()
