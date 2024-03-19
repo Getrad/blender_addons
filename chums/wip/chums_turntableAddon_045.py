@@ -273,7 +273,7 @@ def sendDeadlineCmd():
     thisfilename = bpy.data.filepath
     thisoutputpath = bpy.context.scene.render.filepath
     asset_name = bpy.context.scene.tt_tools_alist
-    bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
+    bpy.context.scene.tt_tools_assetname = asset_name
     asset_task = bpy.context.scene.tt_tools_task
     chm_assetprefix = {'chr':'characters', 
                         'env':'environments', 
@@ -370,7 +370,7 @@ def xcodeH264():
     thisfilename = bpy.data.filepath
     thisoutputpath = bpy.context.scene.render.filepath
     asset_name = bpy.context.scene.tt_tools_alist
-    bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
+    bpy.context.scene.tt_tools_assetname = asset_name
     asset_task = bpy.context.scene.tt_tools_task
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
@@ -827,7 +827,7 @@ def clean_up_after_blender_save(save_path):
 def save_tt_file(asset_name, asset_task, asset_stage):
     the_outpath = ""
     asset_name = bpy.context.scene.tt_tools_alist
-    bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
+    bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
     asset_task = bpy.context.scene.tt_tools_task
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
@@ -881,21 +881,21 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         name = "Asset Root Directory",
         subtype = 'DIR_PATH',
         update = update_prefs_assetroot,
-        default = '',
+        default = 'Y:/projects/CHUMS_Onsite/_prod/assets/',
     )
 
     tt_override_filepath: bpy.props.StringProperty(
         name = "Turntable Base File",
         subtype = 'FILE_PATH',
         update = update_prefs_filepath,
-        default = '',
+        default = 'Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_410.blend',
     )
 
     tt_override_renderroot: bpy.props.StringProperty(
         name="Output Directory",
         subtype = 'DIR_PATH',
         update = update_prefs_renderroot,
-        default = '',
+        default = 'Y:/projects/CHUMS_Onsite/renders/_prod/assets/',
     )
 
     tt_override_stage: bpy.props.StringProperty(
@@ -1256,7 +1256,7 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
         thisfilename = os.path.basename(thisfilepath)
         thisoutputpath = bpy.context.scene.render.filepath
         asset_name = bpy.context.scene.tt_tools_alist
-        bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
+        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         theoutpath = set_output_path(chm_assetroot, chm_renderroot, asset_name, bpy.context.scene.tt_tools_task, chm_tt_stage)
         if (bpy.context.scene.tt_tools_alist.lower() in thisfilename.lower() and 
             bpy.context.scene.tt_tools_alist.lower() in thisoutputpath.lower() and
