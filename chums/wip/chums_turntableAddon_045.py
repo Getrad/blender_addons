@@ -960,19 +960,19 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         (
         name = "Asset Root",
         description = "Asset Root",
-        default = ""
+        default = "Y:/projects/CHUMS_Onsite/_prod/assets/"
         )
     bpy.types.Scene.tt_override_filepath = bpy.props.StringProperty \
         (
         name = "Turntable Base File",
         description = "Turntable Base File",
-        default = ""
+        default = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_410.blend"
         )
     bpy.types.Scene.tt_override_renderroot = bpy.props.StringProperty \
         (
         name = "Output Directory",
         description = "Output Directory",
-        default = ""
+        default = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
         )
     bpy.types.Scene.tt_override_subtree = bpy.props.StringProperty \
         (
