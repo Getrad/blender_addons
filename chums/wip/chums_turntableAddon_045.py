@@ -6,13 +6,13 @@
 #       - BUG - custom properties don't update scene vars automatically - need to hit refresh button
 # 0.4.3 - FEATURE - add enum filter
 # 0.4.4 - FEATURE - add LP support
-
+# 0.4.5 - BUGFIX - Custom preferences added - working stable offsite
 
 
 bl_info = {
     "name": "Turntable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 4, 4),
+    "version": (0, 4, 5),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -38,7 +38,7 @@ import builtins
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.4.4b'
+vsn = '0.4.5'
 
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
@@ -681,7 +681,6 @@ def get_asset(asset_name, asset_dept, asset_stage):
             mytask = "Model"
         # return messagebox showing filepath and message that it can't be found
         tt_tools_messagebox(("Cannot find Path:    " + the_asset_dir + "    check if   " + mytask + "   " + chm_tt_stage + "   are set correctly."), "Missing Path")
-        #print("CANNOT FIND PATH: ", the_asset_dir)
     return 0
 
 def append_asset(asset_name, asset_dept, asset_stage):
@@ -870,6 +869,14 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
     #bl_idname = "Turntable Tools"
     bl_idname = __name__
 
+    tt_override_version: bpy.props.EnumProperty(
+        name="Override Version",
+        description="Override version defaults",
+        items=[('3.x','3.x',''),('4.x','4.x',''),('Custom','Custom','')],
+        update = set_version_override_paths,
+        default = 'Custom',
+    )
+
     tt_override_assetroot: bpy.props.StringProperty(
         name = "Asset Root Directory",
         subtype = 'DIR_PATH',
@@ -882,14 +889,6 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         subtype = 'FILE_PATH',
         update = update_prefs_filepath,
         default = '',
-    )
-
-    tt_override_version: bpy.props.EnumProperty(
-        name="Override Version",
-        description="Override version defaults",
-        items=[('3.x','3.x',''),('4.x','4.x',''),('Custom','Custom','')],
-        update = set_version_override_paths,
-        default = 'Custom',
     )
 
     tt_override_renderroot: bpy.props.StringProperty(
@@ -921,7 +920,6 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         name="Default Deadline Priority",
         default=60,
     )
-
 
     def draw(self, context):
         layout = self.layout
@@ -1135,7 +1133,7 @@ class BUTTON_OT_get_asset(bpy.types.Operator):
     
     def execute(self, context):
         #print("EXECUTE BUTTON_OT_get_asset OPERATOR CLASS")
-        bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
+        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         #print("bpy.context.scene.tt_tools_alist: ", bpy.context.scene.tt_tools_alist)
         #print("bpy.context.scene.tt_tools_task: ", bpy.context.scene.tt_tools_task)
         #print("chm_tt_stage: ", chm_tt_stage)
