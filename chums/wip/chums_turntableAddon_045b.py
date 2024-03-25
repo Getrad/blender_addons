@@ -38,7 +38,7 @@ import builtins
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.4.5'
+vsn = '0.4.5b'
 
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
@@ -64,7 +64,7 @@ chm_assetprefix = {'chr':'characters',
                     'sky':'skies'}
 
 # OMIT THESE ASSET NAMES
-chm_omitlist = (['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirrel', 
+chm_omitlist = (['archive', 'chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirrel', 
                 'env_AAAtemplate', 'env_rompersburrow', 
                 'prp_AAAtemplate', 'prp_bush_romperPopout_01', 'prp_tree_hollowknot',
                 'prx_AAAtemplate', 'prx_treeObstacle_Source'])
@@ -577,12 +577,14 @@ def open_turntable():
                 print("launching Blender from DIRECT local path")
                 mycmd = '\"'
                 mycmd += bpy.app.binary_path
-                mycmd += ('\" \"' + chm_tt_filepath.__str__() + '\"')
-                os.popen(mycmd)
+                mycmd += ('\" \"' + chm_tt_filepath.__str__() + '\" shell=True')
+                os.open(mycmd)
+                #subprocess.call(mycmd)
         else:
             bpy.ops.wm.open_mainfile(filepath=chm_tt_filepath.__str__())
     else:
         tt_tools_messagebox("Turntable cannot be found here:    " + str(chm_tt_filepath) + "\nPlease check path manually and notify your supervisor if you can see and open the file directly.", "Turntable Missing")
+    return {'FINISHED'}
 
 def queryAssetList():
     #print("\nENTER queryAssetList FUNCTION")
@@ -1051,6 +1053,7 @@ class BUTTON_OT_openTT(bpy.types.Operator):
     
     def execute(self, context):
         open_this_file = open_turntable()
+        print(open_this_file)
         return{'FINISHED'}
 
 class BUTTON_OT_openAsset(bpy.types.Operator):
