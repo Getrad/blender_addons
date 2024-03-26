@@ -571,16 +571,14 @@ def open_turntable():
             if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
                 print("launching Blender from LAUNCHPAD function")
                 sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
-                from launchpad.helpers.launchers import launchBlender
-                newsesh = launchBlender(scenePath=chm_tt_filepath, scriptPath=None, background=False, args=sys.argv)
+                from launchpad.helpers.launchers import launchBlenderDetached
+                newsesh = launchBlenderDetached(scenePath=chm_tt_filepath, scriptPath=None, background=False, args=sys.argv)
             else:
                 print("launching Blender from DIRECT local path")
                 mycmd = '\"'
                 mycmd += bpy.app.binary_path
                 mycmd += ('\" \"' + chm_tt_filepath.__str__() + '\"')
-                #os.open(mycmd)
-                newsesh = subprocess.Popen(mycmd)
-                print(newsesh.pid)
+                newsesh = os.open(mycmd)
         else:
             bpy.ops.wm.open_mainfile(filepath=chm_tt_filepath.__str__())
     else:
@@ -760,14 +758,14 @@ def open_assetfile(asset_name, asset_dept, asset_stage):
             if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
                 print("opening asset in Blender from LAUNCHPAD function")
                 sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
-                from launchpad.helpers.launchers import launchBlender
-                newsesh = launchBlender(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
+                from launchpad.helpers.launchers import launchBlenderDetached
+                newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
             else:
                 print("opening asset in Blender from DIRECT local path")
                 mycmd = '\"'
                 mycmd += bpy.app.binary_path
                 mycmd += ('\" \"' + the_asset_path + '\"')
-                os.popen(mycmd)
+                newsesh = os.popen(mycmd)
         else:
             bpy.ops.wm.open_mainfile(filepath=the_asset_path)
     else:
