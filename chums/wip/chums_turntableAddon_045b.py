@@ -577,9 +577,10 @@ def open_turntable():
                 print("launching Blender from DIRECT local path")
                 mycmd = '\"'
                 mycmd += bpy.app.binary_path
-                mycmd += ('\" \"' + chm_tt_filepath.__str__() + '\" shell=True')
-                os.open(mycmd)
-                #subprocess.call(mycmd)
+                mycmd += ('\" \"' + chm_tt_filepath.__str__() + '\"')
+                #os.open(mycmd)
+                newsesh = subprocess.Popen(mycmd)
+                print(newsesh.pid)
         else:
             bpy.ops.wm.open_mainfile(filepath=chm_tt_filepath.__str__())
     else:
