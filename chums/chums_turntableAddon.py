@@ -38,7 +38,7 @@ import builtins
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.4.5a'
+vsn = '0.4.5b'
 
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
@@ -571,18 +571,19 @@ def open_turntable():
             if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
                 print("launching Blender from LAUNCHPAD function")
                 sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
-                from launchpad.helpers.launchers import launchBlender
-                newsesh = launchBlender(scenePath=chm_tt_filepath, scriptPath=None, background=False, args=sys.argv)
+                from launchpad.helpers.launchers import launchBlenderDetached
+                newsesh = launchBlenderDetached(scenePath=chm_tt_filepath, scriptPath=None, background=False, args=sys.argv)
             else:
                 print("launching Blender from DIRECT local path")
                 mycmd = '\"'
                 mycmd += bpy.app.binary_path
                 mycmd += ('\" \"' + chm_tt_filepath.__str__() + '\"')
-                os.popen(mycmd)
+                newsesh = os.open(mycmd)
         else:
             bpy.ops.wm.open_mainfile(filepath=chm_tt_filepath.__str__())
     else:
         tt_tools_messagebox("Turntable cannot be found here:    " + str(chm_tt_filepath) + "\nPlease check path manually and notify your supervisor if you can see and open the file directly.", "Turntable Missing")
+    return {'FINISHED'}
 
 def queryAssetList():
     #print("\nENTER queryAssetList FUNCTION")
@@ -757,14 +758,14 @@ def open_assetfile(asset_name, asset_dept, asset_stage):
             if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
                 print("opening asset in Blender from LAUNCHPAD function")
                 sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
-                from launchpad.helpers.launchers import launchBlender
-                newsesh = launchBlender(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
+                from launchpad.helpers.launchers import launchBlenderDetached
+                newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
             else:
                 print("opening asset in Blender from DIRECT local path")
                 mycmd = '\"'
                 mycmd += bpy.app.binary_path
                 mycmd += ('\" \"' + the_asset_path + '\"')
-                os.popen(mycmd)
+                newsesh = os.popen(mycmd)
         else:
             bpy.ops.wm.open_mainfile(filepath=the_asset_path)
     else:
@@ -1051,6 +1052,7 @@ class BUTTON_OT_openTT(bpy.types.Operator):
     
     def execute(self, context):
         open_this_file = open_turntable()
+        print(open_this_file)
         return{'FINISHED'}
 
 class BUTTON_OT_openAsset(bpy.types.Operator):
