@@ -38,7 +38,7 @@ import builtins
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.4.5b'
+vsn = '0.4.5c'
 
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
@@ -1149,7 +1149,7 @@ class BUTTON_OT_append_asset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
+        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         append_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
         return{'FINISHED'}
 
