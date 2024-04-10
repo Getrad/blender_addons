@@ -38,7 +38,7 @@ import builtins
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.4.5'
+vsn = '0.4.5b'
 
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
@@ -64,7 +64,7 @@ chm_assetprefix = {'chr':'characters',
                     'sky':'skies'}
 
 # OMIT THESE ASSET NAMES
-chm_omitlist = (['chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirrel', 
+chm_omitlist = (['archive', 'chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirrel', 
                 'env_AAAtemplate', 'env_rompersburrow', 
                 'prp_AAAtemplate', 'prp_bush_romperPopout_01', 'prp_tree_hollowknot',
                 'prx_AAAtemplate', 'prx_treeObstacle_Source'])
@@ -408,7 +408,7 @@ def xcodeH264():
     the_outpath = os.path.join(the_outpath_base, outname)
     dlName = os.path.basename(thisfilename)[:-6]
     dlSceneFile = Path(thisfilename).as_posix()
-    dlOutputFile = Path(thisoutputpath).as_posix()
+    dlOutputFile = Path(the_outpath).as_posix()
     dlOutputPath = Path(the_outpath_base).as_posix()
     dlFrames = '0-123'
     filename = uuid.uuid4()
@@ -571,18 +571,19 @@ def open_turntable():
             if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
                 print("launching Blender from LAUNCHPAD function")
                 sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
-                from launchpad.helpers.launchers import launchBlender
-                newsesh = launchBlender(scenePath=chm_tt_filepath, scriptPath=None, background=False, args=sys.argv)
+                from launchpad.helpers.launchers import launchBlenderDetached
+                newsesh = launchBlenderDetached(scenePath=chm_tt_filepath, scriptPath=None, background=False, args=sys.argv)
             else:
                 print("launching Blender from DIRECT local path")
                 mycmd = '\"'
                 mycmd += bpy.app.binary_path
                 mycmd += ('\" \"' + chm_tt_filepath.__str__() + '\"')
-                os.popen(mycmd)
+                newsesh = os.open(mycmd)
         else:
             bpy.ops.wm.open_mainfile(filepath=chm_tt_filepath.__str__())
     else:
         tt_tools_messagebox("Turntable cannot be found here:    " + str(chm_tt_filepath) + "\nPlease check path manually and notify your supervisor if you can see and open the file directly.", "Turntable Missing")
+    return {'FINISHED'}
 
 def queryAssetList():
     #print("\nENTER queryAssetList FUNCTION")
@@ -757,14 +758,14 @@ def open_assetfile(asset_name, asset_dept, asset_stage):
             if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
                 print("opening asset in Blender from LAUNCHPAD function")
                 sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
-                from launchpad.helpers.launchers import launchBlender
-                newsesh = launchBlender(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
+                from launchpad.helpers.launchers import launchBlenderDetached
+                newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
             else:
                 print("opening asset in Blender from DIRECT local path")
                 mycmd = '\"'
                 mycmd += bpy.app.binary_path
                 mycmd += ('\" \"' + the_asset_path + '\"')
-                os.popen(mycmd)
+                newsesh = os.popen(mycmd)
         else:
             bpy.ops.wm.open_mainfile(filepath=the_asset_path)
     else:
@@ -874,7 +875,7 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         description="Override version defaults",
         items=[('3.x','3.x',''),('4.x','4.x',''),('Custom','Custom','')],
         update = set_version_override_paths,
-        default = 'Custom',
+        default = blender_version_str,
     )
 
     tt_override_assetroot: bpy.props.StringProperty(
@@ -1050,7 +1051,8 @@ class BUTTON_OT_openTT(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        open_turntable()
+        open_this_file = open_turntable()
+        print(open_this_file)
         return{'FINISHED'}
 
 class BUTTON_OT_openAsset(bpy.types.Operator):
@@ -1060,7 +1062,7 @@ class BUTTON_OT_openAsset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        open_assetfile(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
+        open_this_file = open_assetfile(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
         return{'FINISHED'}
 
 class BUTTON_OT_refresh(bpy.types.Operator):

@@ -7,6 +7,7 @@
 # 0.4.3 - FEATURE - add enum filter
 # 0.4.4 - FEATURE - add LP support
 # 0.4.5 - BUGFIX - Custom preferences added - working stable offsite
+# 0.4.6 - changed DL tempfile write location to X drive; set deadline pools in submission
 
 
 bl_info = {
@@ -38,7 +39,7 @@ import builtins
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.4.5c'
+vsn = '0.4.6'
 
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
@@ -73,9 +74,9 @@ chm_omitlist = (['archive', 'chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', '
 LAUNCHPAD_REPOSITORY_PATH = r"X:\projects\chums_season2\onsite\pipeline\repos\launchpadRepository"
 
 # ------    FUNCTIONS    --------
-def print(*args, **kwargs):
-    kwargs['flush'] = True
-    builtins.print(*args, **kwargs)
+#def print(*args, **kwargs):
+#    kwargs['flush'] = True
+#    builtins.print(*args, **kwargs)
 
 def update_base_settings(): #(chm_assetroot, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage)
     try:
@@ -252,7 +253,8 @@ def get_asset_from_path(path):
     return asset_name
 
 def getPipelineTmpFolder():
-    tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
+    #tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
+    tmp = r'X:\projects\chums_season2\onsite\pipeline\tmp\dlJobFiles'
     return tmp
 
 def getCurrentUser():
@@ -332,6 +334,8 @@ def sendDeadlineCmd():
         f.write(f"Plugin=Blender\n") # required
         f.write(f"OutputDirectory0={the_outpath_base}\n")
         f.write(f"OutputFilename0={outname}\n")
+        f.write(f"Pool=turntable\n")
+        f.write(f"SecondaryPool=primary\n")
         if bpy.context.scene.tt_tools_draft == True:
             f.write(f"ExtraInfoKeyValue0=SubmitQuickDraft=True\n")
             f.write(f"ExtraInfoKeyValue1=DraftExtension=mov\n")
@@ -432,6 +436,8 @@ def xcodeH264():
         f.write(f"MachineLimit=1\n")
         f.write(f"Group=xcode\n")
         #f.write(f"Allowlist=Darren\n") #FIXME: remove this line when running in prod on the server
+        f.write(f"Pool=turntable\n")
+        f.write(f"SecondaryPool=primary\n")
         f.write(f"ExtraInfo6={dlSceneFile}\n")
 
         #if args["createSgVersion"] == True:
