@@ -254,7 +254,7 @@ def get_asset_from_path(path):
 
 def getPipelineTmpFolder():
     #tmp = r'Y:\projects\CHUMS_Onsite\pipeline\tmp'
-    tmp = r'X:\projects\chums_season2\onsite\pipeline\tmp\dlJobFiles'
+    tmp = r'X:\projects\chums_season2\onsite\pipeline\tmp'
     return tmp
 
 def getCurrentUser():
