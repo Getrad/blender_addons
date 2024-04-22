@@ -40,7 +40,7 @@ import builtins
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.4.7a'
+vsn = '0.4.7c'
 
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
@@ -82,23 +82,23 @@ LAUNCHPAD_REPOSITORY_PATH = r"X:\projects\chums_season2\onsite\pipeline\repos\la
 def update_base_settings(): #(chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage)
     try:
         override_version = bpy.context.preferences.addons[__name__].preferences.tt_override_version
-        print("FROM PREFERENCES")
+        print("\nusing PREFERENCES")
         if override_version == "Custom":
             if len(bpy.context.preferences.addons[__name__].preferences.tt_override_assetroot) > 0:
                 pref_assetroot = bpy.context.preferences.addons[__name__].preferences.tt_override_assetroot
                 bpy.context.scene.tt_override_assetroot = pref_assetroot
-                print("\n    pref_assetroot:", pref_assetroot)
             else:
                 pref_assetroot = ""
                 bpy.context.scene.tt_override_assetroot = pref_assetroot
-            
+            print("*pref_assetroot:", pref_assetroot)
+                        
             if len(bpy.context.preferences.addons[__name__].preferences.tt_override_basefile) > 0:
                 pref_basefile = bpy.context.preferences.addons[__name__].preferences.tt_override_basefile
                 bpy.context.scene.tt_override_basefile = pref_assetroot
-                print("\n    pref_basefile:", pref_basefile)
             else:
                 pref_basefile = 'Path to basefile'
                 bpy.context.scene.tt_override_basefile = pref_basefile
+            print("pref_basefile:", pref_basefile)
             
             if len(bpy.context.preferences.addons[__name__].preferences.tt_override_filepath) > 0:
                 pref_tt_filepath = bpy.context.preferences.addons[__name__].preferences.tt_override_filepath
@@ -176,7 +176,7 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basefile, chm_tt_filepath, c
         
     pref_override_version = override_version
     
-    print("pref_assetroot:", pref_assetroot, "\npref_basefile:", pref_basefile, "\npref_tt_filepath:", pref_tt_filepath, "\npref_renderroot:", pref_renderroot)
+    print("\npref_assetroot:", pref_assetroot, "\npref_basefile:", pref_basefile, "\npref_tt_filepath:", pref_tt_filepath, "\npref_renderroot:", pref_renderroot)
     return (pref_assetroot, pref_basefile, pref_tt_filepath, pref_renderroot, pref_assetssubtree, pref_assetturntables, pref_tt_stage, pref_override_version)
 
 def update_prefs_assetroot(self, context):
@@ -202,11 +202,11 @@ def update_prefs_filepath(self, context):
     return None
 
 def tt_override_basefile(self, context):
-    print("\nself.tt_override_basefile:", self.tt_override_version)
+    print("\nself.tt_override_basefile:", self.tt_override_basefile)
     try:
         if self.tt_override_basefile == "Custom":
-            bpy.context.scene.tt_override_basefile = self.tt_override_filepath
-            print("self.tt_override_basefile:", self.tt_override_filepath)
+            bpy.context.scene.tt_override_basefile = self.tt_override_basefile
+            print("self.tt_override_basefile:", self.tt_override_basefile)
     except:
         print("fail to update prefs")
     
@@ -257,18 +257,22 @@ def set_version_override_paths(self, context):
             case '3.x':
                 self.tt_override_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
                 self.tt_override_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_331.blend"
+                self.tt_override_basefile = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish/basefile_v002.blend"
                 self.tt_override_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
             case '4.x':
                 self.tt_override_assetroot = "X:/projects/chums_season2/onsite/_prod/assets/"
                 self.tt_override_filepath = "X:/projects/chums_season2/onsite/_prod/assets/helpers/turntable/publish/blender/turntable_410.blend"
+                self.tt_override_basefile = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish/basefile_v002.blend"
                 self.tt_override_renderroot = "X:/projects/chums_season2/onsite/renders/_prod/assets"
             case "Custom":
                 self.tt_override_assetroot = bpy.context.scene.tt_override_assetroot
                 self.tt_override_filepath = bpy.context.scene.tt_override_filepath
+                self.tt_override_basefile = bpy.context.scene.tt_override_basefile
                 self.tt_override_renderroot = bpy.context.scene.tt_override_renderroot
             case _:
                 self.tt_override_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
                 self.tt_override_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_331.blend"
+                self.tt_override_basefile = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish/basefile_v002.blend"
                 self.tt_override_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
     return None
 
@@ -374,7 +378,6 @@ def sendDeadlineCmd():
             f.write(f"ExtraInfoKeyValue9=DraftUploadToShotgun=False\n")
 
     pluginInfoPath = Path(tmpDir).joinpath(f'{filename}_pluginInfo.job')
-    # Open the pluginInfo jobfile for writing
     with open(pluginInfoPath, 'w') as f:
         f.write(f"SceneFile={dlSceneFile}\n")
         f.write(f"OutputFile={dlOutputFile}\n")
@@ -386,7 +389,6 @@ def sendDeadlineCmd():
     stdout, stderr = process.communicate()
     sys.stdout.write(stdout.decode())
     if stdout:
-        # Decode the byte string into a UTF-8 string
         output = stdout.decode('utf-8')
         match = re.search(r'JobID=([0-9a-z]+)', output)
         global blendJobId
@@ -460,23 +462,15 @@ def xcodeH264():
         f.write(f"OutputFilename0={outmovname}.mov\n")
         f.write(f"MachineLimit=1\n")
         f.write(f"Group=xcode\n")
-        #f.write(f"Allowlist=Darren\n") #FIXME: remove this line when running in prod on the server
         f.write(f"Pool=turntable\n")
         f.write(f"SecondaryPool=primary\n")
         f.write(f"ExtraInfo6={dlSceneFile}\n")
 
-        #if args["createSgVersion"] == True:
-        #    f.write(f"PostJobScript={updateSgVersionScript}\n")
-        #    f.write(f"ExtraInfo5={args['sgUsername']}\n")
-    
     pluginInfoPath = Path(tmpDir).joinpath(f'{filename}_pluginInfo.job')
-    # Open the pluginInfo jobfile for writing
     with open(pluginInfoPath, 'w') as f:
         f.write(f"InputFile0={dlOutputFile.replace('####', '%04d')}\n") # the image sequence
         f.write(f"InputArgs0=-r {frameRate}\n") # force the image sequence fps to output framerate
         f.write(f"ReplacePadding0=False\n")
-        #f.write(f"ReplacePadding1=False\n")
-        #f.write(f"OutputArgs=-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -profile:v high -level 4.1 -r {frameRate} -s 1080x1080 -c:a aac -b:a 192k -map 0:v:0 -map 1:a:0 -y\n")
         f.write(f"OutputArgs=-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -profile:v high -level 4.1 -r {frameRate} -s 1080x1080 -map 0:v:0 -y\n")
         f.write(f"OutputFile={Path(dlOutputPath).joinpath((outmovname) + '_h264.mov')}\n")
     
@@ -484,7 +478,6 @@ def xcodeH264():
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 def get_selection_bounds(thesel):
-    #print("\nENTER get_selection_bounds FUNCTION")
     from mathutils import Vector
     themin = [0.0, 0.0, 0.0]
     themax = [0.0, 0.0, 0.0]
@@ -525,8 +518,6 @@ def get_selection_bounds(thesel):
     thecenter = ([themin[0]+(thesize[0]/2), 
                   themin[1]+(thesize[1]/2), 
                   themin[2]+(thesize[2]/2)])
-    #print("size [0]", str(thesize))
-    #print("center [1]", str(thecenter))
     
     return thesize, thecenter
 
@@ -596,7 +587,6 @@ def get_assetroot():
 def open_turntable():
     print("call update_base_settings from: open_turntable")
     chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
-    #print("open_turntable: chm_tt_filepath: ", chm_tt_filepath)
     if os.path.exists(chm_tt_filepath):
         if bpy.context.scene.tt_tools_newblend:
             if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
@@ -617,29 +607,10 @@ def open_turntable():
     return {'FINISHED'}
 
 def build_turntable():
-    print("call update_base_settings from: open_turntable")
+    print("\ncall update_base_settings from: build_turntable")
     chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     print("chm_tt_basefile:", chm_tt_basefile)
 
-    '''    
-    if os.path.exists(chm_tt_basefile):
-        if bpy.context.scene.tt_tools_newblend:
-            if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
-                print("launching Blender from LAUNCHPAD function")
-                sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
-                from launchpad.helpers.launchers import launchBlenderDetached
-                newsesh = launchBlenderDetached(scenePath=chm_tt_basefile, scriptPath=None, background=False, args=sys.argv)
-            else:
-                print("launching Blender from DIRECT local path")
-                mycmd = '\"'
-                mycmd += bpy.app.binary_path
-                mycmd += ('\" \"' + chm_tt_basefile.__str__() + '\"')
-                newsesh = os.popen(mycmd)
-        else:
-            bpy.ops.wm.open_mainfile(filepath=chm_tt_basefile.__str__())
-    else:
-        tt_tools_messagebox("Basefile cannot be found here:    " + str(chm_tt_basefile) + "\nPlease check path manually and notify your supervisor if you can see and open the file directly.", "Turntable Missing")
-    '''
     return {'FINISHED'}
 
 def queryAssetList():
@@ -939,7 +910,7 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         name = "Project Base File",
         subtype = 'FILE_PATH',
         update = tt_override_basefile,
-        default = 'Path to basefile',
+        default = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish/basefile_v002.blend",
     )
 
     tt_override_assetroot: bpy.props.StringProperty(
@@ -950,7 +921,7 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
     )
 
     tt_override_filepath: bpy.props.StringProperty(
-        name = "Turntable Base File",
+        name = "Turntable File",
         subtype = 'FILE_PATH',
         update = update_prefs_filepath,
         default = 'Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_410.blend',
@@ -1126,6 +1097,17 @@ class BUTTON_OT_openTT(bpy.types.Operator):
         print(open_this_file)
         return{'FINISHED'}
 
+class BUTTON_OT_buildTT(bpy.types.Operator):
+    '''Build Turntable Basefile.'''
+    bl_idname = "tt_tools.buildtt"
+    bl_label = "Build Turntable"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        build_this_file = build_turntable()
+        print(build_this_file)
+        return{'FINISHED'}
+
 class BUTTON_OT_openAsset(bpy.types.Operator):
     '''Open Latest Asset File'''
     bl_idname = "tt_tools.openasset"
@@ -1205,11 +1187,7 @@ class BUTTON_OT_get_asset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        #print("EXECUTE BUTTON_OT_get_asset OPERATOR CLASS")
         bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-        #print("bpy.context.scene.tt_tools_alist: ", bpy.context.scene.tt_tools_alist)
-        #print("bpy.context.scene.tt_tools_task: ", bpy.context.scene.tt_tools_task)
-        #print("chm_tt_stage: ", chm_tt_stage)
         get_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
         return{'FINISHED'}
 
@@ -1231,11 +1209,7 @@ class BUTTON_OT_get_asset_list(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        #print("EXECUTE BUTTON_OT_get_asset_list OPERATOR CLASS")
         the_asset_list = get_asset_list(chm_tt_stage)
-        #print("the_asset_list: ")
-        #for i in the_asset_list:
-            #print( i[0])
         return{'FINISHED'}
 
 class BUTTON_OT_link_asset(bpy.types.Operator):
@@ -1256,7 +1230,6 @@ class BUTTON_OT_tilt_cam(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        #print("EXECUTE BUTTON_OT_tilt_cam OPERATOR CLASS")
         if "AnimGrp.camera" in bpy.data.objects:
             for o in bpy.context.selected_objects:
                 o.select_set(False)
@@ -1295,7 +1268,6 @@ class BUTTON_OT_set_out_filepath(bpy.types.Operator):
     
     def execute(self, context):
         theoutpath = set_output_path(chm_assetroot, chm_renderroot, bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
-        #print("theoutpath: ", theoutpath)
         bpy.context.scene.render.filepath = theoutpath
         return{'FINISHED'}
 
@@ -1306,11 +1278,8 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        #print("EXECUTE BUTTON_OT_save_ttfile OPERATOR CLASS")
         thisfilepath = bpy.data.filepath
-        #print("thisfilepath: ", thisfilepath)
         thisfilename = os.path.basename(thisfilepath)
-        #print("thisfilename: ", thisfilename)
         if ('turntable' in thisfilename) or (bpy.context.scene.tt_tools_alist in thisfilename or thisfilename[-8:] == "tt.blend"):
             save_tt_file(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
         else:
@@ -1354,6 +1323,7 @@ class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
         layout = self.layout
         layout.prop(bpy.context.scene, "tt_tools_newblend")
         layout.operator("tt_tools.opentt", text=(BUTTON_OT_openTT.bl_label))
+        layout.operator("tt_tools.buildtt", text=(BUTTON_OT_buildTT.bl_label))
         layout.prop(bpy.context.scene, "tt_tools_task")
         split = layout.split(factor=0.85, align=True)
         col = split.column(align=True)
@@ -1397,7 +1367,7 @@ classes = [ tt_toolsProperties, VIEW3D_PT_tt_tools_panel,
             BUTTON_OT_openAsset, BUTTON_OT_submit_tt,
             tt_toolsPreferences, OBJECT_OT_tt_tools_preferences,
             BUTTON_OT_refresh, BUTTON_OT_append_asset,
-            BUTTON_OT_link_asset]
+            BUTTON_OT_link_asset, BUTTON_OT_buildTT]
 
 def register():
     from bpy.utils import register_class
