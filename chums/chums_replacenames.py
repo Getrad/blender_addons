@@ -3,7 +3,7 @@
 bl_info = {
     "name": "Replace Names",
     "author": "conrad dueck",
-    "version": (0,1,0),
+    "version": (0,1,1),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Replace one string with another in scene or selected objects, materials, uvs.",
@@ -16,7 +16,7 @@ import bpy, re
 from bpy import context
 
 ####    GLOBAL VARIABLES    ####l
-vsn = '1.0'
+vsn = '1.1'
 
 
 ####    FUNCTIONS    ####
@@ -53,7 +53,6 @@ def replacemyname(thisobj,
     
     print('exiting replacemyname')
 
-        
 def presuf(thisobj,
            replacenameprefix, 
            replacenamesuffix, 
@@ -73,8 +72,6 @@ def presuf(thisobj,
                 thisobj.data.name = thisobj.name
     
     return thisobj.name
-
-    
 
 ####    CLASSES    ####
 #   OPERATOR BUTTON_OT_replacenamereplace REPLACE
@@ -242,6 +239,14 @@ class BUTTON_OT_replacenamereplace(bpy.types.Operator):
                                   bpy.context.scene.replacenamecase,
                                   bpy.context.scene.replacenameobjdata)
                 
+                #   text (font)
+                if ((theobj.type == "FONT") and bpy.context.scene.replacenametext):
+                    replacemyname(theobj, bpy.context.scene.replacenameold, 
+                                  bpy.context.scene.replacenamenew, 
+                                  bpy.context.scene.replacenamecase,
+                                  bpy.context.scene.replacenameobjdata)
+                
+                
         return{'FINISHED'}
 
 # OPERATOR BUTTON_OT_replacenameselect SELECT
@@ -356,6 +361,18 @@ class BUTTON_OT_replacenameselect(bpy.types.Operator):
                 #   curves
                 if bpy.context.scene.replacenamecurves:
                     if (theobj.type == 'CURVE'):
+                        if bpy.context.scene.replacenamecase:
+                            thenamestr = theobj.name
+                            theteststr = bpy.context.scene.replacenameold
+                        else:
+                            thenamestr = theobj.name.casefold()
+                            theteststr = bpy.context.scene.replacenameold.casefold()
+                        if theteststr in thenamestr:
+                            thenewsel.append(theobj.name)
+                
+                #   text(font)
+                if bpy.context.scene.replacenametext:
+                    if (theobj.type == 'FONT'):
                         if bpy.context.scene.replacenamecase:
                             thenamestr = theobj.name
                             theteststr = bpy.context.scene.replacenameold
@@ -491,6 +508,13 @@ class BUTTON_OT_replacenametrim(bpy.types.Operator):
                 #   curves
                 if bpy.context.scene.replacenamecurves:
                     if (theobj.type == 'CURVE'):
+                        theobj.name = replacenametrim(theobj.name, 
+                                                      bpy.context.scene.replacenamehead, 
+                                                      bpy.context.scene.replacenametail) 
+                
+                #   text(font)
+                if bpy.context.scene.replacenametext:
+                    if (theobj.type == 'FONT'):
                         theobj.name = replacenametrim(theobj.name, 
                                                       bpy.context.scene.replacenamehead, 
                                                       bpy.context.scene.replacenametail) 
@@ -718,6 +742,20 @@ class BUTTON_OT_replacenamepresuf(bpy.types.Operator):
                                    bpy.context.scene.replacenameprefix, 
                                    bpy.context.scene.replacenamesuffix, 
                                    bpy.context.scene.replacenameobjdata)
+                #   text(font)
+                if bpy.context.scene.replacenametext:
+                    if mytype == 'FONT':
+                        if len(thesearchstr) >= 1:
+                            if thesearchstr in theobj.name:
+                                presuf(theobj, 
+                                       bpy.context.scene.replacenameprefix, 
+                                       bpy.context.scene.replacenamesuffix, 
+                                       bpy.context.scene.replacenameobjdata)
+                        else:
+                            presuf(theobj, 
+                                   bpy.context.scene.replacenameprefix, 
+                                   bpy.context.scene.replacenamesuffix, 
+                                   bpy.context.scene.replacenameobjdata)
         return{'FINISHED'}
 
 #   OPERATOR BUTTON_OT_replacenamereset RESET
@@ -756,6 +794,7 @@ class BUTTON_OT_replacenameall(bpy.types.Operator):
         bpy.context.scene.replacenamevertexgroups = True
         bpy.context.scene.replacenameshapekeys = True
         bpy.context.scene.replacenamecurves = True
+        bpy.context.scene.replacenametext = True
         return{'FINISHED'}
 
 #   OPERATOR BUTTON_OT_replacenamenone FILTER NONE
@@ -778,6 +817,7 @@ class BUTTON_OT_replacenamenone(bpy.types.Operator):
         bpy.context.scene.replacenamevertexgroups = False
         bpy.context.scene.replacenameshapekeys = False
         bpy.context.scene.replacenamecurves = False
+        bpy.context.scene.replacenametext = False
         return{'FINISHED'}
 
 #   OPERATOR BUTTON_OT_replacenamelower LOWER CASE ALL
@@ -871,6 +911,12 @@ class BUTTON_OT_replacenamelower(bpy.types.Operator):
                     theobj.name = theobj.name.lower()
                     if bpy.context.scene.replacenameobjdata:
                         theobj.data.name = theobj.data.name.lower()
+                #   text (font)
+                if ((theobj.type == "FONT") and bpy.context.scene.replacenametext):
+                    theobj.name = theobj.name.lower()
+                    if bpy.context.scene.replacenameobjdata:
+                        theobj.data.name = theobj.data.name.lower()
+                
         
         return{'FINISHED'}
 
@@ -901,6 +947,7 @@ class VIEW3D_PT_replacenamereplacename(bpy.types.Panel):
         col.prop(context.scene, "replacenamevertexgroups")
         col.prop(context.scene, "replacenameshapekeys")
         col.prop(context.scene, "replacenamecurves")
+        col.prop(context.scene, "replacenametext")
         split = layout.split(factor=0.5, align=True)
         col = split.column(align=True)
         col.operator("replacename.all", text=(BUTTON_OT_replacenameall.bl_label))
@@ -1018,6 +1065,12 @@ class ReplaceNameProperties(bpy.types.PropertyGroup):
         (
           name = "Curves",
           description = "Search and Replace on Curves",
+          default = True
+        )
+    bpy.types.Scene.replacenametext = bpy.props.BoolProperty \
+        (
+          name = "Text",
+          description = "Search and Replace on Text",
           default = True
         )
     bpy.types.Scene.replacenameobjdata = bpy.props.BoolProperty \
