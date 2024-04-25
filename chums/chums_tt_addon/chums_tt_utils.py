@@ -27,17 +27,19 @@ chm_omitlist = (['archive', 'chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', '
                 'env_AAAtemplate', 'env_rompersburrow', 
                 'prp_AAAtemplate', 'prp_bush_romperPopout_01', 'prp_tree_hollowknot',
                 'prx_AAAtemplate', 'prx_treeObstacle_Source'])
+# LAUNCHPAD
+LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/launchpadRepository"
 
 # FUNCTIONS
-def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage)
+def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version)
     try:
         override_version = (str(bpy.context.scene.tt_override_version))
         print("override_version:", override_version)
-        print("\nusing PREFERENCES")
+        print("using PREFERENCES")
     except:
         override_version = (str(blender_version[0]) + ".x")
         print("override_version:", override_version)
-        print("\nusing DEFAULTS")
+        print("using DEFAULTS")
     
     print("override_version:", override_version)
     
@@ -61,34 +63,43 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, ch
         if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_filepath) > 0:
             pref_tt_filepath = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_filepath
             bpy.context.scene.tt_override_filepath = pref_tt_filepath
-            print("    pref_tt_filepath:", pref_tt_filepath)
         else:
             pref_tt_filepath = ""
             bpy.context.scene.tt_override_filepath = pref_tt_filepath
+        print("    pref_tt_filepath:", pref_tt_filepath)
         
         if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_renderroot) > 0:
             pref_renderroot = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_renderroot
             bpy.context.scene.tt_override_renderroot = pref_renderroot
-            print("    pref_renderroot:", pref_renderroot)
         else:
             pref_renderroot = ""
             bpy.context.scene.tt_override_filepath = pref_renderroot
+        print("    pref_renderroot:", pref_renderroot)
+        
+        if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range) > 0:
+            pref_range = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range
+            bpy.context.scene.tt_override_range = pref_range
+        else:
+            pref_range = "BOO"
+            bpy.context.scene.tt_override_range = pref_range
+        print("    pref_range:", pref_range)
         
         if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_subtree) > 0:
             pref_assetssubtree = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_subtree
             bpy.context.scene.tt_override_subtree = pref_assetssubtree
-            print("    pref_renderroot:", pref_assetssubtree)
         else:
             pref_assetssubtree = ""
             bpy.context.scene.tt_override_subtree = pref_assetssubtree
+        print("    pref_assetssubtree:", pref_assetssubtree)
         
         if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_stage) > 0:
             pref_tt_stage = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_stage
             bpy.context.scene.tt_override_stage = pref_tt_stage
-            print("    pref_renderroot:", pref_tt_stage)
         else:
-                pref_tt_stage = ""
-                bpy.context.scene.tt_override_stage = pref_tt_stage
+            pref_tt_stage = ""
+            bpy.context.scene.tt_override_stage = pref_tt_stage
+        print("    tt_override_stage:", pref_tt_stage)
+
     match blender_version_str:
         case '3.x':
             pref_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
@@ -97,6 +108,7 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, ch
             pref_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
             pref_assetssubtree = "projects/blender"
             pref_assetturntables = "/projects/blender/turntables"
+            pref_range = "1-123"
             pref_tt_stage = 'workfiles'
         case '4.x':
             pref_assetroot = "X:/projects/chums_season2/onsite/_prod/assets"
@@ -105,6 +117,7 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, ch
             pref_renderroot = "X:/projects/chums_season2/onsite/renders/_prod/assets"
             pref_assetssubtree = "blender"
             pref_assetturntables = "turntables"
+            pref_range = "1-123"
             pref_tt_stage = 'work'
         case _:
             pref_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
@@ -113,25 +126,28 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, ch
             pref_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
             pref_assetssubtree = "projects/blender"
             pref_assetturntables = "/projects/blender/turntables"
+            pref_range = "1-123"
             pref_tt_stage = 'workfiles'
     if override_version == 'Custom':
-            if len(bpy.context.scene.tt_override_assetroot) > 0:
-                pref_assetroot = bpy.context.scene.tt_override_assetroot
-            if len(bpy.context.scene.tt_override_filepath) > 0:
-                pref_tt_filepath = bpy.context.scene.tt_override_filepath
-            if len(bpy.context.scene.tt_override_basefile) > 0:
-                pref_basefile = bpy.context.scene.tt_override_basefile
-            if len(bpy.context.scene.tt_override_renderroot) > 0:
-                pref_renderroot = bpy.context.scene.tt_override_renderroot
-            if len(bpy.context.scene.tt_override_stage) > 0:
-                pref_tt_stage = bpy.context.scene.tt_override_stage
-            if len(bpy.context.scene.tt_override_subtree) > 0:
-                pref_assetssubtree = bpy.context.scene.tt_override_subtree
+        if len(bpy.context.scene.tt_override_assetroot) > 0:
+            pref_assetroot = bpy.context.scene.tt_override_assetroot
+        if len(bpy.context.scene.tt_override_filepath) > 0:
+            pref_tt_filepath = bpy.context.scene.tt_override_filepath
+        if len(bpy.context.scene.tt_override_basefile) > 0:
+            pref_basefile = bpy.context.scene.tt_override_basefile
+        if len(bpy.context.scene.tt_override_renderroot) > 0:
+            pref_renderroot = bpy.context.scene.tt_override_renderroot
+        if len(bpy.context.scene.tt_override_range) > 0:
+            pref_range = bpy.context.scene.tt_override_range
+        if len(bpy.context.scene.tt_override_stage) > 0:
+            pref_tt_stage = bpy.context.scene.tt_override_stage
+        if len(bpy.context.scene.tt_override_subtree) > 0:
+            pref_assetssubtree = bpy.context.scene.tt_override_subtree
         
     pref_override_version = override_version
     
     print("\npref_assetroot:", pref_assetroot, "\npref_basefile:", pref_basefile, "\npref_tt_filepath:", pref_tt_filepath, "\npref_renderroot:", pref_renderroot)
-    return (pref_assetroot, pref_basefile, pref_tt_filepath, pref_renderroot, pref_assetssubtree, pref_assetturntables, pref_tt_stage, pref_override_version)
+    return(pref_assetroot, pref_basefile, pref_tt_filepath, pref_renderroot, pref_assetssubtree, pref_assetturntables, pref_range, pref_tt_stage, pref_override_version)
 
 def get_asset_from_path(path):
     asset_name = ""
@@ -170,7 +186,7 @@ def sendDeadlineCmd():
                         'sky':'skies'}
     asset_type = chm_assetprefix[asset_name[:3]]
     print("call update_base_settings from: sendDeadlineCmd")
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     if chm_tt_version == "4.x":
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_tt_stage,chm_assetssubtree).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,chm_tt_stage).replace("/","\\")
@@ -203,7 +219,8 @@ def sendDeadlineCmd():
     dlSceneFile = Path(thisfilename).as_posix()
     dlOutputFile = Path(thisoutputpath).as_posix()
     #dlFrames = '0-123'
-    dlFrames = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range)
+    #dlFrames = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range)
+    dlFrames = str(chm_tt_range)
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
     jobPrio = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.defaultpriority)
@@ -267,7 +284,7 @@ def xcodeH264():
                        'prx':'proxies',
                        'sky':'skies'}
     asset_type = chm_assetprefix[asset_name[:3]]
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     if chm_tt_version == "4.x":
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_tt_stage,chm_assetssubtree).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,chm_tt_stage).replace("/","\\")
@@ -299,7 +316,7 @@ def xcodeH264():
     dlSceneFile = Path(thisfilename).as_posix()
     dlOutputFile = Path(the_outpath).as_posix()
     dlOutputPath = Path(the_outpath_base).as_posix()
-    dlFrames = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range)
+    dlFrames = str(chm_tt_range)
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
     jobPrio = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.defaultpriority)
@@ -436,7 +453,7 @@ def get_assetroot():
 
 def open_turntable():
     print("call update_base_settings from: open_turntable")
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     if os.path.exists(chm_tt_filepath):
         if bpy.context.scene.tt_tools_newblend:
             if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
@@ -460,7 +477,7 @@ def build_turntable():
     print("\ncall update_base_setting() from: build_turntable")
     this_file_path = os.path.dirname(os.path.realpath(__file__))
     chm_postload = os.path.join(this_file_path, 'chums_tt_build.py')
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     chm_basefile = find_latest_workfile(chm_tt_basedir)
     print("chm_basefile: ", chm_basefile)
     mycmd = '\"'
@@ -477,7 +494,7 @@ def build_turntable():
 def queryAssetList():
     #print("\nENTER queryAssetList FUNCTION")
     print("call update_base_settings from: queryAssetList")
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     print("chm_assetroot: ", chm_assetroot, "\nchm_tt_filepath: ", chm_tt_filepath, "\nchm_renderroot: ", chm_renderroot, "\nchm_assetssubtree: ", chm_assetssubtree, "\nchm_assetturntables: ", chm_assetturntables, "\nchm_tt_stage: ", chm_tt_stage, "\nchm_tt_version: ", chm_tt_version)
     anames = []
     try:
@@ -501,7 +518,7 @@ def explore_asset(asset_name, asset_dept, asset_stage):
                     'prx':'proxies',
                     'sky':'skies'}
     print("call update_base_settings from: explore_asset")
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,asset_stage,chm_assetssubtree).replace("/","\\")
@@ -521,7 +538,7 @@ def explore_asset(asset_name, asset_dept, asset_stage):
 def get_asset_list(asset_stage):
     asset_list = []
     for asset_type in chm_assettypes:
-        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         asset_type_path = (os.path.join(chm_assetroot,asset_type))
         assets = [o for o in os.listdir(asset_type_path) if (not(o[-3:] == "zip") and not("_AAA" in o) and not(o == ".DS_Store"))]
         for asset in assets:
@@ -542,7 +559,7 @@ def get_asset(asset_name, asset_dept, asset_stage):
                        'prx':'proxies',
                        'sky':'skies'}
     print("call update_base_settings from: get_asset")
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_tt_stage,chm_assetssubtree).replace("/","\\")
@@ -582,7 +599,7 @@ def append_asset(asset_name, asset_dept, asset_stage):
                        'prx':'proxies',
                        'sky':'skies'}
     print("call update_base_settings from: append_asset")
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_tt_stage,chm_assetssubtree).replace("/","\\")
@@ -609,7 +626,7 @@ def link_asset(asset_name, asset_dept, asset_stage):
                        'prx':'proxies',
                        'sky':'skies'}
     print("call update_base_settings from: link_asset")
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_tt_stage,chm_assetssubtree).replace("/","\\")
@@ -635,7 +652,7 @@ def open_assetfile(asset_name, asset_dept, asset_stage):
                        'sky':'skies'}
     the_asset_type = chm_assetprefix[asset_name[:3]]
     print("call update_base_settings from: open_assetfile")
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     if chm_tt_version == "4.x":
         the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_tt_stage,chm_assetssubtree)
     else:
@@ -676,7 +693,7 @@ def set_output_path(asset_root, render_root, asset_name, asset_task, asset_stage
                        'prx':'proxies',
                        'sky':'skies'}
     print("call update_base_settings from: set_output_path")
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_workpath = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_task,chm_tt_stage,chm_assetssubtree).replace("/","\\")
@@ -725,7 +742,7 @@ def save_tt_file(asset_name, asset_task, asset_stage):
                        'prx':'proxies',
                        'sky':'skies'}
     print("call update_base_settings from: save_tt_file")
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_tt_stage,chm_assetssubtree).replace("/","\\")

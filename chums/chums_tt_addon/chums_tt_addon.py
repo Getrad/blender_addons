@@ -31,7 +31,7 @@ from .chums_tt_utils import queryAssetList
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.5.0b'
+vsn = '0.5.0c'
 #   GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 #   SET DEFAULT VERSION STRING
@@ -41,7 +41,7 @@ thecam_name = "cam.ttCamera"
 # OUTPUT PARAMETERS
 frameRate = 23.976
 thekeyframes_cam = [121,122,123]
-
+            
 # --------    CLASSES    --------
 # OPERATORS
 class BUTTON_OT_openTT(bpy.types.Operator):
@@ -73,7 +73,7 @@ class BUTTON_OT_openAsset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         open_this_file = open_assetfile(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
         return{'FINISHED'}
 
@@ -100,7 +100,7 @@ class BUTTON_OT_exploreAsset(bpy.types.Operator):
     
     def execute(self, context):
         print("call update_base_settings from: BUTTON_OT_exploreAsset")
-        chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         explore_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
         return{'FINISHED'}
 
@@ -120,15 +120,20 @@ class BUTTON_OT_set_cam_loc(bpy.types.Operator):
             for theasset_dim in theasset_size[0]:
                 if theasset_dim >= theasset_max:
                     theasset_max = theasset_dim
-            thecam.location.z = (((theasset_max/2.0)*(1.0+((2*bpy.context.scene.tt_tools_overscan)/100.0)))/math.tan((bpy.context.scene.camera.data.angle)/2))
-            if bpy.data.objects['Ruler']:
-                bpy.data.objects['Ruler'].location.y = ((theasset_size[0][1]/2)*(-1.0 - (bpy.context.scene.tt_tools_overscan/100.0)))
-            thecam.parent.location.z = (theasset_size[1][2])
-            userBaseAngle = math.radians(bpy.context.preferences.addons['chums_tt_addon'].preferences.defaultangle)
-            for aframe in thekeyframes_cam:
-                bpy.context.scene.frame_set(aframe)
-                thecam.parent.rotation_euler.z = userBaseAngle
-                thecam.parent.keyframe_insert(data_path='rotation_euler', frame=aframe)
+                thecam.location.z = (((theasset_max/2.0)*(1.0+((2*bpy.context.scene.tt_tools_overscan)/100.0)))/math.tan((bpy.context.scene.camera.data.angle)/2))
+                if bpy.data.objects['Ruler']:
+                    bpy.data.objects['Ruler'].location.y = ((theasset_size[0][1]/2)*(-1.0 - (bpy.context.scene.tt_tools_overscan/100.0)))
+                thecam.parent.location.z = (theasset_size[1][2])
+                userBaseAngle = math.radians(bpy.context.preferences.addons['chums_tt_addon'].preferences.tt_override_angle)
+                thekeyframes_val = [72,135,45]
+                for ii in range(len(thekeyframes_cam)):
+                    aframe = thekeyframes_cam[ii]
+                    avalue = thekeyframes_val[ii]
+                    bpy.context.scene.frame_set(aframe)
+                    thecam.parent.rotation_euler.z = userBaseAngle
+                    userTiltAngle = math.radians(avalue)
+                    thecam.parent.rotation_euler.x = userTiltAngle
+                    thecam.parent.keyframe_insert(data_path='rotation_euler', frame=aframe)
         else:
             tt_tools_messagebox("Camera    " + str(thecam_name) + "    appears to be missing.\nPlease ensure you're in a turntable file that contains this object.", "Missing Object")
         return{'FINISHED'}
@@ -141,7 +146,7 @@ class BUTTON_OT_get_asset(bpy.types.Operator):
     
     def execute(self, context):
         bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-        chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         get_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
         #get_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, bpy.context.scene.tt_override_stage)
         return{'FINISHED'}
@@ -154,7 +159,7 @@ class BUTTON_OT_append_asset(bpy.types.Operator):
     
     def execute(self, context):
         bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-        chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         append_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
         return{'FINISHED'}
 
@@ -175,7 +180,7 @@ class BUTTON_OT_link_asset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
         link_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
         return{'FINISHED'}
@@ -224,7 +229,7 @@ class BUTTON_OT_set_out_filepath(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         theoutpath = set_output_path(chm_assetroot, chm_renderroot, bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
         bpy.context.scene.render.filepath = theoutpath
         return{'FINISHED'}
@@ -236,7 +241,7 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         thisfilepath = bpy.data.filepath
         thisfilename = os.path.basename(thisfilepath)
         save_tt_file(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
@@ -250,7 +255,7 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         thisfilepath = bpy.data.filepath
         thisfilename = os.path.basename(thisfilepath)
         thisoutputpath = bpy.context.scene.render.filepath
