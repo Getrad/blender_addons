@@ -1,4 +1,6 @@
 # 0.4.7 - FEATURE - rebuild_turntable function - using basefile as starting point, then appending necessary (will require post load script write)
+# 0.5.0 - REFACTOR
+# 0.5.1 - FEATURE - frame range override
 
 import bpy
 import os
@@ -31,9 +33,6 @@ user_path = os.path.join("C:\\users",current_user)
 thecam_name = "cam.ttCamera"
 # DEADLINE COMMAND
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
-# OUTPUT PARAMETERS
-frameRate = 23.976
-thekeyframes_cam = [121,122,123]
 # LAUNCHPAD
 LAUNCHPAD_REPOSITORY_PATH = r"X:\projects\chums_season2\onsite\pipeline\repos\launchpadRepository"
 
@@ -210,6 +209,12 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         default=60,
     )
 
+    tt_override_range: bpy.props.StringProperty(
+        name="Render Range",
+        default = "1-123",
+    )
+
+
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "tt_override_version")
@@ -219,6 +224,7 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "tt_override_renderroot")
         layout.prop(self, "tt_override_subtree")
         layout.prop(self, "tt_override_stage")
+        layout.prop(self, "tt_override_range")
         layout.prop(self, "defaultangle")
         layout.prop(self, "defaultpriority")
 
@@ -287,6 +293,24 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         name = "Stage",
         description = "Stage",
         default = "workfiles"
+        )
+    bpy.types.Scene.defaultangle = bpy.props.FloatProperty \
+        (
+        name = "Default Angle",
+        description = "Default Camera Parent Z Rotation",
+        default = 22.5
+        )
+    bpy.types.Scene.defaultpriority = bpy.props.IntProperty \
+        (
+        name = "Default Deadline Priority",
+        description = "Default Deadline Priority",
+        default = 60
+        )
+    bpy.types.Scene.tt_override_range = bpy.props.StringProperty \
+        (
+        name = "Render Range",
+        description = "Override Render Range",
+        default = "1-123"
         )
     bpy.types.Scene.tt_tools_override_ttsave = bpy.props.StringProperty \
         (

@@ -31,7 +31,6 @@ chm_omitlist = (['archive', 'chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', '
 # FUNCTIONS
 def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage)
     try:
-        #override_version = bpy.context.preferences.addons[__name__].preferences.tt_override_version
         override_version = (str(bpy.context.scene.tt_override_version))
         print("override_version:", override_version)
         print("\nusing PREFERENCES")
@@ -203,7 +202,8 @@ def sendDeadlineCmd():
     dlName = os.path.basename(thisfilename)[:-6]
     dlSceneFile = Path(thisfilename).as_posix()
     dlOutputFile = Path(thisoutputpath).as_posix()
-    dlFrames = '0-123'
+    #dlFrames = '0-123'
+    dlFrames = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range)
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
     jobPrio = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.defaultpriority)
@@ -299,7 +299,7 @@ def xcodeH264():
     dlSceneFile = Path(thisfilename).as_posix()
     dlOutputFile = Path(the_outpath).as_posix()
     dlOutputPath = Path(the_outpath_base).as_posix()
-    dlFrames = '0-123'
+    dlFrames = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range)
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
     jobPrio = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.defaultpriority)
@@ -466,8 +466,8 @@ def build_turntable():
     mycmd = '\"'
     mycmd += bpy.app.binary_path
     mycmd += ('\" \"' + chm_basefile.__str__() + "\"")
-    mycmd += (' --python \"' + chm_postload.__str__() + ("\""))
-    mycmd += (' \"' + chm_tt_filepath.__str__() + '\"')
+    mycmd += (' -P \"' + chm_postload.__str__() + ("\""))
+    mycmd += (' -- \"' + chm_tt_filepath.__str__() + '\"')
     print("\nmycmd = ", mycmd)
     
     my_build_tt = os.popen(mycmd)
