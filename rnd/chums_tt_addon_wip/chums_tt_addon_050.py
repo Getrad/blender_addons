@@ -9,12 +9,12 @@
 # 0.4.5 - BUGFIX - Custom preferences added - working stable offsite
 # 0.4.6 - changed DL tempfile write location to X drive; set deadline pools in submission
 # 0.4.7 - FEATURE - rebuild_turntable function - using basefile as starting point, then appending necessary (will require post load script write)
-
+# 0.5.0 - MODULARIZING
 
 bl_info = {
     "name": "Turntable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 4, 7),
+    "version": (0, 5, 0),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -23,11 +23,11 @@ bl_info = {
     "tracker_url": "",
     "category": "Chums"}
 
-
 # ---    GLOBAL IMPORTS    ----
 from pathlib import Path
 from getpass import getuser
 from socket import gethostname
+from importlib import reload
 import bpy
 import os
 import re
@@ -38,45 +38,39 @@ import sys
 import subprocess
 import builtins
 
+
 # ---    GLOBAL VARIABLES    ----
-# VERSION
-vsn = '0.4.7e'
-
-# GET BLENDER MAIN VERSION
+#   GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
-
+#   SET DEFAULT VERSION STRING
+blender_version_str = (str(blender_version[0]) + ".x")
+# VERSION
+vsn = '0.5.0'
 # GET USER
 current_user = os.getlogin()
 user_path = os.path.join("C:\\users",current_user)
-
-# SET DEFAULT PATHING
-blender_version_str = (str(blender_version[0]) + ".x")
-
 # BASEFILE SPECIFIC 
 thecam_name = "cam.ttCamera"
-
 # DEADLINE COMMAND
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
-
 # OUTPUT PARAMETERS
 frameRate = 23.976
 thekeyframes_cam = [121,122,123]
-
 # DEFINE ASSET TYPE PREFIXES
 chm_assetprefix = {'chr':'characters', 
                     'env':'environments', 
                     'prp':'props', 
                     'prx':'proxies',
                     'sky':'skies'}
-
 # OMIT THESE ASSET NAMES
 chm_omitlist = (['archive', 'chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirrel', 
                 'env_AAAtemplate', 'env_rompersburrow', 
                 'prp_AAAtemplate', 'prp_bush_romperPopout_01', 'prp_tree_hollowknot',
                 'prx_AAAtemplate', 'prx_treeObstacle_Source'])
-
 # LAUNCHPAD
 LAUNCHPAD_REPOSITORY_PATH = r"X:\projects\chums_season2\onsite\pipeline\repos\launchpadRepository"
+
+
 
 # ------    FUNCTIONS    --------
 #def print(*args, **kwargs):
@@ -249,12 +243,6 @@ def update_prefs_subtree(self, context):
     
     return None
 
-def make_path_absolute(self, context):
-    if self.tt_tools_override_asset:
-        if self.tt_tools_override_asset.startswith('//'):
-            self.tt_tools_override_asset = (os.path.abspath(bpy.path.abspath(self.tt_tools_override_asset)))
-    return None
-
 def set_version_override_paths(self, context):
     if self.tt_override_version:
         match self.tt_override_version:
@@ -286,6 +274,12 @@ def set_version_override_paths(self, context):
                 self.tt_override_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
                 self.tt_override_subtree = "projects/blender"
                 self.tt_override_stage = 'workfiles'
+    return None
+
+def make_path_absolute(self, context):
+    if self.tt_tools_override_asset:
+        if self.tt_tools_override_asset.startswith('//'):
+            self.tt_tools_override_asset = (os.path.abspath(bpy.path.abspath(self.tt_tools_override_asset)))
     return None
 
 def get_asset_from_path(path):
@@ -624,7 +618,7 @@ def build_turntable():
     mycmd = '\"'
     mycmd += bpy.app.binary_path
     mycmd += ('\" \"' + chm_tt_basefile.__str__() + ' ' +  + ' ' + chm_tt_filepath.__str__() + '\"')
-    newsesh = os.popen(mycmd)
+    my_build_tt = os.popen(mycmd)
     
 
     return {'FINISHED'}
@@ -908,8 +902,9 @@ def tt_tools_messagebox(message, title):
         self.layout.label(text=message)
     bpy.context.window_manager.popup_menu(draw, title = title, icon='ERROR')
 
+
 # --------    CLASSES    --------
-# PREFERENCES
+#   PREFERENCES
 class tt_toolsPreferences(bpy.types.AddonPreferences):
     #bl_idname = "Turntable Tools"
     bl_idname = __name__
@@ -1001,7 +996,7 @@ class OBJECT_OT_tt_tools_preferences(bpy.types.Operator):
 
         return {'FINISHED'}
 
-# PROPERTIES
+#   PROPERTIES
 class tt_toolsProperties(bpy.types.PropertyGroup):
     bpy.types.Scene.tt_tools_assetname = bpy.props.StringProperty \
         (
@@ -1369,19 +1364,14 @@ class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
         col = split.column(align=True)
         col.prop(bpy.context.scene, "tt_tools_draft")
 
-chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
-if os.path.exists(chm_assetroot):
-    chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
-                  os.path.isdir(os.path.join(chm_assetroot, f))])
-
 #   REGISTER
-classes = [ tt_toolsProperties, VIEW3D_PT_tt_tools_panel, 
+classes = [ VIEW3D_PT_tt_tools_panel, tt_toolsProperties,
             BUTTON_OT_set_cam_loc, BUTTON_OT_get_asset, 
+            tt_toolsPreferences,OBJECT_OT_tt_tools_preferences, 
             BUTTON_OT_openTT, BUTTON_OT_exploreAsset,
             BUTTON_OT_set_out_filepath, BUTTON_OT_save_ttfile,
             BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam,
             BUTTON_OT_openAsset, BUTTON_OT_submit_tt,
-            tt_toolsPreferences, OBJECT_OT_tt_tools_preferences,
             BUTTON_OT_refresh, BUTTON_OT_append_asset,
             BUTTON_OT_link_asset, BUTTON_OT_buildTT]
 
@@ -1395,8 +1385,7 @@ def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
-    
 
 if __name__ == "__main__":
     register()
-    
+

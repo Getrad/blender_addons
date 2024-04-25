@@ -1,34 +1,7 @@
-# ----------------------- NOTES -----------------------
-# 0.4.0 - UPDATE - to Blender version 4.x
-# 0.4.1 - UPDATE - removed tunes; set default paths when not 331 or 410 to use 331
-# 0.4.2 - FEATURE - string field asset override
-#       - DEADLINE SUPPORT - BUG - comment is incorrect for custom submissions
-#       - BUG - custom properties don't update scene vars automatically - need to hit refresh button
-# 0.4.3 - FEATURE - add enum filter
-# 0.4.4 - FEATURE - add LP support
-# 0.4.5 - BUGFIX - Custom preferences added - working stable offsite
-# 0.4.6 - changed DL tempfile write location to X drive; set deadline pools in submission
-# 0.4.7 - FEATURE - rebuild_turntable function - using basefile as starting point, then appending necessary (will require post load script write)
-
-
-bl_info = {
-    "name": "Turntable Tools",
-    "author": "Conrad Dueck, Darren Place",
-    "version": (0, 4, 7),
-    "blender": (4, 1, 0),
-    "location": "View3D > Tool Shelf > Chums",
-    "description": "Turntable Convenience Tools",
-    "warning": "",
-    "wiki_url": "",
-    "tracker_url": "",
-    "category": "Chums"}
-
-
-# ---    GLOBAL IMPORTS    ----
+import bpy
 from pathlib import Path
 from getpass import getuser
 from socket import gethostname
-import bpy
 import os
 import re
 import math
@@ -39,111 +12,89 @@ import subprocess
 import builtins
 
 # ---    GLOBAL VARIABLES    ----
-# VERSION
-vsn = '0.4.7e'
-
-# GET BLENDER MAIN VERSION
+#   GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
-
-# GET USER
-current_user = os.getlogin()
-user_path = os.path.join("C:\\users",current_user)
-
-# SET DEFAULT PATHING
+#   SET DEFAULT VERSION STRING
 blender_version_str = (str(blender_version[0]) + ".x")
-
-# BASEFILE SPECIFIC 
-thecam_name = "cam.ttCamera"
-
-# DEADLINE COMMAND
-deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
-
-# OUTPUT PARAMETERS
-frameRate = 23.976
-thekeyframes_cam = [121,122,123]
-
 # DEFINE ASSET TYPE PREFIXES
 chm_assetprefix = {'chr':'characters', 
                     'env':'environments', 
                     'prp':'props', 
                     'prx':'proxies',
                     'sky':'skies'}
-
 # OMIT THESE ASSET NAMES
 chm_omitlist = (['archive', 'chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', 'chr_squirrel', 
                 'env_AAAtemplate', 'env_rompersburrow', 
                 'prp_AAAtemplate', 'prp_bush_romperPopout_01', 'prp_tree_hollowknot',
                 'prx_AAAtemplate', 'prx_treeObstacle_Source'])
 
-# LAUNCHPAD
-LAUNCHPAD_REPOSITORY_PATH = r"X:\projects\chums_season2\onsite\pipeline\repos\launchpadRepository"
-
-# ------    FUNCTIONS    --------
-#def print(*args, **kwargs):
-#    kwargs['flush'] = True
-#    builtins.print(*args, **kwargs)
-
-def update_base_settings(): #(chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage)
+# FUNCTIONS
+def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage)
     try:
-        override_version = bpy.context.preferences.addons[__name__].preferences.tt_override_version
+        #override_version = bpy.context.preferences.addons[__name__].preferences.tt_override_version
+        override_version = (str(bpy.context.scene.tt_override_version))
+        print("override_version:", override_version)
         print("\nusing PREFERENCES")
-        if override_version == "Custom":
-            if len(bpy.context.preferences.addons[__name__].preferences.tt_override_assetroot) > 0:
-                pref_assetroot = bpy.context.preferences.addons[__name__].preferences.tt_override_assetroot
-                bpy.context.scene.tt_override_assetroot = pref_assetroot
-            else:
-                pref_assetroot = ""
-                bpy.context.scene.tt_override_assetroot = pref_assetroot
-            print("    pref_assetroot:", pref_assetroot)
-                        
-            if len(bpy.context.preferences.addons[__name__].preferences.tt_override_basefile) > 0:
-                pref_basefile = bpy.context.preferences.addons[__name__].preferences.tt_override_basefile
-                bpy.context.scene.tt_override_basefile = pref_basefile
-            else:
-                pref_basefile = 'Path to basefile'
-                bpy.context.scene.tt_override_basefile = pref_basefile
-            print("    pref_basefile:", pref_basefile)
-            
-            if len(bpy.context.preferences.addons[__name__].preferences.tt_override_filepath) > 0:
-                pref_tt_filepath = bpy.context.preferences.addons[__name__].preferences.tt_override_filepath
-                bpy.context.scene.tt_override_filepath = pref_tt_filepath
-                print("    pref_tt_filepath:", pref_tt_filepath)
-            else:
-                pref_tt_filepath = ""
-                bpy.context.scene.tt_override_filepath = pref_tt_filepath
-            
-            if len(bpy.context.preferences.addons[__name__].preferences.tt_override_renderroot) > 0:
-                pref_renderroot = bpy.context.preferences.addons[__name__].preferences.tt_override_renderroot
-                bpy.context.scene.tt_override_renderroot = pref_renderroot
-                print("    pref_renderroot:", pref_renderroot)
-            else:
-                pref_renderroot = ""
-                bpy.context.scene.tt_override_filepath = pref_renderroot
-            
-            if len(bpy.context.preferences.addons[__name__].preferences.tt_override_subtree) > 0:
-                pref_assetssubtree = bpy.context.preferences.addons[__name__].preferences.tt_override_subtree
-                bpy.context.scene.tt_override_subtree = pref_assetssubtree
-                print("    pref_renderroot:", pref_assetssubtree)
-            else:
-                pref_assetssubtree = ""
-                bpy.context.scene.tt_override_subtree = pref_assetssubtree
-            
-            if len(bpy.context.preferences.addons[__name__].preferences.tt_override_stage) > 0:
-                pref_tt_stage = bpy.context.preferences.addons[__name__].preferences.tt_override_stage
-                bpy.context.scene.tt_override_stage = pref_tt_stage
-                print("    pref_renderroot:", pref_tt_stage)
-            else:
+    except:
+        override_version = (str(blender_version[0]) + ".x")
+        print("override_version:", override_version)
+        print("\nusing DEFAULTS")
+    
+    print("override_version:", override_version)
+    
+    if override_version == "Custom":
+        if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_assetroot) > 0:
+            pref_assetroot = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_assetroot
+            bpy.context.scene.tt_override_assetroot = pref_assetroot
+        else:
+            pref_assetroot = ""
+            bpy.context.scene.tt_override_assetroot = pref_assetroot
+        print("    pref_assetroot:", pref_assetroot)
+                    
+        if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_basefile) > 0:
+            pref_basefile = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_basefile
+            bpy.context.scene.tt_override_basefile = pref_basefile
+        else:
+            pref_basefile = 'Path to basefile'
+            bpy.context.scene.tt_override_basefile = pref_basefile
+        print("    pref_basefile:", pref_basefile)
+        
+        if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_filepath) > 0:
+            pref_tt_filepath = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_filepath
+            bpy.context.scene.tt_override_filepath = pref_tt_filepath
+            print("    pref_tt_filepath:", pref_tt_filepath)
+        else:
+            pref_tt_filepath = ""
+            bpy.context.scene.tt_override_filepath = pref_tt_filepath
+        
+        if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_renderroot) > 0:
+            pref_renderroot = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_renderroot
+            bpy.context.scene.tt_override_renderroot = pref_renderroot
+            print("    pref_renderroot:", pref_renderroot)
+        else:
+            pref_renderroot = ""
+            bpy.context.scene.tt_override_filepath = pref_renderroot
+        
+        if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_subtree) > 0:
+            pref_assetssubtree = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_subtree
+            bpy.context.scene.tt_override_subtree = pref_assetssubtree
+            print("    pref_renderroot:", pref_assetssubtree)
+        else:
+            pref_assetssubtree = ""
+            bpy.context.scene.tt_override_subtree = pref_assetssubtree
+        
+        if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_stage) > 0:
+            pref_tt_stage = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_stage
+            bpy.context.scene.tt_override_stage = pref_tt_stage
+            print("    pref_renderroot:", pref_tt_stage)
+        else:
                 pref_tt_stage = ""
                 bpy.context.scene.tt_override_stage = pref_tt_stage
-    except:
-        print("FROM DEFAULTS")
-        override_version = (str(blender_version[0]) + ".x")
-    print("override_version:", override_version)
     match blender_version_str:
         case '3.x':
             pref_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
             pref_tt_filepath = Path(str(pref_assetroot + "helpers/turntable/projects/blender/turntable_331.blend"))
-            pref_basefile = 'Path to Base File'
+            pref_basefile = 'Y:/projects/CHUMS_Onsite/_prod/assets/helpers/basefiles/publish/'
             pref_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
             pref_assetssubtree = "projects/blender"
             pref_assetturntables = "/projects/blender/turntables"
@@ -151,7 +102,7 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basefile, chm_tt_filepath, c
         case '4.x':
             pref_assetroot = "X:/projects/chums_season2/onsite/_prod/assets"
             pref_tt_filepath = Path(str(pref_assetroot + "/helpers/turntable/publish/blender/turntable_410.blend"))
-            pref_basefile = 'X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish/basefile_v002.blend'
+            pref_basefile = 'X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish'
             pref_renderroot = "X:/projects/chums_season2/onsite/renders/_prod/assets"
             pref_assetssubtree = "blender"
             pref_assetturntables = "turntables"
@@ -159,7 +110,7 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basefile, chm_tt_filepath, c
         case _:
             pref_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
             pref_tt_filepath = Path(str(pref_assetroot + "helpers/turntable/projects/blender/turntable_331.blend"))
-            pref_basefile = 'Path to Base File'
+            pref_basefile = 'X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish'
             pref_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
             pref_assetssubtree = "projects/blender"
             pref_assetturntables = "/projects/blender/turntables"
@@ -182,111 +133,6 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basefile, chm_tt_filepath, c
     
     print("\npref_assetroot:", pref_assetroot, "\npref_basefile:", pref_basefile, "\npref_tt_filepath:", pref_tt_filepath, "\npref_renderroot:", pref_renderroot)
     return (pref_assetroot, pref_basefile, pref_tt_filepath, pref_renderroot, pref_assetssubtree, pref_assetturntables, pref_tt_stage, pref_override_version)
-
-def update_prefs_assetroot(self, context):
-    print("\nself.tt_override_version:", self.tt_override_version)
-    try:
-        if self.tt_override_version == "Custom":
-            bpy.context.scene.tt_override_assetroot = self.tt_override_assetroot
-            print("self.tt_override_assetroot:", self.tt_override_assetroot)
-    except:
-        print("fail to update prefs")
-    
-    return None
-
-def update_prefs_filepath(self, context):
-    print("\nself.tt_override_version:", self.tt_override_version)
-    try:
-        if self.tt_override_version == "Custom":
-            bpy.context.scene.tt_override_filepath = self.tt_override_filepath
-            print("self.tt_override_filepath:", self.tt_override_filepath)
-    except:
-        print("fail to update prefs")
-    
-    return None
-
-def tt_override_basefile(self, context):
-    print("\nself.tt_override_basefile:", self.tt_override_basefile)
-    try:
-        if self.tt_override_basefile == "Custom":
-            bpy.context.scene.tt_override_basefile = self.tt_override_basefile
-            print("self.tt_override_basefile:", self.tt_override_basefile)
-    except:
-        print("fail to update prefs")
-    
-    return None
-
-def update_prefs_renderroot(self, context):
-    print("\nself.tt_override_version:", self.tt_override_version)
-    try:
-        if self.tt_override_version == "Custom":
-            bpy.context.scene.tt_override_renderroot = self.tt_override_renderroot
-            print("self.tt_override_renderroot:", self.tt_override_renderroot)
-    except:
-        print("fail to update prefs")
-    
-    return None
-
-def update_prefs_stage(self, context):
-    print("\nself.tt_override_version:", self.tt_override_version)
-    try:
-        if self.tt_override_version == "Custom":
-            bpy.context.scene.tt_override_stage = self.tt_override_stage
-            print("self.tt_override_stage:", self.tt_override_stage)
-    except:
-        print("fail to update prefs")
-    
-    return None
-
-def update_prefs_subtree(self, context):
-    print("\nself.tt_override_version:", self.tt_override_version)
-    try:
-        if self.tt_override_subtree == "Custom":
-            bpy.context.scene.tt_override_subtree = self.tt_override_subtree
-            print("self.tt_override_subtree:", self.tt_override_subtree)
-    except:
-        print("fail to update update_prefs_subtree")
-    
-    return None
-
-def make_path_absolute(self, context):
-    if self.tt_tools_override_asset:
-        if self.tt_tools_override_asset.startswith('//'):
-            self.tt_tools_override_asset = (os.path.abspath(bpy.path.abspath(self.tt_tools_override_asset)))
-    return None
-
-def set_version_override_paths(self, context):
-    if self.tt_override_version:
-        match self.tt_override_version:
-            case '3.x':
-                self.tt_override_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
-                self.tt_override_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_331.blend"
-                self.tt_override_basefile = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish/basefile_v002.blend"
-                self.tt_override_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
-                self.tt_override_subtree = "projects/blender"
-                self.tt_override_stage = 'workfiles'
-            case '4.x':
-                self.tt_override_assetroot = "X:/projects/chums_season2/onsite/_prod/assets/"
-                self.tt_override_filepath = "X:/projects/chums_season2/onsite/_prod/assets/helpers/turntable/publish/blender/turntable_410.blend"
-                self.tt_override_basefile = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish/basefile_v002.blend"
-                self.tt_override_renderroot = "X:/projects/chums_season2/onsite/renders/_prod/assets"
-                self.tt_override_subtree = ""
-                self.tt_override_stage = 'work'
-            case "Custom":
-                self.tt_override_assetroot = bpy.context.scene.tt_override_assetroot
-                self.tt_override_filepath = bpy.context.scene.tt_override_filepath
-                self.tt_override_basefile = bpy.context.scene.tt_override_basefile
-                self.tt_override_renderroot = bpy.context.scene.tt_override_renderroot
-                self.tt_override_subtree = bpy.context.scene.tt_override_subtree
-                self.tt_override_stage = bpy.context.scene.tt_override_stage
-            case _:
-                self.tt_override_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
-                self.tt_override_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_331.blend"
-                self.tt_override_basefile = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish/basefile_v002.blend"
-                self.tt_override_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
-                self.tt_override_subtree = "projects/blender"
-                self.tt_override_stage = 'workfiles'
-    return None
 
 def get_asset_from_path(path):
     asset_name = ""
@@ -325,7 +171,7 @@ def sendDeadlineCmd():
                         'sky':'skies'}
     asset_type = chm_assetprefix[asset_name[:3]]
     print("call update_base_settings from: sendDeadlineCmd")
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     if chm_tt_version == "4.x":
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_tt_stage,chm_assetssubtree).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,chm_tt_stage).replace("/","\\")
@@ -360,7 +206,7 @@ def sendDeadlineCmd():
     dlFrames = '0-123'
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
-    jobPrio = str(bpy.context.preferences.addons[__name__].preferences.defaultpriority)
+    jobPrio = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.defaultpriority)
 
     with open(jobInfoPath, 'w') as f:
         f.write(f"Name={dlName} [Blender Render]\n")
@@ -421,7 +267,7 @@ def xcodeH264():
                        'prx':'proxies',
                        'sky':'skies'}
     asset_type = chm_assetprefix[asset_name[:3]]
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     if chm_tt_version == "4.x":
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_tt_stage,chm_assetssubtree).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,chm_tt_stage).replace("/","\\")
@@ -456,7 +302,7 @@ def xcodeH264():
     dlFrames = '0-123'
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
-    jobPrio = str(bpy.context.preferences.addons[__name__].preferences.defaultpriority)
+    jobPrio = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.defaultpriority)
 
     with open(jobInfoPath, 'w') as f:
         f.write(f"Name={dlName} [H.264 Transcode]\n")
@@ -559,27 +405,19 @@ def remove_any_existing_asset():
     return 0
 
 def find_latest_workfile(input_path):
-    #print("ENTER find_latest_workfile FUNCTION")
     latest_filepath = ""
     vNo = 0
     if os.path.exists(input_path):
-        #print("input_path: ", input_path)
         for f in os.listdir(input_path):
-            #print("f: ", f)
             this_path = os.path.join(input_path, f)
-            #print("this_path: ", this_path)
             if this_path.endswith(".blend") and (this_path[-10] == "v"):
-                #print("FUCK BLENDER!!!")
-                #print("this_path: ", this_path)
                 if os.path.isfile(this_path):
                     str_version = (f.split(".")[0][-3:])
-                    #print("str_version: ", str_version)
                     this_version = int(str_version)
                     if this_version > vNo:
                         vNo = this_version
                         latest_filepath = this_path
     else:
-        # return messagebox showing filepath and message that it can't be found
         tt_tools_messagebox(("Cannot find Path:    " + input_path), "Missing Path")
     if len(latest_filepath) < 3:
         tt_tools_messagebox(("Cannot find latest version:    " + input_path), "Version Issue")
@@ -590,7 +428,7 @@ def find_latest_workfile(input_path):
 def get_assetroot():
     #print("\nENTER get_assetroot FUNCTION")
     try:
-        tt_override_assetroot = bpy.context.preferences.addons[__name__].preferences.tt_override_assetroot
+        tt_override_assetroot = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_assetroot
     except:
         tt_override_assetroot = chm_assetroot
     print("fn get_assetroot returns ", tt_override_assetroot)
@@ -598,7 +436,7 @@ def get_assetroot():
 
 def open_turntable():
     print("call update_base_settings from: open_turntable")
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     if os.path.exists(chm_tt_filepath):
         if bpy.context.scene.tt_tools_newblend:
             if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
@@ -620,19 +458,23 @@ def open_turntable():
 
 def build_turntable():
     print("\ncall update_base_setting() from: build_turntable")
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_postload = os.path.join(os.path.dirname(os.path.realpath(__file__), 'chums_tt_build.py'))
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_basefile = find_latest_workfile(chm_tt_basedir)
+    print("chm_basefile: ", chm_basefile)
     mycmd = '\"'
     mycmd += bpy.app.binary_path
-    mycmd += ('\" \"' + chm_tt_basefile.__str__() + ' ' +  + ' ' + chm_tt_filepath.__str__() + '\"')
-    newsesh = os.popen(mycmd)
+    mycmd += ('\" \"' + chm_basefile.__str__())
+    mycmd += (' ' + chm_tt_filepath.__str__())
+    mycmd += (' -P ' + chm_tt_filepath.__str__() + '\"')
+    my_build_tt = os.popen(mycmd)
     
-
     return {'FINISHED'}
 
 def queryAssetList():
     #print("\nENTER queryAssetList FUNCTION")
     print("call update_base_settings from: queryAssetList")
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     print("chm_assetroot: ", chm_assetroot, "\nchm_tt_filepath: ", chm_tt_filepath, "\nchm_renderroot: ", chm_renderroot, "\nchm_assetssubtree: ", chm_assetssubtree, "\nchm_assetturntables: ", chm_assetturntables, "\nchm_tt_stage: ", chm_tt_stage, "\nchm_tt_version: ", chm_tt_version)
     anames = []
     try:
@@ -656,7 +498,7 @@ def explore_asset(asset_name, asset_dept, asset_stage):
                     'prx':'proxies',
                     'sky':'skies'}
     print("call update_base_settings from: explore_asset")
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,asset_stage,chm_assetssubtree).replace("/","\\")
@@ -676,7 +518,7 @@ def explore_asset(asset_name, asset_dept, asset_stage):
 def get_asset_list(asset_stage):
     asset_list = []
     for asset_type in chm_assettypes:
-        chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
         asset_type_path = (os.path.join(chm_assetroot,asset_type))
         assets = [o for o in os.listdir(asset_type_path) if (not(o[-3:] == "zip") and not("_AAA" in o) and not(o == ".DS_Store"))]
         for asset in assets:
@@ -697,7 +539,7 @@ def get_asset(asset_name, asset_dept, asset_stage):
                        'prx':'proxies',
                        'sky':'skies'}
     print("call update_base_settings from: get_asset")
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_tt_stage,chm_assetssubtree).replace("/","\\")
@@ -737,7 +579,7 @@ def append_asset(asset_name, asset_dept, asset_stage):
                        'prx':'proxies',
                        'sky':'skies'}
     print("call update_base_settings from: append_asset")
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_tt_stage,chm_assetssubtree).replace("/","\\")
@@ -764,7 +606,7 @@ def link_asset(asset_name, asset_dept, asset_stage):
                        'prx':'proxies',
                        'sky':'skies'}
     print("call update_base_settings from: link_asset")
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_tt_stage,chm_assetssubtree).replace("/","\\")
@@ -790,7 +632,7 @@ def open_assetfile(asset_name, asset_dept, asset_stage):
                        'sky':'skies'}
     the_asset_type = chm_assetprefix[asset_name[:3]]
     print("call update_base_settings from: open_assetfile")
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     if chm_tt_version == "4.x":
         the_asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_dept,chm_tt_stage,chm_assetssubtree)
     else:
@@ -831,7 +673,7 @@ def set_output_path(asset_root, render_root, asset_name, asset_task, asset_stage
                        'prx':'proxies',
                        'sky':'skies'}
     print("call update_base_settings from: set_output_path")
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_workpath = os.path.join(chm_assetroot,the_asset_type,asset_name,asset_task,chm_tt_stage,chm_assetssubtree).replace("/","\\")
@@ -880,7 +722,7 @@ def save_tt_file(asset_name, asset_task, asset_stage):
                        'prx':'proxies',
                        'sky':'skies'}
     print("call update_base_settings from: save_tt_file")
-    chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
     asset_type = chm_assetprefix[asset_name[:3]]
     if chm_tt_version == "4.x":
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_tt_stage,chm_assetssubtree).replace("/","\\")
@@ -908,495 +750,28 @@ def tt_tools_messagebox(message, title):
         self.layout.label(text=message)
     bpy.context.window_manager.popup_menu(draw, title = title, icon='ERROR')
 
-# --------    CLASSES    --------
-# PREFERENCES
-class tt_toolsPreferences(bpy.types.AddonPreferences):
-    #bl_idname = "Turntable Tools"
-    bl_idname = __name__
-
-    tt_override_version: bpy.props.EnumProperty(
-        name="Override Version",
-        description="Override version defaults",
-        items=[('3.x','3.x',''),('4.x','4.x',''),('Custom','Custom','')],
-        update = set_version_override_paths,
-        default = blender_version_str,
-    )
-
-    tt_override_basefile: bpy.props.StringProperty(
-        name = "Project Base File",
-        subtype = 'DIR_PATH',
-        update = tt_override_basefile,
-        default = "Path to Base File",
-    )
-
-    tt_override_assetroot: bpy.props.StringProperty(
-        name = "Asset Root Directory",
-        subtype = 'DIR_PATH',
-        update = update_prefs_assetroot,
-        default = 'Y:/projects/CHUMS_Onsite/_prod/assets/',
-    )
-
-    tt_override_filepath: bpy.props.StringProperty(
-        name = "Turntable File",
-        subtype = 'FILE_PATH',
-        update = update_prefs_filepath,
-        default = 'Path to Turntable File',
-    )
-
-    tt_override_renderroot: bpy.props.StringProperty(
-        name="Output Directory",
-        subtype = 'DIR_PATH',
-        update = update_prefs_renderroot,
-        default = 'Path to Render Root Folder',
-    )
-
-    tt_override_stage: bpy.props.StringProperty(
-        name="Stage String",
-        update = update_prefs_stage,
-        default = "",
-    )
-
-    tt_override_subtree: bpy.props.StringProperty(
-        name="Asset Subtree",
-        subtype = 'DIR_PATH',
-        update = update_prefs_subtree,
-        default = "",
-    )
-
-    defaultangle: bpy.props.FloatProperty(
-        name="Default Camera Parent Z Rotation",
-        default=22.5,
-    )
-
-    defaultpriority: bpy.props.IntProperty(
-        name="Default Deadline Priority",
-        default=60,
-    )
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(self, "tt_override_version")
-        layout.prop(self, "tt_override_assetroot")
-        layout.prop(self, "tt_override_basefile")
-        layout.prop(self, "tt_override_filepath")
-        layout.prop(self, "tt_override_renderroot")
-        layout.prop(self, "tt_override_subtree")
-        layout.prop(self, "tt_override_stage")
-        layout.prop(self, "defaultangle")
-        layout.prop(self, "defaultpriority")
-
-class OBJECT_OT_tt_tools_preferences(bpy.types.Operator):
-    bl_idname = "object.tt_tools_preferences"
-    bl_label = "Turntable Add-on Preferences"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        preferences = context.preferences
-        addon_prefs = preferences.addons["Turntable Tools"].preferences
-
-        info = ("")
-
-        self.report({'INFO'}, info)
-        print("info: ", info)
-
-        return {'FINISHED'}
-
-# PROPERTIES
-class tt_toolsProperties(bpy.types.PropertyGroup):
-    bpy.types.Scene.tt_tools_assetname = bpy.props.StringProperty \
-        (
-        name = "Asset Name",
-        description = "Asset Name",
-        default = ""
-        )
-    bpy.types.Scene.tt_override_assetroot = bpy.props.StringProperty \
-        (
-        name = "Asset Root",
-        description = "Asset Root",
-        default = "Y:/projects/CHUMS_Onsite/_prod/assets/"
-        )
-    bpy.types.Scene.tt_override_basefile = bpy.props.StringProperty \
-        (
-        name = "Project Base File",
-        description = "Project Base File",
-        default = "Path to basefile"
-        )
-    bpy.types.Scene.tt_override_filepath = bpy.props.StringProperty \
-        (
-        name = "Turntable Base File",
-        description = "Turntable Base File",
-        default = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable_410.blend"
-        )
-    bpy.types.Scene.tt_override_renderroot = bpy.props.StringProperty \
-        (
-        name = "Output Directory",
-        description = "Output Directory",
-        default = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
-        )
-    bpy.types.Scene.tt_override_subtree = bpy.props.StringProperty \
-        (
-        name = "Asset Subtree",
-        description = "Asset Subtree",
-        default = "projects/blender"
-        )
-    bpy.types.Scene.tt_override_stage = bpy.props.StringProperty \
-        (
-        name = "Stage",
-        description = "Stage",
-        default = "workfiles"
-        )
-    bpy.types.Scene.tt_tools_override_ttsave = bpy.props.StringProperty \
-        (
-        name = "",
-        description = "Turntable Blender File Folder",
-        default = ""
-        )
-    bpy.types.Scene.tt_tools_task = bpy.props.EnumProperty \
-        (
-        name="",
-        description="Use latest model or texture version.",
-        items=[ ('20_model', "Model", ""),
-                ('30_texture', "Texture", "")
-               ],
-        default = "30_texture"
-        )
-    bpy.types.Scene.tt_tools_overscan = bpy.props.FloatProperty \
-        (
-        name = "Overscan %",
-        description = "Percent of asset size to use as border",
-        min = 0.00,
-        max = 10000.0,
-        step = 0.5,
-        default = 20.0
-        )
-    bpy.types.Scene.tt_tools_newblend = bpy.props.BoolProperty \
-        (
-        name = "Force New Blender",
-        description = "When opening assets or the turntable file with this enabled will launch a new Bledner session.",
-        default = True
-        )
-    bpy.types.Scene.tt_tools_xcode = bpy.props.BoolProperty \
-        (
-        name = "Transcode",
-        description = "Transcode H264.",
-        default = True
-        )
-    bpy.types.Scene.tt_tools_draft = bpy.props.BoolProperty \
-        (
-        name = "Draft",
-        description = "Deadline Draft.",
-        default = False
-        )
-    bpy.types.Scene.tt_tools_alist = bpy.props.EnumProperty \
-        (
-        name="",
-        description="Asset List",
-        items=queryAssetList(),
-        default = None
-        )
-    bpy.types.Scene.tt_tools_filter = bpy.props.StringProperty \
-        (
-        name = "Filter",
-        description = "String to Isolate",
-        default = ""
-        )
-
-# OPERATORS
-class BUTTON_OT_openTT(bpy.types.Operator):
-    '''Open Turntable Basefile.'''
-    bl_idname = "tt_tools.opentt"
-    bl_label = "Open Turntable"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        open_this_file = open_turntable()
-        print(open_this_file)
-        return{'FINISHED'}
-
-class BUTTON_OT_buildTT(bpy.types.Operator):
-    '''Build Turntable Basefile.'''
-    bl_idname = "tt_tools.buildtt"
-    bl_label = "Build Turntable"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        build_this_file = build_turntable()
-        print(build_this_file)
-        return{'FINISHED'}
-
-class BUTTON_OT_openAsset(bpy.types.Operator):
-    '''Open Latest Asset File'''
-    bl_idname = "tt_tools.openasset"
-    bl_label = "Open Asset File"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        open_this_file = open_assetfile(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
-        return{'FINISHED'}
-
-class BUTTON_OT_refresh(bpy.types.Operator):
-    '''Refresh the Asset List'''
-    bl_idname = "tt_tools.refresh"
-    bl_label = "Refresh"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        bpy.types.Scene.tt_tools_alist = bpy.props.EnumProperty(
-            name="",
-            description="Asset List",
-            items=queryAssetList(),
-            default = None
-            )
-        return{'FINISHED'}
-
-class BUTTON_OT_exploreAsset(bpy.types.Operator):
-    '''Open Asset Folder'''
-    bl_idname = "tt_tools.exploreasset"
-    bl_label = "Explore Asset"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        print("call update_base_settings from: BUTTON_OT_exploreAsset")
-        chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
-        print("chm_assetroot: ", chm_assetroot)
-        print("chm_tt_filepath: ", chm_tt_filepath)
-        print("chm_renderroot: ", chm_renderroot)
-        print("chm_assetssubtree: ", chm_assetssubtree)
-        print("chm_assetturntables: ", chm_assetturntables)
-        print("chm_tt_stage: ", chm_tt_stage)
-        explore_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
-        return{'FINISHED'}
-
-class BUTTON_OT_set_cam_loc(bpy.types.Operator):
-    '''Set Camera distance from asset.'''
-    bl_idname = "tt_tools.set_cam_loc"
-    bl_label = "Set Camera"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        #print("EXECUTE set_cam_loc OPERATOR")
-        if thecam_name in bpy.data.objects:
-            thecam = bpy.data.objects[thecam_name]
-            theasset_objects = get_local_asset_objects()
-            theasset_size = (get_selection_bounds(theasset_objects))
-            theasset_max = 0
-            for theasset_dim in theasset_size[0]:
-                if theasset_dim >= theasset_max:
-                    theasset_max = theasset_dim
-            thecam.location.z = (((theasset_max/2.0)*(1.0+((2*bpy.context.scene.tt_tools_overscan)/100.0)))/math.tan((bpy.context.scene.camera.data.angle)/2))
-            if bpy.data.objects['Ruler']:
-                bpy.data.objects['Ruler'].location.y = ((theasset_size[0][1]/2)*(-1.0 - (bpy.context.scene.tt_tools_overscan/100.0)))
-            thecam.parent.location.z = (theasset_size[1][2])
-            userBaseAngle = math.radians(bpy.context.preferences.addons[__name__].preferences.defaultangle)
-            for aframe in thekeyframes_cam:
-                bpy.context.scene.frame_set(aframe)
-                thecam.parent.rotation_euler.z = userBaseAngle
-                thecam.parent.keyframe_insert(data_path='rotation_euler', frame=aframe)
-        else:
-            tt_tools_messagebox("Camera    " + str(thecam_name) + "    appears to be missing.\nPlease ensure you're in a turntable file that contains this object.", "Missing Object")
-        return{'FINISHED'}
-
-class BUTTON_OT_get_asset(bpy.types.Operator):
-    '''REPLACE the asset_prod collection from the latest asset from selected stage; then link asset to turntable helpers.'''
-    bl_idname = "tt_tools.get_asset"
-    bl_label = "Get Asset"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-        get_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
-        return{'FINISHED'}
-
-class BUTTON_OT_append_asset(bpy.types.Operator):
-    '''APPEND the asset_prod collection from the latest PUBLISHED asset'''
-    bl_idname = "tt_tools.append_asset"
-    bl_label = "Append Asset"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-        append_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
-        return{'FINISHED'}
-
-class BUTTON_OT_get_asset_list(bpy.types.Operator):
-    '''Return the latest asset - see console'''
-    bl_idname = "tt_tools.get_asset_list"
-    bl_label = "Get Asset List"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        the_asset_list = get_asset_list(chm_tt_stage)
-        return{'FINISHED'}
-
-class BUTTON_OT_link_asset(bpy.types.Operator):
-    '''LINK the asset_prod collection from the latest PUBLISHED asset'''
-    bl_idname = "tt_tools.link_asset"
-    bl_label = "Link Asset"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
-        link_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
-        return{'FINISHED'}
-
-class BUTTON_OT_tilt_cam(bpy.types.Operator):
-    '''Select the camera tilt control'''
-    bl_idname = "tt_tools.tilt_cam"
-    bl_label = "Select Camera Control"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        if "AnimGrp.camera" in bpy.data.objects:
-            for o in bpy.context.selected_objects:
-                o.select_set(False)
-            bpy.data.objects["AnimGrp.camera"].select_set(True)
-            bpy.context.view_layer.objects.active = bpy.data.objects["AnimGrp.camera"]
-        else:
-            tt_tools_messagebox("Camera control object    AnimGrp.camera    appears to be missing.\nPlease ensure you're in a turntable file that contains this object.", "Missing Object")
-        return{'FINISHED'}
-
-class BUTTON_OT_selectTTcam(bpy.types.Operator):
-    '''Select turntable camera object.'''
-    bl_idname = "tt_tools.selectttcam"
-    bl_label = "Select Camera Object"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        if thecam_name in bpy.data.objects:
-            try:
-                for o in bpy.context.selected_objects:
-                    o.select_set(False)
-                thecam = bpy.data.objects[thecam_name]
-                thecam.select_set(True)
-                bpy.context.view_layer.objects.active = thecam
-            except:
-                pass
-                #print("FAILED TO FIND " + str(thecam_name))
-        else:
-            tt_tools_messagebox("Camera " + str(thecam_name) + "appears to be missing.\nPlease ensure you're in a turntable file that contains this object.", "Missing Object")
-        return{'FINISHED'}
-
-class BUTTON_OT_set_out_filepath(bpy.types.Operator):
-    '''Set Output path.'''
-    bl_idname = "tt_tools.set_out_filepath"
-    bl_label = "Set Output"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        theoutpath = set_output_path(chm_assetroot, chm_renderroot, bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
-        bpy.context.scene.render.filepath = theoutpath
-        return{'FINISHED'}
-
-class BUTTON_OT_save_ttfile(bpy.types.Operator):
-    '''Return the latest asset - see console'''
-    bl_idname = "tt_tools.save_ttfile"
-    bl_label = "Save Turntable File"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        thisfilepath = bpy.data.filepath
-        thisfilename = os.path.basename(thisfilepath)
-        if ('turntable' in thisfilename) or (bpy.context.scene.tt_tools_alist in thisfilename or thisfilename[-8:] == "tt.blend"):
-            save_tt_file(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
-        else:
-            tt_tools_messagebox("To save a turntable file, the starting file must be one of:   the turntable.blend   OR   a previous turntable filename starting with   " + str(bpy.context.scene.tt_tools_alist) + "   and ending with   tt.blend.    Please ensure you're starting with one of those files.", "Failed Save")
-        
-        return{'FINISHED'}
-
-class BUTTON_OT_submit_tt(bpy.types.Operator):
-    '''Submit Turntable to Deadline'''
-    bl_idname = "tt_tools.submit_tt"
-    bl_label = "Submit Turntable Render"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        thisfilepath = bpy.data.filepath
-        thisfilename = os.path.basename(thisfilepath)
-        thisoutputpath = bpy.context.scene.render.filepath
-        asset_name = bpy.context.scene.tt_tools_alist
-        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-        theoutpath = set_output_path(chm_assetroot, chm_renderroot, asset_name, bpy.context.scene.tt_tools_task, chm_tt_stage)
-        if (bpy.context.scene.tt_tools_alist.lower() in thisfilename.lower() and 
-            bpy.context.scene.tt_tools_alist.lower() in thisoutputpath.lower() and
-            thisfilename[-8:] == "tt.blend"):
-            sendDeadlineCmd()
-            if bpy.context.scene.tt_tools_xcode == True:
-                xcodeH264()
-        else:
-            tt_tools_messagebox("To submit a turntable render, this file name must start with the asset selected above    " + str(bpy.context.scene.tt_tools_alist) + "    in the filename and the filename must end with    tt.blend", "Failed Submit")
-        
-        return{'FINISHED'}
-
-class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_label = ("Turntable Utils "+vsn)
-    bl_context = "objectmode"
-    bl_category = 'Chums'
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(bpy.context.scene, "tt_tools_newblend")
-        layout.operator("tt_tools.opentt", text=(BUTTON_OT_openTT.bl_label))
-        layout.operator("tt_tools.buildtt", text=(BUTTON_OT_buildTT.bl_label))
-        layout.prop(bpy.context.scene, "tt_tools_task")
-        split = layout.split(factor=0.85, align=True)
-        col = split.column(align=True)
-        col.prop(bpy.context.scene, "tt_tools_alist")
-        col = split.column(align=True)
-        col.operator("tt_tools.refresh", text=(BUTTON_OT_refresh.bl_label))
-        #layout.prop(bpy.context.scene, "tt_tools_override_asset")
-        layout.prop(bpy.context.scene, "tt_tools_filter")
-        layout.operator("tt_tools.exploreasset", text=(BUTTON_OT_exploreAsset.bl_label))
-        layout.operator("tt_tools.openasset", text=(BUTTON_OT_openAsset.bl_label))
-        layout.operator("tt_tools.get_asset", text=(BUTTON_OT_get_asset.bl_label))
-        split = layout.split(factor=0.5, align=True)
-        col = split.column(align=True)
-        col.operator("tt_tools.append_asset", text=(BUTTON_OT_append_asset.bl_label))
-        col = split.column(align=True)
-        col.operator("tt_tools.link_asset", text=(BUTTON_OT_link_asset.bl_label))
-        layout.prop(bpy.context.scene, "tt_tools_overscan")
-        layout.operator("tt_tools.set_cam_loc", text=(BUTTON_OT_set_cam_loc.bl_label))
-        layout.operator("tt_tools.tilt_cam", text=(BUTTON_OT_tilt_cam.bl_label))
-        layout.operator("tt_tools.selectttcam", text=(BUTTON_OT_selectTTcam.bl_label))
-        layout.operator("tt_tools.set_out_filepath", text=(BUTTON_OT_set_out_filepath.bl_label))
-        layout.operator("tt_tools.save_ttfile", text=(BUTTON_OT_save_ttfile.bl_label))
-        layout.operator("tt_tools.submit_tt", text=(BUTTON_OT_submit_tt.bl_label))
-        split = layout.split(factor=0.5, align=True)
-        col = split.column(align=True)
-        col.prop(bpy.context.scene, "tt_tools_xcode")
-        col = split.column(align=True)
-        col.prop(bpy.context.scene, "tt_tools_draft")
-
-chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_stage, chm_tt_version = update_base_settings()
-if os.path.exists(chm_assetroot):
-    chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
-                  os.path.isdir(os.path.join(chm_assetroot, f))])
-
-#   REGISTER
-classes = [ tt_toolsProperties, VIEW3D_PT_tt_tools_panel, 
-            BUTTON_OT_set_cam_loc, BUTTON_OT_get_asset, 
-            BUTTON_OT_openTT, BUTTON_OT_exploreAsset,
-            BUTTON_OT_set_out_filepath, BUTTON_OT_save_ttfile,
-            BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam,
-            BUTTON_OT_openAsset, BUTTON_OT_submit_tt,
-            tt_toolsPreferences, OBJECT_OT_tt_tools_preferences,
-            BUTTON_OT_refresh, BUTTON_OT_append_asset,
-            BUTTON_OT_link_asset, BUTTON_OT_buildTT]
+__all__ = ["tt_tools_messagebox","save_tt_file",
+           "clean_up_after_blender_save","set_output_path",
+           "open_assetfile","link_asset",
+           "append_asset","get_asset",
+           "get_asset_list","explore_asset",
+           "queryAssetList","build_turntable",
+           "open_turntable","get_assetroot",
+           "find_latest_workfile","remove_any_existing_asset",
+           "get_local_asset_objects","get_selection_bounds",
+           "xcodeH264","sendDeadlineCmd",
+           "getMachineName","getCurrentUser",
+           "getPipelineTmpFolder","get_asset_from_path",
+           "update_base_settings","blender_version"
+           ]
 
 def register():
-    from bpy.utils import register_class
-    for cls in classes:
-        register_class(cls)
+    pass
 
 #   UNREGISTER
 def unregister():
-    from bpy.utils import unregister_class
-    for cls in reversed(classes):
-        unregister_class(cls)
+    pass
     
-
 if __name__ == "__main__":
     register()
-    
+

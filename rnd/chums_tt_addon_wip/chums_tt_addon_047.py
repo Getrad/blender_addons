@@ -11,19 +11,6 @@
 # 0.4.7 - FEATURE - rebuild_turntable function - using basefile as starting point, then appending necessary (will require post load script write)
 
 
-bl_info = {
-    "name": "Turntable Tools",
-    "author": "Conrad Dueck, Darren Place",
-    "version": (0, 4, 7),
-    "blender": (4, 1, 0),
-    "location": "View3D > Tool Shelf > Chums",
-    "description": "Turntable Convenience Tools",
-    "warning": "",
-    "wiki_url": "",
-    "tracker_url": "",
-    "category": "Chums"}
-
-
 # ---    GLOBAL IMPORTS    ----
 from pathlib import Path
 from getpass import getuser
@@ -624,7 +611,7 @@ def build_turntable():
     mycmd = '\"'
     mycmd += bpy.app.binary_path
     mycmd += ('\" \"' + chm_tt_basefile.__str__() + ' ' +  + ' ' + chm_tt_filepath.__str__() + '\"')
-    newsesh = os.popen(mycmd)
+    my_build_tt = os.popen(mycmd)
     
 
     return {'FINISHED'}
@@ -1395,8 +1382,7 @@ def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
-    
 
 if __name__ == "__main__":
     register()
-    
+
