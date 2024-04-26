@@ -27,8 +27,12 @@ chm_omitlist = (['archive', 'chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', '
                 'env_AAAtemplate', 'env_rompersburrow', 
                 'prp_AAAtemplate', 'prp_bush_romperPopout_01', 'prp_tree_hollowknot',
                 'prx_AAAtemplate', 'prx_treeObstacle_Source'])
+# DEADLINE COMMAND
+deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 # LAUNCHPAD
 LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/launchpadRepository"
+# OUTPUT PARAMETERS
+frameRate = 23.976
 
 # FUNCTIONS
 def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version)
@@ -342,6 +346,7 @@ def xcodeH264():
         f.write(f"ExtraInfo6={dlSceneFile}\n")
 
     pluginInfoPath = Path(tmpDir).joinpath(f'{filename}_pluginInfo.job')
+    print("pluginInfoPath: ", pluginInfoPath)
     with open(pluginInfoPath, 'w') as f:
         f.write(f"InputFile0={dlOutputFile.replace('####', '%04d')}\n") # the image sequence
         f.write(f"InputArgs0=-r {frameRate}\n") # force the image sequence fps to output framerate

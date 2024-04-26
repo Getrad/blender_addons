@@ -31,8 +31,6 @@ current_user = os.getlogin()
 user_path = os.path.join("C:\\users",current_user)
 # BASEFILE SPECIFIC 
 thecam_name = "cam.ttCamera"
-# DEADLINE COMMAND
-deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 # LAUNCHPAD
 LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/launchpadRepository"
 
@@ -396,10 +394,10 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
 
 
 #   REGISTER
-classes = [tt_toolsPreferences,OBJECT_OT_tt_tools_preferences,
-            tt_toolsProperties,VIEW3D_PT_tt_tools_panel,
+classes = [tt_toolsPreferences,tt_toolsProperties,
+            OBJECT_OT_tt_tools_preferences,VIEW3D_PT_tt_tools_panel,
             BUTTON_OT_set_cam_loc, BUTTON_OT_get_asset, 
-            BUTTON_OT_openTT, BUTTON_OT_exploreAsset,
+            BUTTON_OT_exploreAsset,
             BUTTON_OT_set_out_filepath, BUTTON_OT_save_ttfile,
             BUTTON_OT_tilt_cam, BUTTON_OT_selectTTcam,
             BUTTON_OT_openAsset, BUTTON_OT_submit_tt,

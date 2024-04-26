@@ -39,7 +39,6 @@ blender_version_str = (str(blender_version[0]) + ".x")
 #   SET THE CAMERA OBJECT NAME
 thecam_name = "cam.ttCamera"
 # OUTPUT PARAMETERS
-frameRate = 23.976
 thekeyframes_cam = [121,122,123]
             
 # --------    CLASSES    --------
