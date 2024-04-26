@@ -10,6 +10,7 @@
 # 0.4.6 - changed DL tempfile write location to X drive; set deadline pools in submission
 # 0.4.7 - FEATURE - rebuild_turntable function - using basefile as starting point, then appending necessary (will require post load script write)
 # 0.5.0 - MODULARIZING
+####### - NOW TRACKED IN INIT FILE
 
 # ---    GLOBAL IMPORTS    ----
 from pathlib import Path
@@ -31,7 +32,7 @@ from .chums_tt_utils import queryAssetList
 
 # ---    GLOBAL VARIABLES    ----
 # VERSION
-vsn = '0.5.0c'
+vsn = '0.5.1'
 #   GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 #   SET DEFAULT VERSION STRING
@@ -179,8 +180,8 @@ class BUTTON_OT_link_asset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
+        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-        bpy.context.scene.assetname = bpy.context.scene.tt_tools_alist
         link_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
         return{'FINISHED'}
 
@@ -282,7 +283,7 @@ class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(bpy.context.scene, "tt_tools_newblend")
+        #layout.prop(bpy.context.scene, "tt_tools_newblend")
         #layout.operator("tt_tools.opentt", text=(BUTTON_OT_openTT.bl_label))
         layout.operator("tt_tools.buildtt", text=(BUTTON_OT_buildTT.bl_label))
         layout.prop(bpy.context.scene, "tt_tools_task")

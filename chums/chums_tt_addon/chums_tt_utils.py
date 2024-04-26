@@ -460,20 +460,17 @@ def open_turntable():
     print("call update_base_settings from: open_turntable")
     chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     if os.path.exists(chm_tt_filepath):
-        if bpy.context.scene.tt_tools_newblend:
-            if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
-                print("launching Blender from LAUNCHPAD function")
-                sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
-                from launchpad.helpers.launchers import launchBlenderDetached
-                newsesh = launchBlenderDetached(scenePath=chm_tt_filepath, scriptPath=None, background=False, args=sys.argv)
-            else:
-                print("launching Blender from DIRECT local path")
-                mycmd = '\"'
-                mycmd += bpy.app.binary_path
-                mycmd += ('\" \"' + chm_tt_filepath.__str__() + '\"')
-                newsesh = os.popen(mycmd)
+        if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
+            print("launching Blender from LAUNCHPAD function")
+            sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
+            from launchpad.helpers.launchers import launchBlenderDetached
+            newsesh = launchBlenderDetached(scenePath=chm_tt_filepath, scriptPath=None, background=False, args=sys.argv)
         else:
-            bpy.ops.wm.open_mainfile(filepath=chm_tt_filepath.__str__())
+            print("launching Blender from DIRECT local path to THIS version")
+            mycmd = '\"'
+            mycmd += bpy.app.binary_path
+            mycmd += ('\" \"' + chm_tt_filepath.__str__() + '\"')
+            newsesh = os.popen(mycmd)
     else:
         tt_tools_messagebox("Turntable cannot be found here:    " + str(chm_tt_filepath) + "\nPlease check path manually and notify your supervisor if you can see and open the file directly.", "Turntable Missing")
     return {'FINISHED'}
@@ -665,20 +662,17 @@ def open_assetfile(asset_name, asset_dept, asset_stage):
     #print("the_asset_dir:", the_asset_dir)
     the_asset_path = find_latest_workfile(the_asset_dir)
     if os.path.exists(the_asset_dir):
-        if bpy.context.scene.tt_tools_newblend:
-            if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
-                print("opening asset in Blender from LAUNCHPAD function")
-                sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
-                from launchpad.helpers.launchers import launchBlenderDetached
-                newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
-            else:
-                print("opening asset in Blender from DIRECT local path")
-                mycmd = '\"'
-                mycmd += bpy.app.binary_path
-                mycmd += ('\" \"' + the_asset_path + '\"')
-                newsesh = os.popen(mycmd)
+        if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
+            print("opening asset in Blender from LAUNCHPAD function")
+            sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
+            from launchpad.helpers.launchers import launchBlenderDetached
+            newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
         else:
-            bpy.ops.wm.open_mainfile(filepath=the_asset_path)
+            print("opening asset in Blender from DIRECT local path")
+            mycmd = '\"'
+            mycmd += bpy.app.binary_path
+            mycmd += ('\" \"' + the_asset_path + '\"')
+            newsesh = os.popen(mycmd)
     else:
         # return messagebox showing filepath and message that it can't be found
         tt_tools_messagebox(("Cannot find Path:    " + the_asset_dir), "Missing Path")

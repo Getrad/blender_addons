@@ -12,7 +12,7 @@ from .chums_tt_addon import *
 bl_info = {
     "name": "Turntable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 5, 0),
+    "version": (0, 5, 1),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
@@ -360,12 +360,12 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         step = 0.5,
         default = 20.0
         )
-    bpy.types.Scene.tt_tools_newblend = bpy.props.BoolProperty \
-        (
-        name = "Force New Blender",
-        description = "When opening assets or the turntable file with this enabled will launch a new Bledner session.",
-        default = True
-        )
+    #bpy.types.Scene.tt_tools_newblend = bpy.props.BoolProperty \
+    #    (
+    #    name = "Force New Blender",
+    #    description = "When opening assets or the turntable file with this enabled will launch a new Bledner session.",
+    #    default = True
+    #    )
     bpy.types.Scene.tt_tools_xcode = bpy.props.BoolProperty \
         (
         name = "Transcode",
