@@ -26,8 +26,9 @@ import uuid
 import sys
 import subprocess
 import builtins
-from .chums_tt_utils import *
-from .chums_tt_utils import queryAssetList
+from chums_tt_addon.chums_tt_utils import *
+from chums_tt_addon.chums_tt_utils import queryAssetList
+from chums_tt_addon.chums_tt_utils import set_camera
 
 
 # ---    GLOBAL VARIABLES    ----
@@ -112,6 +113,9 @@ class BUTTON_OT_set_cam_loc(bpy.types.Operator):
     
     def execute(self, context):
         #print("EXECUTE set_cam_loc OPERATOR")
+        thekeyframes_val = [72,135,45]
+        set_camera(thecam_name, thekeyframes_cam, thekeyframes_val)
+        '''
         if thecam_name in bpy.data.objects:
             thecam = bpy.data.objects[thecam_name]
             theasset_objects = get_local_asset_objects()
@@ -136,6 +140,7 @@ class BUTTON_OT_set_cam_loc(bpy.types.Operator):
                     thecam.parent.keyframe_insert(data_path='rotation_euler', frame=aframe)
         else:
             tt_tools_messagebox("Camera    " + str(thecam_name) + "    appears to be missing.\nPlease ensure you're in a turntable file that contains this object.", "Missing Object")
+        '''
         return{'FINISHED'}
 
 class BUTTON_OT_get_asset(bpy.types.Operator):

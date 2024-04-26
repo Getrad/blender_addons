@@ -1,6 +1,13 @@
 import bpy
 import os
 import sys
+import addon_utils
+for i in addon_utils.modules():
+    if i.bl_info['name'] == 'Turntable Tools':
+        print(i)
+        addon_utils.enable('chums_tt_addon', default_set=True, persistent=False, handle_error=None)
+        from chums_tt_addon.chums_tt_utils import *
+        print("IMPORTED FUNCTIONS!")
 
 def build_turntable(tt_path):
     #define collection list
@@ -14,6 +21,11 @@ def build_turntable(tt_path):
                 bpy.context.scene.collection.children.link(coll)
     if bpy.data.objects['cam.ttCamera']:
         bpy.context.scene.camera = bpy.data.objects['cam.ttCamera']
+    from chums_tt_addon.chums_tt_utils import get_asset
+    from chums_tt_addon.chums_tt_utils import set_camera
+    from chums_tt_addon.chums_tt_utils import set_output_path
+    from chums_tt_addon.chums_tt_utils import save_tt_file
+    from chums_tt_addon.chums_tt_utils import sendDeadlineCmd
 
 def save_temp_turntable():
     current_user = os.getlogin()
@@ -38,6 +50,12 @@ if __name__ == "__main__":
     # build file
     build_turntable((argv[0]))
     # load asset
+    #from chums_tt_addon.chums_tt_utils import get_asset
+    #get_asset(asset_name, asset_dept, asset_stage)
+    #set_camera(tt_cam_name, keyframes_cam, keyframes_val)
+    #set_output_path(asset_root, render_root, asset_name, asset_task, asset_stage)
+    #save_tt_file(asset_name, asset_task, asset_stage)
+    #sendDeadlineCmd()
     # save file
     save_temp_turntable()
     
