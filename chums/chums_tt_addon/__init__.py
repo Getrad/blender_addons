@@ -39,6 +39,7 @@ LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/lau
 # FUNCTIONS
 def set_version_override_paths(self, context):
     if self.tt_override_version:
+        bpy.context.scene.tt_override_version = self.tt_override_version
         match self.tt_override_version:
             case '3.x':
                 self.tt_override_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
@@ -75,9 +76,9 @@ def set_version_override_paths(self, context):
     return None
 
 def update_prefs_subtree(self, context):
-    print("\nself.tt_override_version:", self.tt_override_version)
+    print("update_prefs_subtree - self.tt_override_version:", self.tt_override_version)
     try:
-        if self.tt_override_subtree == "Custom":
+        if self.tt_override_version == "Custom":
             bpy.context.scene.tt_override_subtree = self.tt_override_subtree
             print("self.tt_override_subtree:", self.tt_override_subtree)
     except:
@@ -86,8 +87,7 @@ def update_prefs_subtree(self, context):
     return None
 
 def update_prefs_assetroot(self, context):
-    #print("\nself.tt_override_version:", self.tt_override_version)
-    print("\nself.tt_override_version:", bpy.context.scene.tt_override_version)
+    print("update_prefs_assetroot - self.tt_override_version:", bpy.context.scene.tt_override_version)
     try:
         if self.tt_override_version == "Custom":
             bpy.context.scene.tt_override_assetroot = self.tt_override_assetroot
@@ -98,7 +98,7 @@ def update_prefs_assetroot(self, context):
     return None
 
 def update_prefs_filepath(self, context):
-    print("\nself.tt_override_version:", self.tt_override_version)
+    print("update_prefs_filepath - self.tt_override_version:", self.tt_override_version)
     try:
         if self.tt_override_version == "Custom":
             bpy.context.scene.tt_override_filepath = self.tt_override_filepath
@@ -109,7 +109,7 @@ def update_prefs_filepath(self, context):
     return None
 
 def update_prefs_basefile(self, context):
-    print("\nself.tt_override_basefile:", self.tt_override_basefile)
+    print("update_prefs_basefile - self.tt_override_version:", self.tt_override_version)
     try:
         if self.tt_override_version == "Custom":
             bpy.context.scene.tt_override_basefile = self.tt_override_basefile
@@ -120,7 +120,7 @@ def update_prefs_basefile(self, context):
     return None
 
 def update_prefs_renderroot(self, context):
-    print("\nself.tt_override_version:", self.tt_override_version)
+    print("update_prefs_renderroot - self.tt_override_version:", self.tt_override_version)
     try:
         if self.tt_override_version == "Custom":
             bpy.context.scene.tt_override_renderroot = self.tt_override_renderroot
@@ -131,7 +131,7 @@ def update_prefs_renderroot(self, context):
     return None
 
 def update_prefs_range(self, context):
-    print("\nself.tt_override_range:", self.tt_override_range)
+    print("update_prefs_range - self.tt_override_range:", self.tt_override_range)
     try:
         if self.tt_override_version == "Custom":
             bpy.context.scene.tt_override_range = self.tt_override_range
@@ -142,7 +142,7 @@ def update_prefs_range(self, context):
     return None
 
 def update_prefs_stage(self, context):
-    print("\nself.tt_override_version:", self.tt_override_version)
+    print("update_prefs_stage - self.tt_override_version:", self.tt_override_version)
     try:
         if self.tt_override_version == "Custom":
             bpy.context.scene.tt_override_stage = self.tt_override_stage
@@ -153,7 +153,7 @@ def update_prefs_stage(self, context):
     return None
 
 def update_prefs_version(self, context):
-    print("\nself.tt_override_version:", self.tt_override_version)
+    print("update_prefs_version - self.tt_override_version:", self.tt_override_version)
     try:
         if self.tt_override_version == "Custom":
             bpy.context.scene.tt_override_version = self.tt_override_version
@@ -168,7 +168,6 @@ def make_path_absolute(self, context):
         if self.tt_tools_override_asset.startswith('//'):
             self.tt_tools_override_asset = (os.path.abspath(bpy.path.abspath(self.tt_tools_override_asset)))
     return None
-
 
 # CLASSES
 #   PREFERENCES
