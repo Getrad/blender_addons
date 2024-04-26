@@ -10,6 +10,7 @@ import uuid
 import sys
 import subprocess
 import builtins
+from .chums_tt_utils import *
 
 # ---    GLOBAL VARIABLES    ----
 #   GET BLENDER MAIN VERSION
