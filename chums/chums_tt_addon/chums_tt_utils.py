@@ -312,7 +312,7 @@ def xcodeH264():
     the_outpath_base = os.path.join(the_outpath_base, latest_asset_version)
     if not(os.path.exists(the_outpath_base)):
         os.makedirs(the_outpath_base)
-    outname = latest_asset_filename.replace(".blend",".####.png")
+    outname = latest_asset_filename.replace(".blend",".####.exr")
     outmovname = os.path.basename(latest_asset_filename)[:-6]
     the_outpath = os.path.join(the_outpath_base, outname)
     dlName = os.path.basename(thisfilename)[:-6]
