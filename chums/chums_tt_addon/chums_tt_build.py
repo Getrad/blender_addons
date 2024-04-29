@@ -27,19 +27,23 @@ thekeyframes_val = [72,135,45]
 # --------   FUNCTIONS   --------
 def build_turntable(tt_path):
     print("   Working with turntable file: ", tt_path)
-    #define collection list
+    # define collection list
     coll_list = ['col.anim_controls','col.tt_objects','references','lightrig.sun']
-    #import tt collections
+    # import tt collections
     if os.path.exists(tt_path):
         with bpy.data.libraries.load(tt_path, link=False) as (data_src, data_dst):
             data_dst.collections = data_src.collections
         for coll in data_dst.collections:
             if coll.name in coll_list:
                 bpy.context.scene.collection.children.link(coll)
+    # set active camera
     if bpy.data.objects['cam.ttCamera']:
         bpy.context.scene.camera = bpy.data.objects['cam.ttCamera']
+    # confirm output resolution
     bpy.context.scene.render.resolution_x = 1080
     bpy.context.scene.render.resolution_y = 1080
+    # update asset list
+    queryAssetList()
 
 def save_temp_turntable():
     current_user = os.getlogin()
@@ -72,17 +76,16 @@ if __name__ == "__main__":
     # load asset
     queryAssetList()
     from chums_tt_addon.chums_tt_utils import get_asset
-    bpy.context.scene.tt_tools_alist = (argv[1])
-    print("   bpy.context.scene.tt_tools_alist: ", bpy.context.scene.tt_tools_alist)
+    bpy.context.scene.tt_tools_assetname = (argv[1])
     bpy.context.scene.tt_tools_task = (argv[2])
-    get_asset((argv[1]))
+    get_asset(bpy.context.scene.tt_tools_assetname)
     print("   bpy.context.scene.tt_tools_task: ", bpy.context.scene.tt_tools_task)
     set_camera(thecam_name, thekeyframes_cam, thekeyframes_val)
-    #set_output_path(asset_name)
-    #save_tt_file(asset_name, asset_task)
-    #sendDeadlineCmd()
-    #xcodeH264()
-    #save_tt_file(asset_name, asset_task)
+    bpy.context.scene.render.filepath = set_output_path(bpy.context.scene.tt_tools_assetname)
+    save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
+    sendDeadlineCmd()
+    xcodeH264()
+    save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
     
     
     

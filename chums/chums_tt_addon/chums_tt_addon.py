@@ -33,7 +33,7 @@ from chums_tt_addon.chums_tt_utils import set_camera
 
 # --------   VARIABLES   --------
 # VERSION
-vsn = '0.5.1b'
+vsn = '0.5.1d'
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 # SET DEFAULT VERSION STRING
@@ -77,7 +77,8 @@ class BUTTON_OT_openAsset(bpy.types.Operator):
     
     def execute(self, context):
         chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-        open_this_file = open_assetfile(bpy.context.scene.tt_tools_alist)
+        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+        open_this_file = open_assetfile(bpy.context.scene.tt_tools_assetname)
         return{'FINISHED'}
 
 class BUTTON_OT_refresh(bpy.types.Operator):
@@ -103,8 +104,9 @@ class BUTTON_OT_exploreAsset(bpy.types.Operator):
     
     def execute(self, context):
         print("call update_base_settings from: BUTTON_OT_exploreAsset")
+        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-        explore_asset(bpy.context.scene.tt_tools_alist)
+        explore_asset(bpy.context.scene.tt_tools_assetname)
         return{'FINISHED'}
 
 class BUTTON_OT_set_cam_loc(bpy.types.Operator):
@@ -126,9 +128,9 @@ class BUTTON_OT_get_asset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+        #bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-        get_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
+        get_asset(bpy.context.scene.tt_tools_assetname)
         #get_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, bpy.context.scene.tt_override_stage)
         return{'FINISHED'}
 
@@ -139,9 +141,9 @@ class BUTTON_OT_append_asset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+        #bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-        append_asset(bpy.context.scene.tt_tools_alist)
+        append_asset(bpy.context.scene.tt_tools_assetname)
         return{'FINISHED'}
 
 class BUTTON_OT_get_asset_list(bpy.types.Operator):
@@ -161,9 +163,9 @@ class BUTTON_OT_link_asset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+        #bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-        link_asset(bpy.context.scene.tt_tools_alist)
+        link_asset(bpy.context.scene.tt_tools_assetname)
         return{'FINISHED'}
 
 class BUTTON_OT_tilt_cam(bpy.types.Operator):
@@ -211,7 +213,7 @@ class BUTTON_OT_set_out_filepath(bpy.types.Operator):
     
     def execute(self, context):
         chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-        theoutpath = set_output_path(chm_assetroot, chm_renderroot, bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, chm_tt_stage)
+        theoutpath = set_output_path(bpy.context.scene.tt_tools_assetname)
         bpy.context.scene.render.filepath = theoutpath
         return{'FINISHED'}
 
@@ -225,7 +227,7 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
         #chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         thisfilepath = bpy.data.filepath
         thisfilename = os.path.basename(thisfilepath)
-        save_tt_file(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task)
+        save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
         
         return{'FINISHED'}
 
@@ -241,16 +243,16 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
         thisfilename = os.path.basename(thisfilepath)
         thisoutputpath = bpy.context.scene.render.filepath
         asset_name = bpy.context.scene.tt_tools_alist
-        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-        theoutpath = set_output_path(chm_assetroot, chm_renderroot, asset_name, bpy.context.scene.tt_tools_task, chm_tt_stage)
-        if (bpy.context.scene.tt_tools_alist.lower() in thisfilename.lower() and 
-            bpy.context.scene.tt_tools_alist.lower() in thisoutputpath.lower() and
+        bpy.context.scene.tt_tools_assetname = asset_name
+        theoutpath = set_output_path(bpy.context.scene.tt_tools_assetname)
+        if (bpy.context.scene.tt_tools_assetname.lower() in thisfilename.lower() and 
+            bpy.context.scene.tt_tools_assetname.lower() in thisoutputpath.lower() and
             thisfilename[-8:] == "tt.blend"):
             sendDeadlineCmd()
             if bpy.context.scene.tt_tools_xcode == True:
                 xcodeH264()
         else:
-            tt_tools_messagebox("To submit a turntable render, this file name must start with the asset selected above    " + str(bpy.context.scene.tt_tools_alist) + "    in the filename and the filename must end with    tt.blend", "Failed Submit")
+            tt_tools_messagebox("To submit a turntable render, this file name must start with the asset selected above    " + str(bpy.context.scene.tt_tools_assetname) + "    in the filename and the filename must end with    tt.blend", "Failed Submit")
         
         return{'FINISHED'}
 

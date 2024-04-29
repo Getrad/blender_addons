@@ -271,7 +271,7 @@ class OBJECT_OT_tt_tools_preferences(bpy.types.Operator):
 
 #   PROPERTIES
 class tt_toolsProperties(bpy.types.PropertyGroup):
-    #addon preference properties
+    # addon preference properties
     bpy.types.Scene.tt_override_version = bpy.props.StringProperty \
         (
         name = "Version",
@@ -336,7 +336,7 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         description = "Default Deadline Priority",
         default = 60
         )
-    #scene properties
+    # scene properties
     bpy.types.Scene.tt_tools_assetname = bpy.props.StringProperty \
         (
         name = "Asset Name",
