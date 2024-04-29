@@ -119,9 +119,9 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, ch
                 pref_tt_filepath = Path(str(pref_assetroot + "/helpers/turntable/publish/blender/turntable.blend"))
                 pref_basefile = 'X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish'
                 pref_renderroot = "X:/projects/chums_season2/onsite/renders/_prod/assets"
-                pref_assetssubtree = "work"
+                pref_assetssubtree = "blender"
                 pref_range = "1-123"
-                pref_tt_stage = 'blender'
+                pref_tt_stage = "work"
             case _:
                 pref_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
                 pref_tt_filepath = Path(str(pref_assetroot + "helpers/turntable/projects/blender/turntable.blend"))
@@ -161,8 +161,8 @@ def sendDeadlineCmd():
     tmpDir = Path(getPipelineTmpFolder()).joinpath('dlJobFiles')
     thisfilename = bpy.data.filepath
     thisoutputpath = bpy.context.scene.render.filepath
-    asset_name = bpy.context.scene.tt_tools_alist
-    bpy.context.scene.tt_tools_assetname = asset_name
+    #asset_name = bpy.context.scene.tt_tools_alist
+    asset_name = bpy.context.scene.tt_tools_assetname
     asset_task = bpy.context.scene.tt_tools_task
     chm_assetprefix = {'chr':'characters', 
                         'env':'environments', 
@@ -462,12 +462,6 @@ def queryAssetList():
     #print("\nENTER queryAssetList FUNCTION")
     print("\n\nCall update_base_settings() from: queryAssetList")
     chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-    #print("chm_assetroot: ", chm_assetroot, \
-    #      "\nchm_tt_filepath: ", chm_tt_filepath, \
-    #      "\nchm_renderroot: ", chm_renderroot, \
-    #      "\nchm_assetssubtree: ", chm_assetssubtree, \
-    #     "\nchm_tt_stage: ", chm_tt_stage, \
-    #      "\nchm_tt_version: ", chm_tt_version)
     anames = []
     try:
         filtstr = bpy.context.scene.tt_tools_filter
@@ -481,10 +475,10 @@ def queryAssetList():
             anames += ([(aname,aname,'') for aname in os.listdir(thistype) if 
                 (aname[:3] in chm_assetprefix.keys() and 
                 not(aname in chm_omitlist)) and (filtstr.lower() in aname.lower())])
-    try:
-        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-    except:
-        print("Fail to update bpy.context.scene.tt_tools_assetname")
+    #try:
+    #    bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+    #except:
+    #    print("Fail to update bpy.context.scene.tt_tools_assetname")
     return anames
 
 def get_asset_dir(asset_name, chm_assetroot, chm_assetssubtree, chm_tt_stage, chm_tt_version):

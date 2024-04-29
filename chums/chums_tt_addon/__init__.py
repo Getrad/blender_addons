@@ -276,7 +276,8 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         (
         name = "Version",
         description = "Version",
-        default = "Custom"
+        #default = "4.x"
+        default = blender_version_str
         )
     bpy.types.Scene.tt_override_assetroot = bpy.props.StringProperty \
         (
