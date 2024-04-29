@@ -8,8 +8,25 @@ for i in addon_utils.modules():
         addon_utils.enable('chums_tt_addon', default_set=True, persistent=False, handle_error=None)
         from chums_tt_addon.chums_tt_utils import *
         print("IMPORTED FUNCTIONS!")
+from chums_tt_addon.chums_tt_utils import get_asset
+from chums_tt_addon.chums_tt_utils import set_camera
+from chums_tt_addon.chums_tt_utils import set_output_path
+from chums_tt_addon.chums_tt_utils import save_tt_file
+from chums_tt_addon.chums_tt_utils import sendDeadlineCmd
+from chums_tt_addon.chums_tt_utils import xcodeH264
 
+
+# --------   VARIABLES   --------
+# SET THE CAMERA OBJECT NAME
+thecam_name = "cam.ttCamera"
+# OUTPUT PARAMETERS
+thekeyframes_cam = [121,122,123]
+thekeyframes_val = [72,135,45]
+
+
+# --------   FUNCTIONS   --------
 def build_turntable(tt_path):
+    print("   Working with turntable file: ", tt_path)
     #define collection list
     coll_list = ['col.anim_controls','col.tt_objects','references','lightrig.sun']
     #import tt collections
@@ -21,14 +38,8 @@ def build_turntable(tt_path):
                 bpy.context.scene.collection.children.link(coll)
     if bpy.data.objects['cam.ttCamera']:
         bpy.context.scene.camera = bpy.data.objects['cam.ttCamera']
-    from chums_tt_addon.chums_tt_utils import get_asset
-    from chums_tt_addon.chums_tt_utils import set_camera
-    from chums_tt_addon.chums_tt_utils import set_output_path
-    from chums_tt_addon.chums_tt_utils import save_tt_file
-    from chums_tt_addon.chums_tt_utils import sendDeadlineCmd
     bpy.context.scene.render.resolution_x = 1080
     bpy.context.scene.render.resolution_y = 1080
-    
 
 def save_temp_turntable():
     current_user = os.getlogin()
@@ -43,22 +54,35 @@ def save_temp_turntable():
     except:
         print("FAILED TO SAVE TEMP TT FILE")
 
-def load_asset(asset_entity):
+def load_asset(assetname):
     pass
 
+
+# --------     EXEC     ---------
 if __name__ == "__main__":
     argv = sys.argv
     argv = argv[argv.index("--") + 1:]
     print("Building Turntable using (argv: ", (argv[0]))
+    print("   for asset: ", (argv[1]))
+    print("   for stage: ", (argv[2]))
     # build file
     build_turntable((argv[0]))
-    # load asset
-    #from chums_tt_addon.chums_tt_utils import get_asset
-    #get_asset(asset_name, asset_dept, asset_stage)
-    #set_camera(tt_cam_name, keyframes_cam, keyframes_val)
-    #set_output_path(asset_root, render_root, asset_name, asset_task, asset_stage)
-    #save_tt_file(asset_name, asset_task, asset_stage)
-    #sendDeadlineCmd()
-    # save file
+    # save temp local safety file file
     save_temp_turntable()
+    # load asset
+    queryAssetList()
+    from chums_tt_addon.chums_tt_utils import get_asset
+    bpy.context.scene.tt_tools_alist = (argv[1])
+    print("   bpy.context.scene.tt_tools_alist: ", bpy.context.scene.tt_tools_alist)
+    bpy.context.scene.tt_tools_task = (argv[2])
+    get_asset((argv[1]))
+    print("   bpy.context.scene.tt_tools_task: ", bpy.context.scene.tt_tools_task)
+    set_camera(thecam_name, thekeyframes_cam, thekeyframes_val)
+    #set_output_path(asset_name)
+    #save_tt_file(asset_name, asset_task)
+    #sendDeadlineCmd()
+    #xcodeH264()
+    #save_tt_file(asset_name, asset_task)
+    
+    
     

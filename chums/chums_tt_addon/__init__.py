@@ -22,21 +22,22 @@ bl_info = {
     "tracker_url": "",
     "category": "Chums"}
 
-# ---    GLOBAL VARIABLES    ----
+
+# --------   VARIABLES   --------
 #   GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 #   SET DEFAULT VERSION STRING
 blender_version_str = (str(blender_version[0]) + ".x")
-# GET USER
+#   GET USER
 current_user = os.getlogin()
 user_path = os.path.join("C:\\users",current_user)
-# BASEFILE SPECIFIC 
+#   BASEFILE SPECIFIC 
 thecam_name = "cam.ttCamera"
-# LAUNCHPAD
+#   LAUNCHPAD
 LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/launchpadRepository"
 
 
-# FUNCTIONS
+# --------   FUNCTIONS   --------
 def set_version_override_paths(self, context):
     if self.tt_override_version:
         bpy.context.scene.tt_override_version = self.tt_override_version
@@ -169,7 +170,8 @@ def make_path_absolute(self, context):
             self.tt_tools_override_asset = (os.path.abspath(bpy.path.abspath(self.tt_tools_override_asset)))
     return None
 
-# CLASSES
+
+# --------    CLASSES    --------
 #   PREFERENCES
 class tt_toolsPreferences(bpy.types.AddonPreferences):
     bl_idname = __name__
@@ -392,8 +394,8 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         )
 
 
-#   REGISTER
-classes = [tt_toolsPreferences,tt_toolsProperties,
+# -------- REGISTRATION ---------
+classes = [tt_toolsProperties,tt_toolsPreferences,
             OBJECT_OT_tt_tools_preferences,VIEW3D_PT_tt_tools_panel,
             BUTTON_OT_set_cam_loc, BUTTON_OT_get_asset, 
             BUTTON_OT_exploreAsset,
@@ -403,6 +405,7 @@ classes = [tt_toolsPreferences,tt_toolsProperties,
             BUTTON_OT_refresh, BUTTON_OT_append_asset,
             BUTTON_OT_link_asset, BUTTON_OT_buildTT]
 
+#   REGISTER
 def register():
     from bpy.utils import register_class
     for cls in classes:
@@ -414,6 +417,8 @@ def unregister():
     for cls in reversed(classes):
         unregister_class(cls)
 
+
+# --------     EXEC     ---------
 if __name__ == "__main__":
     chm_assetroot, chm_tt_basefile, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_assetturntables, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     if os.path.exists(chm_assetroot):
