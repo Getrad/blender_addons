@@ -26,6 +26,9 @@ def build_turntable(tt_path):
     from chums_tt_addon.chums_tt_utils import set_output_path
     from chums_tt_addon.chums_tt_utils import save_tt_file
     from chums_tt_addon.chums_tt_utils import sendDeadlineCmd
+    bpy.context.scene.render.resolution_x = 1080
+    bpy.context.scene.render.resolution_y = 1080
+    
 
 def save_temp_turntable():
     current_user = os.getlogin()
