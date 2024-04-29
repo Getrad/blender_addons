@@ -258,8 +258,8 @@ def xcodeH264():
     tmpDir = Path(getPipelineTmpFolder()).joinpath('dlJobFiles')
     thisfilename = bpy.data.filepath
     thisoutputpath = bpy.context.scene.render.filepath
-    asset_name = bpy.context.scene.tt_tools_alist
-    bpy.context.scene.tt_tools_assetname = asset_name
+    #asset_name = bpy.context.scene.tt_tools_alist
+    asset_name = bpy.context.scene.tt_tools_assetname
     asset_task = bpy.context.scene.tt_tools_task
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
