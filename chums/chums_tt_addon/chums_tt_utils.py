@@ -131,7 +131,6 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, ch
                 pref_range = "1-123"
                 pref_tt_stage = 'workfiles'
     pref_override_version = override_version
-    
     return(pref_assetroot, pref_basefile, pref_tt_filepath, pref_renderroot, pref_assetssubtree, pref_range, pref_tt_stage, pref_override_version)
 
 def get_asset_from_path(path):
@@ -222,6 +221,7 @@ def sendDeadlineCmd():
         f.write(f"OutputDirectory0={the_outpath_base}\n")
         f.write(f"OutputFilename0={outname}\n")
         f.write(f"Pool=turntable\n")
+        f.write(f"Group=blender\n")
         f.write(f"SecondaryPool=primary\n")
         if bpy.context.scene.tt_tools_draft == True:
             f.write(f"ExtraInfoKeyValue0=SubmitQuickDraft=True\n")
@@ -438,20 +438,34 @@ def get_assetroot():
 
 def build_turntable():
     print("\n\nCall update_base_setting() from: build_turntable")
+    if len(bpy.context.scene.tt_tools_assetname) <1:
+        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
     this_file_path = os.path.dirname(os.path.realpath(__file__))
     chm_postload = os.path.join(this_file_path, 'chums_tt_build.py')
     chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     chm_basefile = find_latest_workfile(chm_tt_basedir)
     print("chm_basefile: ", chm_basefile)
-    chm_asset = bpy.context.scene.tt_tools_alist
+    chm_asset = bpy.context.scene.tt_tools_assetname
+    the_asset_dir = get_asset_dir(chm_asset)
     chm_task = bpy.context.scene.tt_tools_task
+    chm_load = bpy.context.scene.tt_tools_autoload
+    chm_render = bpy.context.scene.tt_tools_autorender
+    chm_version = bpy.context.scene.tt_override_version
     mycmd = '\"'
     mycmd += bpy.app.binary_path
     mycmd += ('\" \"' + chm_basefile.__str__() + "\"")
     mycmd += (' -P \"' + chm_postload.__str__() + ("\""))
+    #argv start
     mycmd += (' -- \"' + chm_tt_filepath.__str__() + '\"')
     mycmd += (' \"' + chm_asset.__str__() + '\"')
     mycmd += (' \"' + chm_task.__str__() + '\"')
+    mycmd += (' \"' + chm_load.__str__() + '\"')
+    mycmd += (' \"' + chm_render.__str__() + '\"')
+    mycmd += (' \"' + chm_version.__str__() + '\"')
+    mycmd += (' \"' + chm_assetroot.__str__() + '\"')
+    mycmd += (' \"' + chm_assetssubtree.__str__() + '\"')
+    mycmd += (' \"' + chm_tt_stage.__str__() + '\"')
+    mycmd += (' \"' + chm_renderroot.__str__() + '\"')
     print("\nmycmd = ", mycmd)
     
     my_build_tt = os.popen(mycmd)
@@ -459,7 +473,6 @@ def build_turntable():
     return {'FINISHED'}
 
 def queryAssetList():
-    #print("\nENTER queryAssetList FUNCTION")
     print("\n\nCall update_base_settings() from: queryAssetList")
     chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     anames = []
@@ -475,14 +488,21 @@ def queryAssetList():
             anames += ([(aname,aname,'') for aname in os.listdir(thistype) if 
                 (aname[:3] in chm_assetprefix.keys() and 
                 not(aname in chm_omitlist)) and (filtstr.lower() in aname.lower())])
-    #try:
-    #    bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-    #except:
-    #    print("Fail to update bpy.context.scene.tt_tools_assetname")
     return anames
 
-def get_asset_dir(asset_name, chm_assetroot, chm_assetssubtree, chm_tt_stage, chm_tt_version):
+def pickedAsset():
+    try:
+        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+    except:
+        print("failed to set bpy.context.scene.tt_tools_assetname")
+    return None
+
+def get_asset_dir(asset_name):
+    print("\n\nCall update_base_settings from: get_asset_dir")
+    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
     asset_dir = ""
+    if len(asset_name) < 1:
+        asset_name = bpy.context.scene.tt_tools_assetname
     print("get_asset_dir -     asset_name: ", asset_name)
     print("get_asset_dir - chm_tt_version: ", chm_tt_version)
     chm_assetprefix = {'chr':'characters', 
@@ -490,20 +510,21 @@ def get_asset_dir(asset_name, chm_assetroot, chm_assetssubtree, chm_tt_stage, ch
                        'prp':'props', 
                        'prx':'proxies',
                        'sky':'skies'}
-    the_asset_type = chm_assetprefix[asset_name[:3]]
-    match chm_tt_version:
-        case '3.x':
-            asset_dir = os.path.join(chm_assetroot,the_asset_type,bpy.context.scene.tt_tools_assetname,bpy.context.scene.tt_tools_task,chm_assetssubtree,chm_tt_stage)
-            print('3.x asset_dir:', asset_dir)
-        case '4.x':
-            asset_dir = os.path.join(chm_assetroot,the_asset_type,bpy.context.scene.tt_tools_assetname,bpy.context.scene.tt_tools_task,chm_tt_stage,chm_assetssubtree)
-            print("4.x asset_dir:", asset_dir)
-        case 'Custom':
-            asset_dir = os.path.join(chm_assetroot,the_asset_type,bpy.context.scene.tt_tools_assetname,bpy.context.scene.tt_tools_task,chm_assetssubtree,chm_tt_stage)
-            print("Custom asset_dir:", asset_dir)
-        case _:
-            asset_dir = os.path.join(chm_assetroot,the_asset_type,bpy.context.scene.tt_tools_assetname,bpy.context.scene.tt_tools_task,chm_assetssubtree,chm_tt_stage)
-            print("_")
+    if len(asset_name) > 1:
+        the_asset_type = chm_assetprefix[asset_name[:3]]
+        match chm_tt_version:
+            case '3.x':
+                asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_assetssubtree,chm_tt_stage)
+                print('3.x asset_dir:', asset_dir)
+            case '4.x':
+                asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_tt_stage,chm_assetssubtree)
+                print("4.x asset_dir:", asset_dir)
+            case 'Custom':
+                asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_assetssubtree,chm_tt_stage)
+                print("Custom asset_dir:", asset_dir)
+            case _:
+                asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_assetssubtree,chm_tt_stage)
+                print("_")
     asset_dir = asset_dir.replace("/","\\")
     return asset_dir
 
@@ -536,7 +557,7 @@ def get_render_dir(asset_name, asset_version, chm_renderroot, chm_tt_stage, chm_
 def explore_asset(asset_name):
     print("\n\nCall update_base_settings from: explore_asset")
     chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-    the_asset_dir = get_asset_dir(asset_name, chm_assetroot, chm_assetssubtree, chm_tt_stage, chm_tt_version)
+    the_asset_dir = get_asset_dir(asset_name)
     if os.path.exists(the_asset_dir):
         subprocess.Popen('explorer \"' + (the_asset_dir) + '\"')
     else:
@@ -549,14 +570,14 @@ def get_asset(asset_name):
     remove_any_existing_asset()
     print("\n\nCall update_base_settings from: get_asset")
     chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-    the_asset_dir = get_asset_dir(asset_name, chm_assetroot, chm_assetssubtree, chm_tt_stage, chm_tt_version)
+    bpy.context.scene.tt_tools_assetpath = get_asset_dir(asset_name)
+    the_asset_dir = bpy.context.scene.tt_tools_assetpath
     print("the_asset_dir: ", the_asset_dir)
     the_asset_path = find_latest_workfile(the_asset_dir)
     if os.path.exists(the_asset_path):
         with bpy.data.libraries.load(the_asset_path, link=False) as (data_src, data_dst):
             data_dst.collections = data_src.collections
         for coll in data_dst.collections:
-            the_topnodes = []
             if coll.name == "asset_prod":
                 bpy.context.scene.collection.children.link(coll)
             for colobj in coll.all_objects:
@@ -567,7 +588,7 @@ def get_asset(asset_name):
             mytask = "Texture"
         else:
             mytask = "Model"
-        tt_tools_messagebox(("Cannot find Path:    " + the_asset_dir + "    check if   " + mytask + "   " + chm_tt_stage + "   are set correctly."), "Missing Path")
+        tt_tools_messagebox(("Cannot find Path:    " + the_asset_path + "    check if   " + mytask + "   " + chm_tt_stage + "   are set correctly."), "Missing Path")
     return 0
 
 def append_asset(asset_name):
@@ -587,7 +608,7 @@ def append_asset(asset_name):
 def link_asset(asset_name):
     print("\n\nCall update_base_settings from: link_asset")
     chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-    the_asset_dir = get_asset_dir(asset_name, chm_assetroot, chm_assetssubtree, chm_tt_stage, chm_tt_version)
+    the_asset_dir = get_asset_dir(asset_name)
     the_asset_path = find_latest_workfile(the_asset_dir)
     if os.path.exists(the_asset_path):
         with bpy.data.libraries.load(the_asset_path, link=True) as (data_src, data_dst):
@@ -601,7 +622,7 @@ def link_asset(asset_name):
 def open_assetfile(asset_name):
     print("\n\nCall update_base_settings from: open_assetfile")
     chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-    the_asset_dir = get_asset_dir(asset_name, chm_assetroot, chm_assetssubtree, chm_tt_stage, chm_tt_version)
+    the_asset_dir = get_asset_dir(asset_name)
     the_asset_path = find_latest_workfile(the_asset_dir)
     if os.path.exists(the_asset_dir):
         if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
@@ -628,7 +649,7 @@ def set_output_path(asset_name):
     the_outpath = ""
     print("\n\nCall update_base_settings from: set_output_path")
     chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-    the_asset_dir = get_asset_dir(asset_name, chm_assetroot, chm_assetssubtree, chm_tt_stage, chm_tt_version)
+    the_asset_dir = get_asset_dir(asset_name)
     latest_asset_workfile = find_latest_workfile(the_asset_dir)
     latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
     latest_asset_filename = os.path.basename(latest_asset_workfile)
@@ -728,7 +749,7 @@ __all__ = ["tt_tools_messagebox","save_tt_file",
            "explore_asset","get_asset_dir",
            "queryAssetList","build_turntable",
            "get_assetroot","get_render_dir",
-           "set_camera",
+           "set_camera","pickedAsset",
            "find_latest_workfile","remove_any_existing_asset",
            "get_local_asset_objects","get_selection_bounds",
            "xcodeH264","sendDeadlineCmd",

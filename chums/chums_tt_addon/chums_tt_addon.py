@@ -33,7 +33,7 @@ from chums_tt_addon.chums_tt_utils import set_camera
 
 # --------   VARIABLES   --------
 # VERSION
-vsn = '0.5.1d'
+vsn = '0.5.1e'
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 # SET DEFAULT VERSION STRING
@@ -129,9 +129,9 @@ class BUTTON_OT_get_asset(bpy.types.Operator):
     
     def execute(self, context):
         #bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
+        if len(bpy.context.scene.tt_tools_assetname) < 1 or (bpy.context.scene.tt_tools_assetname != bpy.context.scene.tt_tools_alist):
+            bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         get_asset(bpy.context.scene.tt_tools_assetname)
-        #get_asset(bpy.context.scene.tt_tools_alist, bpy.context.scene.tt_tools_task, bpy.context.scene.tt_override_stage)
         return{'FINISHED'}
 
 class BUTTON_OT_append_asset(bpy.types.Operator):
@@ -144,16 +144,6 @@ class BUTTON_OT_append_asset(bpy.types.Operator):
         #bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         append_asset(bpy.context.scene.tt_tools_assetname)
-        return{'FINISHED'}
-
-class BUTTON_OT_get_asset_list(bpy.types.Operator):
-    '''Return the latest asset - see console'''
-    bl_idname = "tt_tools.get_asset_list"
-    bl_label = "Get Asset List"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        the_asset_list = get_asset_list(chm_tt_stage)
         return{'FINISHED'}
 
 class BUTTON_OT_link_asset(bpy.types.Operator):
@@ -266,8 +256,11 @@ class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        #layout.prop(bpy.context.scene, "tt_tools_newblend")
-        #layout.operator("tt_tools.opentt", text=(BUTTON_OT_openTT.bl_label))
+        split = layout.split(factor=0.5, align=True)
+        col = split.column(align=True)
+        col.prop(bpy.context.scene, "tt_tools_autoload")
+        col = split.column(align=True)
+        col.prop(bpy.context.scene, "tt_tools_autorender")
         layout.operator("tt_tools.buildtt", text=(BUTTON_OT_buildTT.bl_label))
         layout.prop(bpy.context.scene, "tt_tools_task")
         split = layout.split(factor=0.85, align=True)

@@ -8,7 +8,6 @@ from pathlib import Path
 
 from chums_tt_addon.chums_tt_utils import *
 from chums_tt_addon.chums_tt_addon import *
-from chums_tt_addon.chums_tt_utils import set_camera
 
 bl_info = {
     "name": "Turntable Tools",
@@ -344,6 +343,12 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         description = "Asset Name",
         default = ""
         )
+    bpy.types.Scene.tt_tools_assetpath = bpy.props.StringProperty \
+        (
+        name = "Asset Path",
+        description = "Asset Path",
+        default = ""
+        )
     bpy.types.Scene.tt_tools_override_ttsave = bpy.props.StringProperty \
         (
         name = "",
@@ -385,6 +390,7 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         name="",
         description="Asset List",
         items=queryAssetList(),
+        update=pickedAsset(),
         default = None
         )
     bpy.types.Scene.tt_tools_filter = bpy.props.StringProperty \
@@ -393,7 +399,19 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         description = "String to Isolate",
         default = ""
         )
-
+    bpy.types.Scene.tt_tools_autoload = bpy.props.BoolProperty \
+        (
+        name = "Load Selected",
+        description = "",
+        default = True
+        )
+    bpy.types.Scene.tt_tools_autorender = bpy.props.BoolProperty \
+        (
+        name = "Render TT",
+        description = "",
+        default = False
+        )
+    
 
 # -------- REGISTRATION ---------
 classes = [tt_toolsProperties,tt_toolsPreferences,

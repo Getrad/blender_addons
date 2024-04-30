@@ -25,7 +25,7 @@ thekeyframes_val = [72,135,45]
 
 
 # --------   FUNCTIONS   --------
-def build_turntable(tt_path):
+def build_turntable(tt_path, tt_version):
     print("   Working with turntable file: ", tt_path)
     # define collection list
     coll_list = ['col.anim_controls','col.tt_objects','references','lightrig.sun']
@@ -42,6 +42,12 @@ def build_turntable(tt_path):
     # confirm output resolution
     bpy.context.scene.render.resolution_x = 1080
     bpy.context.scene.render.resolution_y = 1080
+    # set version
+    bpy.context.scene.tt_override_version = tt_version
+    try:
+        bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_version = tt_version
+    except:
+        print("error setting addon preferences version")
     # update asset list
     queryAssetList()
 
@@ -69,23 +75,47 @@ if __name__ == "__main__":
     print("Building Turntable using (argv: ", (argv[0]))
     print("   for asset: ", (argv[1]))
     print("   for stage: ", (argv[2]))
+    print("    autoload: ", (argv[3]))
+    print("  autorender: ", (argv[4]))
+    print("     version: ", (argv[5]))
+    if (argv[5]) == "Custom":
+        try:
+            print("      ttroot: ", (argv[6]))
+            print("   ttsubtree: ", (argv[7]))
+            print("    tt_stage: ", (argv[8]))
+            print("      tt_out: ", (argv[9]))
+        except:
+            print("Missing arguments for Custom build - troot, ttbase, ttfile, tt_out")
     # build file
-    build_turntable((argv[0]))
+    build_turntable((argv[0]), (argv[5]))
     # save temp local safety file file
     save_temp_turntable()
     # load asset
     queryAssetList()
-    from chums_tt_addon.chums_tt_utils import get_asset
-    bpy.context.scene.tt_tools_assetname = (argv[1])
-    bpy.context.scene.tt_tools_task = (argv[2])
-    get_asset(bpy.context.scene.tt_tools_assetname)
-    print("   bpy.context.scene.tt_tools_task: ", bpy.context.scene.tt_tools_task)
-    set_camera(thecam_name, thekeyframes_cam, thekeyframes_val)
-    bpy.context.scene.render.filepath = set_output_path(bpy.context.scene.tt_tools_assetname)
-    save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
-    sendDeadlineCmd()
-    xcodeH264()
-    save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
-    
+    if (argv[3]) == "True":
+        if (argv[5]) == "Custom":
+            #update prefs
+            bpy.context.scene.tt_override_assetroot = argv[6]
+            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_assetroot = argv[6]
+            bpy.context.scene.tt_override_subtree = argv[7]
+            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_subtree = argv[7]
+            bpy.context.scene.tt_override_stage = argv[8]
+            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_stage = argv[8]
+            bpy.context.scene.tt_override_renderroot = argv[9]
+            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_renderroot = argv[9]
+        #from chums_tt_addon.chums_tt_utils import get_asset
+        bpy.context.scene.tt_tools_assetname = (argv[1])
+        bpy.context.scene.tt_tools_task = (argv[2])
+        get_asset(bpy.context.scene.tt_tools_assetname)
+        print("   bpy.context.scene.tt_tools_task: ", bpy.context.scene.tt_tools_task)
+        set_camera(thecam_name, thekeyframes_cam, thekeyframes_val)
+        bpy.context.scene.render.filepath = set_output_path(bpy.context.scene.tt_tools_assetname)
+        save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
+        if (argv[4]) == "True":
+            # launch render
+            sendDeadlineCmd()
+            xcodeH264()
+            save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
+        
     
     
