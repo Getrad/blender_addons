@@ -42,6 +42,7 @@ def build_turntable(tt_path, tt_version):
     # confirm output resolution
     bpy.context.scene.render.resolution_x = 1080
     bpy.context.scene.render.resolution_y = 1080
+    bpy.context.scene.render.use_motion_blur = False
     # set version
     bpy.context.scene.tt_override_version = tt_version
     try:

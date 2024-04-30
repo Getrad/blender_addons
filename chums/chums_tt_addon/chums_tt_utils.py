@@ -438,7 +438,7 @@ def get_assetroot():
 
 def build_turntable():
     print("\n\nCall update_base_setting() from: build_turntable")
-    if len(bpy.context.scene.tt_tools_assetname) <1:
+    if len(bpy.context.scene.tt_tools_assetname) < 1 or ((len(bpy.context.scene.tt_tools_alist) > 1) and (bpy.context.scene.tt_tools_assetname != bpy.context.scene.tt_tools_alist)):
         bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
     this_file_path = os.path.dirname(os.path.realpath(__file__))
     chm_postload = os.path.join(this_file_path, 'chums_tt_build.py')
