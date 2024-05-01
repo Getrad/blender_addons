@@ -195,7 +195,9 @@ def sendDeadlineCmd():
     dlSceneFile = Path(thisfilename).as_posix()
     dlOutputFile = Path(thisoutputpath).as_posix()
     #frameRamge
-    dlFrames = str(chm_tt_range)
+    dlFrames = "1-123"
+    if bpy.context.scene.tt_override_range == True:
+        dlFrames = (str(bpy.context.scene.frame_start) +"-" + str(bpy.context.scene.frame_end))
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
     jobPrio = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.defaultpriority)
@@ -293,7 +295,10 @@ def xcodeH264():
     dlSceneFile = Path(thisfilename).as_posix()
     dlOutputFile = Path(the_outpath).as_posix()
     dlOutputPath = Path(the_outpath_base).as_posix()
-    dlFrames = str(chm_tt_range)
+    #frameRamge
+    dlFrames = "1-123"
+    if bpy.context.scene.tt_override_range == True:
+        dlFrames = (str(bpy.context.scene.frame_start) +"-" + str(bpy.context.scene.frame_end))
     filename = uuid.uuid4()
     jobInfoPath = Path(tmpDir).joinpath(f'{filename}_jobInfo.job')
     jobPrio = str(bpy.context.preferences.addons["chums_tt_addon"].preferences.defaultpriority)
