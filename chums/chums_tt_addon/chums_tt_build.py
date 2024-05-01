@@ -54,8 +54,10 @@ def build_turntable(tt_path, tt_range, tt_version):
         print("error setting addon preferences version")
     # set range
     try:
-        bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range = tt_range
-        bpy.context.scene.tt_override_range = tt_range
+        if tt_range == "1-123":
+            bpy.context.scene.tt_override_range = False
+        else:
+            bpy.context.scene.tt_override_range = True
     except:
         print("error setting addon preferences tt_override_range")
     bpy.context.scene.frame_start = int(tt_range.split("-")[0])
@@ -105,7 +107,7 @@ if __name__ == "__main__":
     save_temp_turntable()
     # load asset
     queryAssetList()
-    if (argv[3]) == "True":
+    if (len(argv[1]) > 1) and (argv[3]) == "True":
         if (argv[6]) == "Custom":
             #update prefs
             bpy.context.scene.tt_override_assetroot = argv[7]

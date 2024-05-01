@@ -66,7 +66,7 @@ class BUTTON_OT_openAsset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
+        #chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
         bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         open_this_file = open_assetfile(bpy.context.scene.tt_tools_assetname)
         return{'FINISHED'}
@@ -95,7 +95,7 @@ class BUTTON_OT_exploreAsset(bpy.types.Operator):
     def execute(self, context):
         print("call update_base_settings from: BUTTON_OT_exploreAsset")
         bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
+        #chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
         explore_asset(bpy.context.scene.tt_tools_assetname)
         return{'FINISHED'}
 
@@ -132,7 +132,7 @@ class BUTTON_OT_append_asset(bpy.types.Operator):
     
     def execute(self, context):
         print("\n\nCall update_base_settings from: BUTTON_OT_append_asset")
-        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
+        #chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
         try:
             bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         except:
@@ -148,7 +148,7 @@ class BUTTON_OT_link_asset(bpy.types.Operator):
     
     def execute(self, context):
         print("\n\nCall update_base_settings from: BUTTON_OT_link_asset")
-        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
+        #chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
         try:
             bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         except:
@@ -200,7 +200,7 @@ class BUTTON_OT_set_out_filepath(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
+        #chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
         theoutpath = set_output_path(bpy.context.scene.tt_tools_assetname)
         bpy.context.scene.render.filepath = theoutpath
         return{'FINISHED'}
@@ -212,7 +212,6 @@ class BUTTON_OT_save_ttfile(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        #chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
         thisfilepath = bpy.data.filepath
         thisfilename = os.path.basename(thisfilepath)
         save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
@@ -226,7 +225,7 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
+        #chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
         thisfilepath = bpy.data.filepath
         thisfilename = os.path.basename(thisfilepath)
         thisoutputpath = bpy.context.scene.render.filepath
@@ -293,6 +292,8 @@ class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
         col.prop(bpy.context.scene, "tt_tools_xcode")
         col = split.column(align=True)
         col.prop(bpy.context.scene, "tt_tools_draft")
+        layout.prop(bpy.context.scene, "tt_override_range")
+        
 
 
 # -------- REGISTRATION ---------

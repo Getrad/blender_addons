@@ -6,7 +6,7 @@
 #       - FEATURE - added AUTOLOAD and AUTORENDERTT features
 #       - FEATURE - BUILD COMMAND
 #       - DOCS - https://docs.google.com/document/d/1YmDjLhnPXZqVWtPw6iCsjxK71WYtTzOzTl3x9pywwZY/edit?usp=sharing
-# 0.5.2 - BUGFIX - use preferences Frame Range to override the turntable timeline
+# 0.5.2 - BUGFIX - use preferences Frame Range to override the turntable timeline from 1-123 default to local frame range
 ## ToDo - Give Department a proper global list for convenience
 ## ToDo - AutoRestrict Department list to existing folders that contain files
 ## ToDo - 
@@ -226,12 +226,6 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         default = "blender",
     )
 
-    tt_override_range: bpy.props.StringProperty(
-        name="Render Range",
-        update = update_prefs_range,
-        default = "1-123",
-    )
-
     tt_override_angle: bpy.props.FloatProperty(
         name="Default Camera Parent Z Rotation",
         default=22.5,
@@ -257,7 +251,6 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "tt_override_renderroot")
         layout.prop(self, "tt_override_subtree")
         layout.prop(self, "tt_override_stage")
-        layout.prop(self, "tt_override_range")
         layout.prop(self, "tt_override_angle")
         layout.prop(self, "defaultpriority")
 
@@ -313,12 +306,6 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         description = "Output Directory",
         default = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
         #default = "Directory"
-        )
-    bpy.types.Scene.tt_override_range = bpy.props.StringProperty \
-        (
-        name = "Render Range",
-        description = "Render Range",
-        default = "1-123"
         )
     bpy.types.Scene.tt_override_subtree = bpy.props.StringProperty \
         (
@@ -406,6 +393,12 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         name = "Filter",
         description = "String to Isolate",
         default = ""
+        )
+    bpy.types.Scene.tt_override_range = bpy.props.BoolProperty \
+        (
+        name = "Use Local Frame Range",
+        description = "...instead of default 1 - 123 range",
+        default = False
         )
     bpy.types.Scene.tt_tools_autoload = bpy.props.BoolProperty \
         (
