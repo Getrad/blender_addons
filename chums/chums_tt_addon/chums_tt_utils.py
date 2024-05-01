@@ -492,7 +492,8 @@ def queryAssetList():
 
 def pickedAsset():
     try:
-        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+        the_picked = bpy.context.scene.tt_tools_alist
+        bpy.context.scene.tt_tools_assetname = the_picked
     except:
         print("failed to set bpy.context.scene.tt_tools_assetname")
     return None
@@ -592,9 +593,7 @@ def get_asset(asset_name):
     return 0
 
 def append_asset(asset_name):
-    print("\n\nCall update_base_settings from: append_asset")
-    chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
-    the_asset_dir = get_asset_dir(asset_name, chm_assetroot, chm_assetssubtree, chm_tt_stage, chm_tt_version)
+    the_asset_dir = get_asset_dir(asset_name)
     the_asset_path = find_latest_workfile(the_asset_dir)
     if os.path.exists(the_asset_path):
         with bpy.data.libraries.load(the_asset_path, link=False) as (data_src, data_dst):
@@ -626,16 +625,27 @@ def open_assetfile(asset_name):
     the_asset_path = find_latest_workfile(the_asset_dir)
     if os.path.exists(the_asset_dir):
         if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
-            print("opening asset in Blender from LAUNCHPAD function")
-            sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
-            from launchpad.helpers.launchers import launchBlenderDetached
-            newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
+            use_lp_launch = True
         else:
+            use_lp_launch = False
+        if use_lp_launch:
+            try:
+                print("opening asset in Blender from LAUNCHPAD function")
+                sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
+                from launchpad.helpers.launchers import launchBlenderDetached
+                newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
+                use_lp_launch = True
+            except:
+                print("ERROR: trying with DIRECT LOCAL blender path - ie; the same as the one you're using to generate and see this message")
+                tt_tools_messagebox("ERROR: trying with DIRECT LOCAL blender path - ie; the same as the one you're using to generate and see this message", "Missing Path")
+                use_lp_launch = False
+        if not(use_lp_launch):
             print("opening asset in Blender from DIRECT local path")
             mycmd = '\"'
             mycmd += bpy.app.binary_path
             mycmd += ('\" \"' + the_asset_path + '\"')
             newsesh = os.popen(mycmd)
+            use_lp_launch = False
     else:
         tt_tools_messagebox(("Cannot find Path:    " + the_asset_dir), "Missing Path")
 

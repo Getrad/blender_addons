@@ -33,7 +33,7 @@ from chums_tt_addon.chums_tt_utils import set_camera
 
 # --------   VARIABLES   --------
 # VERSION
-vsn = '0.5.1e'
+vsn = '0.5.1'
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 # SET DEFAULT VERSION STRING
@@ -141,8 +141,12 @@ class BUTTON_OT_append_asset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        #bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+        print("\n\nCall update_base_settings from: BUTTON_OT_append_asset")
         chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
+        try:
+            bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+        except:
+            print("FAIL to update bpy.context.scene.tt_tools_assetname, using: ", bpy.context.scene.tt_tools_assetname)
         append_asset(bpy.context.scene.tt_tools_assetname)
         return{'FINISHED'}
 
@@ -153,8 +157,12 @@ class BUTTON_OT_link_asset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        #bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+        print("\n\nCall update_base_settings from: BUTTON_OT_link_asset")
         chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_range, chm_tt_stage, chm_tt_version = update_base_settings()
+        try:
+            bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+        except:
+            print("FAIL to update bpy.context.scene.tt_tools_assetname, using: ", bpy.context.scene.tt_tools_assetname)
         link_asset(bpy.context.scene.tt_tools_assetname)
         return{'FINISHED'}
 
@@ -256,20 +264,23 @@ class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        #layout.label(text="Build Turntable")
         split = layout.split(factor=0.5, align=True)
         col = split.column(align=True)
         col.prop(bpy.context.scene, "tt_tools_autoload")
         col = split.column(align=True)
         col.prop(bpy.context.scene, "tt_tools_autorender")
         layout.operator("tt_tools.buildtt", text=(BUTTON_OT_buildTT.bl_label))
-        layout.prop(bpy.context.scene, "tt_tools_task")
-        split = layout.split(factor=0.85, align=True)
+        #layout.label(text="Asset")
+        layout.prop(bpy.context.scene, "tt_tools_filter")
+        split = layout.split(factor=0.75, align=True)
         col = split.column(align=True)
         col.prop(bpy.context.scene, "tt_tools_alist")
         col = split.column(align=True)
         col.operator("tt_tools.refresh", text=(BUTTON_OT_refresh.bl_label))
-        #layout.prop(bpy.context.scene, "tt_tools_override_asset")
-        layout.prop(bpy.context.scene, "tt_tools_filter")
+        #layout.label(text="Department/Task")
+        layout.prop(bpy.context.scene, "tt_tools_task")
+        #layout.label(text="Actions")
         layout.operator("tt_tools.exploreasset", text=(BUTTON_OT_exploreAsset.bl_label))
         layout.operator("tt_tools.openasset", text=(BUTTON_OT_openAsset.bl_label))
         layout.operator("tt_tools.get_asset", text=(BUTTON_OT_get_asset.bl_label))
@@ -278,6 +289,7 @@ class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
         col.operator("tt_tools.append_asset", text=(BUTTON_OT_append_asset.bl_label))
         col = split.column(align=True)
         col.operator("tt_tools.link_asset", text=(BUTTON_OT_link_asset.bl_label))
+        layout.label(text="Camera")
         layout.prop(bpy.context.scene, "tt_tools_overscan")
         layout.operator("tt_tools.set_cam_loc", text=(BUTTON_OT_set_cam_loc.bl_label))
         layout.operator("tt_tools.tilt_cam", text=(BUTTON_OT_tilt_cam.bl_label))

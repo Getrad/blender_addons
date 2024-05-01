@@ -1,6 +1,12 @@
 # 0.4.7 - FEATURE - rebuild_turntable function - using basefile as starting point, then appending necessary (will require post load script write)
 # 0.5.0 - REFACTOR
-# 0.5.1 - FEATURE - frame range override
+# 0.5.1 - GUI - moved list order in UI; 
+#       - FEATURE - frame range override;
+#       - FEATURE - added AUTOLOAD and AUTORENDERTT features
+#       - FEATURE - 
+## ToDo - Give Department a proper global list for convenience
+## ToDo - AutoRestrict Department list to existing folders that contain files
+## ToDo - 
 
 import bpy
 import os
@@ -184,7 +190,7 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
     )
 
     tt_override_basefile: bpy.props.StringProperty(
-        name = "Project Base File",
+        name = "Base File Directory",
         subtype = 'DIR_PATH',
         update = update_prefs_basefile,
         default = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish",
@@ -287,8 +293,8 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         )
     bpy.types.Scene.tt_override_basefile = bpy.props.StringProperty \
         (
-        name = "Project Base File",
-        description = "Project Base File",
+        name = "Base File Directory",
+        description = "Project Base File Directory",
         default = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish/"
         #default = "Directory"
         )
@@ -358,7 +364,7 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
     bpy.types.Scene.tt_tools_task = bpy.props.EnumProperty \
         (
         name="",
-        description="Use latest model or texture version.",
+        description="Department (Model/Texture)",
         items=[ ('20_model', "Model", ""),
                 ('30_texture', "Texture", "")
                ],
@@ -401,13 +407,13 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         )
     bpy.types.Scene.tt_tools_autoload = bpy.props.BoolProperty \
         (
-        name = "Load Selected",
+        name = "Auto Load",
         description = "",
         default = True
         )
     bpy.types.Scene.tt_tools_autorender = bpy.props.BoolProperty \
         (
-        name = "Render TT",
+        name = "Auto Render",
         description = "",
         default = False
         )

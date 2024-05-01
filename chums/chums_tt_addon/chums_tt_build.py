@@ -111,9 +111,10 @@ if __name__ == "__main__":
         print("   bpy.context.scene.tt_tools_task: ", bpy.context.scene.tt_tools_task)
         set_camera(thecam_name, thekeyframes_cam, thekeyframes_val)
         bpy.context.scene.render.filepath = set_output_path(bpy.context.scene.tt_tools_assetname)
-        save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
+        save_temp_turntable()
         if (argv[4]) == "True":
             # launch render
+            save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
             sendDeadlineCmd()
             xcodeH264()
             save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
