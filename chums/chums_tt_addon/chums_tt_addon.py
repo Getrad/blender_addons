@@ -1,14 +1,4 @@
 # ----------------------- NOTES -----------------------
-# 0.4.0 - UPDATE - to Blender version 4.x
-# 0.4.1 - UPDATE - removed tunes; set default paths when not 331 or 410 to use 331
-# 0.4.2 - FEATURE - string field asset override
-#       - DEADLINE SUPPORT - BUG - comment is incorrect for custom submissions
-#       - BUG - custom properties don't update scene vars automatically - need to hit refresh button
-# 0.4.3 - FEATURE - add enum filter
-# 0.4.4 - FEATURE - add LP support
-# 0.4.5 - BUGFIX - Custom preferences added - working stable offsite
-# 0.4.6 - changed DL tempfile write location to X drive; set deadline pools in submission
-# 0.4.7 - FEATURE - rebuild_turntable function - using basefile as starting point, then appending necessary (will require post load script write)
 # 0.5.0 - MODULARIZING
 ####### - NOW TRACKED IN INIT FILE
 
@@ -33,7 +23,7 @@ from chums_tt_addon.chums_tt_utils import set_camera
 
 # --------   VARIABLES   --------
 # VERSION
-vsn = '0.5.1'
+vsn = '0.5.2'
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 # SET DEFAULT VERSION STRING
@@ -254,6 +244,7 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
         
         return{'FINISHED'}
 
+#PANEL
 class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'

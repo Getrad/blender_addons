@@ -1,3 +1,6 @@
+# ----------------------- NOTES -----------------------
+# 0.5.2
+
 import bpy
 from pathlib import Path
 from getpass import getuser
@@ -34,6 +37,7 @@ deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/launchpadRepository"
 # OUTPUT PARAMETERS
 frameRate = 23.976
+frameRange = "1-123"
 
 
 # --------   FUNCTIONS   --------
@@ -81,14 +85,6 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, ch
             bpy.context.scene.tt_override_filepath = pref_renderroot
         print("    pref_renderroot:", pref_renderroot)
         
-        if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range) > 0:
-            pref_range = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range
-            bpy.context.scene.tt_override_range = pref_range
-        else:
-            pref_range = "BOO"
-            bpy.context.scene.tt_override_range = pref_range
-        print("    pref_range:", pref_range)
-        
         if len(bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_subtree) > 0:
             pref_assetssubtree = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_subtree
             bpy.context.scene.tt_override_subtree = pref_assetssubtree
@@ -112,7 +108,6 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, ch
                 pref_basefile = 'Y:/projects/CHUMS_Onsite/_prod/shots/chm_ep000/'
                 pref_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
                 pref_assetssubtree = "projects/blender"
-                pref_range = "1-123"
                 pref_tt_stage = 'workfiles'
             case '4.x':
                 pref_assetroot = "X:/projects/chums_season2/onsite/_prod/assets"
@@ -120,7 +115,6 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, ch
                 pref_basefile = 'X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish'
                 pref_renderroot = "X:/projects/chums_season2/onsite/renders/_prod/assets"
                 pref_assetssubtree = "blender"
-                pref_range = "1-123"
                 pref_tt_stage = "work"
             case _:
                 pref_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
@@ -128,8 +122,14 @@ def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, ch
                 pref_basefile = 'X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish'
                 pref_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
                 pref_assetssubtree = "projects/blender"
-                pref_range = "1-123"
                 pref_tt_stage = 'workfiles'
+    try:
+        pref_range = bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range
+        bpy.context.scene.tt_override_range = pref_range
+        print("    pref_range:", pref_range)
+    except:
+        pref_range = frameRange
+        #bpy.context.scene.tt_override_range = pref_range
     pref_override_version = override_version
     return(pref_assetroot, pref_basefile, pref_tt_filepath, pref_renderroot, pref_assetssubtree, pref_range, pref_tt_stage, pref_override_version)
 
@@ -160,7 +160,6 @@ def sendDeadlineCmd():
     tmpDir = Path(getPipelineTmpFolder()).joinpath('dlJobFiles')
     thisfilename = bpy.data.filepath
     thisoutputpath = bpy.context.scene.render.filepath
-    #asset_name = bpy.context.scene.tt_tools_alist
     asset_name = bpy.context.scene.tt_tools_assetname
     asset_task = bpy.context.scene.tt_tools_task
     chm_assetprefix = {'chr':'characters', 
@@ -450,6 +449,7 @@ def build_turntable():
     chm_task = bpy.context.scene.tt_tools_task
     chm_load = bpy.context.scene.tt_tools_autoload
     chm_render = bpy.context.scene.tt_tools_autorender
+    chm_range = bpy.context.scene.tt_override_range
     chm_version = bpy.context.scene.tt_override_version
     mycmd = '\"'
     mycmd += bpy.app.binary_path
@@ -461,6 +461,7 @@ def build_turntable():
     mycmd += (' \"' + chm_task.__str__() + '\"')
     mycmd += (' \"' + chm_load.__str__() + '\"')
     mycmd += (' \"' + chm_render.__str__() + '\"')
+    mycmd += (' \"' + chm_range.__str__() + '\"')
     mycmd += (' \"' + chm_version.__str__() + '\"')
     mycmd += (' \"' + chm_assetroot.__str__() + '\"')
     mycmd += (' \"' + chm_assetssubtree.__str__() + '\"')

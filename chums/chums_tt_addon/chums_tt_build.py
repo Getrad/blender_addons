@@ -1,3 +1,6 @@
+# ----------------------- NOTES -----------------------
+# 0.5.2
+
 import bpy
 import os
 import sys
@@ -25,7 +28,7 @@ thekeyframes_val = [72,135,45]
 
 
 # --------   FUNCTIONS   --------
-def build_turntable(tt_path, tt_version):
+def build_turntable(tt_path, tt_range, tt_version):
     print("   Working with turntable file: ", tt_path)
     # define collection list
     coll_list = ['col.anim_controls','col.tt_objects','references','lightrig.sun']
@@ -49,6 +52,14 @@ def build_turntable(tt_path, tt_version):
         bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_version = tt_version
     except:
         print("error setting addon preferences version")
+    # set range
+    try:
+        bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_range = tt_range
+        bpy.context.scene.tt_override_range = tt_range
+    except:
+        print("error setting addon preferences tt_override_range")
+    bpy.context.scene.frame_start = int(tt_range.split("-")[0])
+    bpy.context.scene.frame_end = int(tt_range.split("-")[1])
     # update asset list
     queryAssetList()
 
@@ -78,32 +89,33 @@ if __name__ == "__main__":
     print("   for stage: ", (argv[2]))
     print("    autoload: ", (argv[3]))
     print("  autorender: ", (argv[4]))
-    print("     version: ", (argv[5]))
+    print("  frameRange: ", (argv[5]))
+    print("     version: ", (argv[6]))
     if (argv[5]) == "Custom":
         try:
-            print("      ttroot: ", (argv[6]))
-            print("   ttsubtree: ", (argv[7]))
-            print("    tt_stage: ", (argv[8]))
-            print("      tt_out: ", (argv[9]))
+            print("      ttroot: ", (argv[7]))
+            print("   ttsubtree: ", (argv[8]))
+            print("    tt_stage: ", (argv[9]))
+            print("      tt_out: ", (argv[10]))
         except:
             print("Missing arguments for Custom build - troot, ttbase, ttfile, tt_out")
     # build file
-    build_turntable((argv[0]), (argv[5]))
+    build_turntable((argv[0]), (argv[5]), (argv[6]))
     # save temp local safety file file
     save_temp_turntable()
     # load asset
     queryAssetList()
     if (argv[3]) == "True":
-        if (argv[5]) == "Custom":
+        if (argv[6]) == "Custom":
             #update prefs
-            bpy.context.scene.tt_override_assetroot = argv[6]
-            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_assetroot = argv[6]
-            bpy.context.scene.tt_override_subtree = argv[7]
-            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_subtree = argv[7]
-            bpy.context.scene.tt_override_stage = argv[8]
-            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_stage = argv[8]
-            bpy.context.scene.tt_override_renderroot = argv[9]
-            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_renderroot = argv[9]
+            bpy.context.scene.tt_override_assetroot = argv[7]
+            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_assetroot = argv[7]
+            bpy.context.scene.tt_override_subtree = argv[8]
+            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_subtree = argv[8]
+            bpy.context.scene.tt_override_stage = argv[9]
+            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_stage = argv[9]
+            bpy.context.scene.tt_override_renderroot = argv[10]
+            bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_renderroot = argv[10]
         #from chums_tt_addon.chums_tt_utils import get_asset
         bpy.context.scene.tt_tools_assetname = (argv[1])
         bpy.context.scene.tt_tools_task = (argv[2])

@@ -1,9 +1,12 @@
+# ----------------------- NOTES -----------------------
 # 0.4.7 - FEATURE - rebuild_turntable function - using basefile as starting point, then appending necessary (will require post load script write)
 # 0.5.0 - REFACTOR
 # 0.5.1 - GUI - moved list order in UI; 
 #       - FEATURE - frame range override;
 #       - FEATURE - added AUTOLOAD and AUTORENDERTT features
-#       - FEATURE - 
+#       - FEATURE - BUILD COMMAND
+#       - DOCS - https://docs.google.com/document/d/1YmDjLhnPXZqVWtPw6iCsjxK71WYtTzOzTl3x9pywwZY/edit?usp=sharing
+# 0.5.2 - BUGFIX - use preferences Frame Range to override the turntable timeline
 ## ToDo - Give Department a proper global list for convenience
 ## ToDo - AutoRestrict Department list to existing folders that contain files
 ## ToDo - 
@@ -139,9 +142,8 @@ def update_prefs_renderroot(self, context):
 def update_prefs_range(self, context):
     print("update_prefs_range - self.tt_override_range:", self.tt_override_range)
     try:
-        if self.tt_override_version == "Custom":
-            bpy.context.scene.tt_override_range = self.tt_override_range
-            print("self.tt_override_range:", self.tt_override_range)
+        bpy.context.scene.tt_override_range = self.tt_override_range
+        print("self.tt_override_range:", self.tt_override_range)
     except:
         print("fail to update prefs")
     
