@@ -21,7 +21,7 @@ from chums_tt_addon.chums_tt_addon import *
 bl_info = {
     "name": "Turntable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 5, 1),
+    "version": (0, 5, 2),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
