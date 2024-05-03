@@ -7,9 +7,11 @@
 #       - FEATURE - BUILD COMMAND
 #       - DOCS - https://docs.google.com/document/d/1YmDjLhnPXZqVWtPw6iCsjxK71WYtTzOzTl3x9pywwZY/edit?usp=sharing
 # 0.5.2 - BUGFIX - use preferences Frame Range to override the turntable timeline from 1-123 default to local frame range
+#       - FEATURE - ignore asset elements below the ground when framing camera
+#       - FEATURE - add blender version awareness to Build and Open processes
 ## ToDo - Give Department a proper global list for convenience
 ## ToDo - AutoRestrict Department list to existing folders that contain files
-## ToDo - 
+## ToDo - add deaprtment "intelligence" to avoid errors
 
 import bpy
 import os
@@ -336,7 +338,7 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         (
         name = "Asset Name",
         description = "Asset Name",
-        default = ""
+        default = "none"
         )
     bpy.types.Scene.tt_tools_assetpath = bpy.props.StringProperty \
         (
@@ -344,20 +346,43 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         description = "Asset Path",
         default = ""
         )
-    bpy.types.Scene.tt_tools_override_ttsave = bpy.props.StringProperty \
+    bpy.types.Scene.tt_override_range = bpy.props.BoolProperty \
         (
-        name = "",
-        description = "Turntable Blender File Folder",
-        default = ""
+        name = "Use Local Frame Range",
+        description = "...instead of default 1 - 123 range",
+        default = False
+        )
+    bpy.types.Scene.tt_tools_autoload = bpy.props.BoolProperty \
+        (
+        name = "Auto Load",
+        description = "",
+        default = True
+        )
+    bpy.types.Scene.tt_tools_autorender = bpy.props.BoolProperty \
+        (
+        name = "Auto Render",
+        description = "",
+        default = False
         )
     bpy.types.Scene.tt_tools_task = bpy.props.EnumProperty \
         (
         name="",
         description="Department (Model/Texture)",
-        items=[ ('20_model', "Model", ""),
-                ('30_texture', "Texture", "")
-               ],
+        items=[('20_model','model',''),('30_texture','texture','')],
         default = "30_texture"
+        )
+    bpy.types.Scene.tt_tools_alist = bpy.props.EnumProperty \
+        (
+        name="",
+        description="Asset List",
+        items=queryAssetList(),
+        default = None
+        )
+    bpy.types.Scene.tt_tools_filter = bpy.props.StringProperty \
+        (
+        name = "Filter",
+        description = "String to Isolate",
+        default = ""
         )
     bpy.types.Scene.tt_tools_overscan = bpy.props.FloatProperty \
         (
@@ -380,39 +405,7 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         description = "Deadline Draft.",
         default = False
         )
-    bpy.types.Scene.tt_tools_alist = bpy.props.EnumProperty \
-        (
-        name="",
-        description="Asset List",
-        items=queryAssetList(),
-        update=pickedAsset(),
-        default = None
-        )
-    bpy.types.Scene.tt_tools_filter = bpy.props.StringProperty \
-        (
-        name = "Filter",
-        description = "String to Isolate",
-        default = ""
-        )
-    bpy.types.Scene.tt_override_range = bpy.props.BoolProperty \
-        (
-        name = "Use Local Frame Range",
-        description = "...instead of default 1 - 123 range",
-        default = False
-        )
-    bpy.types.Scene.tt_tools_autoload = bpy.props.BoolProperty \
-        (
-        name = "Auto Load",
-        description = "",
-        default = True
-        )
-    bpy.types.Scene.tt_tools_autorender = bpy.props.BoolProperty \
-        (
-        name = "Auto Render",
-        description = "",
-        default = False
-        )
-    
+
 
 # -------- REGISTRATION ---------
 classes = [tt_toolsProperties,tt_toolsPreferences,
