@@ -11,7 +11,7 @@
 #       - FEATURE - add blender version awareness to Build and Open processes
 ## ToDo - Give Department a proper global list for convenience
 ## ToDo - AutoRestrict Department list to existing folders that contain files
-## ToDo - add deaprtment "intelligence" to avoid errors
+## ToDo - add department "intelligence" to avoid errors
 
 import bpy
 import os
