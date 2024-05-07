@@ -709,7 +709,7 @@ def open_assetfile(asset_name):
     the_asset_dir = get_asset_dir(asset_name)
     the_asset_path = find_latest_workfile(the_asset_dir)
     if os.path.exists(the_asset_dir):
-        if os.path.exists(LAUNCHPAD_REPOSITORY_PATH):
+        if os.path.exists(LAUNCHPAD_REPOSITORY_PATH) and not(chm_tt_version == "3.x"):
             use_lp_launch = True
         else:
             use_lp_launch = False
