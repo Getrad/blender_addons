@@ -43,7 +43,7 @@ frameRange = "1-123"
 
 
 # --------   FUNCTIONS   --------
-def update_base_settings(): #(chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version)
+def update_base_settings(): #(chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version)
     print("update_base_settings")
     try:
         override_version = (str(bpy.context.scene.tt_override_version))

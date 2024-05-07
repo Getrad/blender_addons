@@ -23,7 +23,7 @@ from chums_tt_addon.chums_tt_utils import set_camera
 
 # --------   VARIABLES   --------
 # VERSION
-vsn = '0.5.2a'
+vsn = '0.5.2b'
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 # SET DEFAULT VERSION STRING
@@ -37,17 +37,6 @@ thekeyframes_val = [72,135,45]
 
 # --------    CLASSES    --------
 # OPERATORS
-class BUTTON_OT_openTT(bpy.types.Operator):
-    '''Open Turntable Basefile.'''
-    bl_idname = "tt_tools.opentt"
-    bl_label = "Open Turntable"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        open_this_file = open_turntable()
-        print(open_this_file)
-        return{'FINISHED'}
-
 class BUTTON_OT_buildTT(bpy.types.Operator):
     '''Build Turntable Basefile.'''
     bl_idname = "tt_tools.buildtt"
@@ -298,7 +287,7 @@ class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
 # -------- REGISTRATION ---------
 __all__ = [ "VIEW3D_PT_tt_tools_panel",
             "BUTTON_OT_set_cam_loc", "BUTTON_OT_get_asset", 
-            "BUTTON_OT_openTT", "BUTTON_OT_exploreAsset",
+            "BUTTON_OT_exploreAsset",
             "BUTTON_OT_set_out_filepath", "BUTTON_OT_save_ttfile",
             "BUTTON_OT_tilt_cam", "BUTTON_OT_selectTTcam",
             "BUTTON_OT_openAsset", "BUTTON_OT_submit_tt",
