@@ -137,6 +137,7 @@ def update_base_settings(): #(chm_blenderpath, chm_assetroot, chm_tt_basedir, ch
                 pref_assetssubtree = "projects/blender"
                 pref_tt_stage = 'workfiles'
     pref_override_version = override_version
+    
     return(pref_blenderpath, pref_assetroot, pref_basefile, pref_tt_filepath, pref_renderroot, pref_assetssubtree, pref_tt_stage, pref_override_version)
 
 def get_asset_from_path(path):
@@ -456,7 +457,6 @@ def build_turntable():
     chm_basefile = find_latest_workfile(chm_tt_basedir)
     print("chm_basefile: ", chm_basefile)
     chm_asset = bpy.context.scene.tt_tools_assetname
-    #the_asset_dir = get_asset_dir(chm_asset)
     chm_task = bpy.context.scene.tt_tools_task
     chm_load = bpy.context.scene.tt_tools_autoload
     chm_render = bpy.context.scene.tt_tools_autorender
@@ -464,27 +464,40 @@ def build_turntable():
     if bpy.context.scene.tt_override_range == True:
         chm_range = (str(bpy.context.scene.frame_start) +"-" + str(bpy.context.scene.frame_end))
     chm_version = bpy.context.scene.tt_override_version
+    # construct the cmd line
     mycmd = '\"'
+    # path to blender exe
     if os.path.exists(chm_blenderpath):
         print("opening asset in Blender from DEFINED path")
         mycmd += chm_blenderpath
     else:
         print("opening asset in Blender from CURRENT SESSION path")
         mycmd += bpy.app.binary_path
-    #mycmd += bpy.app.binary_path
+    # path to base empty file to open
     mycmd += ('\" \"' + chm_basefile.__str__() + "\"")
+    # path to script that builds turntable
     mycmd += (' -P \"' + chm_postload.__str__() + ("\""))
-    #argv start
+    # path to the master turntable file from which to append collections
     mycmd += (' -- \"' + chm_tt_filepath.__str__() + '\"')
+    # asset name
     mycmd += (' \"' + chm_asset.__str__() + '\"')
+    # task folder name
     mycmd += (' \"' + chm_task.__str__() + '\"')
+    # boolean string  if asset should be loaded automatically
     mycmd += (' \"' + chm_load.__str__() + '\"')
+    # boolean string if loaded turntable should be rendered
     mycmd += (' \"' + chm_render.__str__() + '\"')
+    # frame range to render
     mycmd += (' \"' + chm_range.__str__() + '\"')
+    # blender version
     mycmd += (' \"' + chm_version.__str__() + '\"')
+    # path to asset root folder
     mycmd += (' \"' + chm_assetroot.__str__() + '\"')
+    # folder sub path below asset folder
     mycmd += (' \"' + chm_assetssubtree.__str__() + '\"')
+    # work or publish stage 
     mycmd += (' \"' + chm_tt_stage.__str__() + '\"')
+    # path to render root folder
     mycmd += (' \"' + chm_renderroot.__str__() + '\"')
     print("\nmycmd = ", mycmd)
     
@@ -559,7 +572,6 @@ def queryAssetList():
             anames += ([(aname,aname,'') for aname in os.listdir(thistype) if 
                 (aname[:3] in chm_assetprefix.keys() and 
                 not(aname in chm_omitlist)) and (filtstr.lower() in aname.lower())])
-    
     return anames
 
 def queryDepartments():
@@ -578,8 +590,12 @@ def queryDepartments():
                     other_dir = asset_dir.replace(chm_tt_stage, d)
                     if len(os.listdir(other_dir)) >= 1:
                         dept_names.append((d,d[3:],""))
-
     return dept_names
+
+def set_asset_from_name(asset_name):
+    queryAssetList()
+    #bpy.context.scene.tt_tools_alist = asset_name
+    return bpy.context.scene.tt_tools_assetname
 
 def get_asset_dir(asset_name):
     print("\n\nCall update_base_settings from: get_asset_dir")
@@ -708,6 +724,12 @@ def open_assetfile(asset_name):
     chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_dir = get_asset_dir(asset_name)
     the_asset_path = find_latest_workfile(the_asset_dir)
+    #the_assetname_script = ("import bpy\nfrom chums_tt_addon.chums_tt_utils import *\nqueryAssetList()\nbpy.context.scene.tt_tools_alist = \"" + asset_name + "\"")
+    #the_assetname_script = ("bpy.context.scene.tt_tools_alist = \"" + asset_name + "\"")
+    #the_assetname_script = ("set_asset_from_name(\"" + asset_name + "\")")
+    this_file_path = os.path.dirname(os.path.realpath(__file__))
+    the_assetname_script = os.path.join(this_file_path, "chums_tt_setassetname.py")
+    print("the_assetname_script: ", the_assetname_script)
     if os.path.exists(the_asset_dir):
         if os.path.exists(LAUNCHPAD_REPOSITORY_PATH) and not(chm_tt_version == "3.x"):
             use_lp_launch = True
@@ -732,7 +754,16 @@ def open_assetfile(asset_name):
             else:
                 print("opening asset in Blender from CURRENT SESSION path")
                 mycmd += bpy.app.binary_path
-            mycmd += ('\" \"' + the_asset_path + '\"')
+            mycmd += ('\" \"' + the_asset_path)
+            mycmd += ('\" -P \"' + str(the_assetname_script) + '\"')
+            #mycmd += ('\" --python-expr \"' + str(the_assetname_script) + '\'')
+            # asset name
+            mycmd += (' -- \"' + asset_name + '\"')
+            # addon version
+            mycmd += (' \"' + chm_tt_version + '\"')
+            # path to asset root folder
+            mycmd += (' \"' + chm_assetroot + '\"')
+            print("\nmycmd: ", mycmd)
             newsesh = os.popen(mycmd)
             use_lp_launch = False
     else:
@@ -854,8 +885,8 @@ __all__ = ["tt_tools_messagebox","save_tt_file",
            "xcodeH264","sendDeadlineCmd",
            "getMachineName","getCurrentUser",
            "getPipelineTmpFolder","get_asset_from_path",
-           "update_base_settings","blender_version"
-           ]
+           "update_base_settings","blender_version",
+           "set_asset_from_name"]
 
 #   REGISTER
 def register():

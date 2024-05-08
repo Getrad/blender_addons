@@ -13,6 +13,7 @@ for i in addon_utils.modules():
         print("IMPORTED FUNCTIONS!")
 from chums_tt_addon.chums_tt_utils import get_asset
 from chums_tt_addon.chums_tt_utils import set_camera
+from chums_tt_addon.chums_tt_utils import set_asset_from_name
 from chums_tt_addon.chums_tt_utils import set_output_path
 from chums_tt_addon.chums_tt_utils import save_tt_file
 from chums_tt_addon.chums_tt_utils import sendDeadlineCmd
@@ -64,6 +65,7 @@ def build_turntable(tt_path, tt_range, tt_version):
     bpy.context.scene.frame_end = int(tt_range.split("-")[1])
     # update asset list
     queryAssetList()
+    
 
 def save_temp_turntable():
     current_user = os.getlogin()
@@ -122,8 +124,8 @@ if __name__ == "__main__":
         bpy.context.scene.tt_tools_assetname = (argv[1])
         bpy.context.scene.tt_tools_task = (argv[2])
         get_asset(bpy.context.scene.tt_tools_assetname)
-        print("   bpy.context.scene.tt_tools_task: ", bpy.context.scene.tt_tools_task)
         set_camera(thecam_name, thekeyframes_cam, thekeyframes_val)
+        #set_asset_from_name(bpy.context.scene.tt_tools_assetname)
         bpy.context.scene.render.filepath = set_output_path(bpy.context.scene.tt_tools_assetname)
         save_temp_turntable()
         if (argv[4]) == "True":
@@ -132,6 +134,3 @@ if __name__ == "__main__":
             sendDeadlineCmd()
             xcodeH264()
             save_tt_file(bpy.context.scene.tt_tools_assetname, bpy.context.scene.tt_tools_task)
-        
-    
-    

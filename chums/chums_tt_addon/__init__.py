@@ -338,7 +338,7 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         (
         name = "Asset Name",
         description = "Asset Name",
-        default = "none"
+        default = ""
         )
     bpy.types.Scene.tt_tools_assetpath = bpy.props.StringProperty \
         (
@@ -437,4 +437,8 @@ if __name__ == "__main__":
     if os.path.exists(chm_assetroot):
         chm_assettypes = ([f for f in os.listdir(chm_assetroot) if 
                     os.path.isdir(os.path.join(chm_assetroot, f))])
+    if bpy.context.scene.tt_tools_assetname:
+        bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
+    else:
+        print("fail to read bpy.context.scene.tt_tools_alist")
     register()
