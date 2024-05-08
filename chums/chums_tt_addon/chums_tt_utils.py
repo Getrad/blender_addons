@@ -592,9 +592,28 @@ def queryDepartments():
                         dept_names.append((d,d[3:],""))
     return dept_names
 
+def refreshAssetList():
+    print("\n\nPressed refresh button")
+    thelist = queryAssetList()
+    print("thelist:", thelist)
+    if bpy.context.scene.tt_tools_assetname is not None:
+        print(bpy.context.scene.tt_tools_assetname)
+        theitem = (bpy.context.scene.tt_tools_assetname,bpy.context.scene.tt_tools_assetname,'')
+        print(theitem in thelist)
+        if theitem in thelist:
+            bpy.context.scene.tt_tools_alist = (bpy.context.scene.tt_tools_assetname)
+    return 0
+
 def set_asset_from_name(asset_name):
     queryAssetList()
-    #bpy.context.scene.tt_tools_alist = asset_name
+    try:
+        bpy.context.scene.tt_tools_assetname = asset_name
+    except:
+        print("failed to update bpy.context.scene.tt_tools_assetname: ", asset_name)
+    try:
+        bpy.context.scene.tt_tools_alist = asset_name
+    except:
+        print("failed to update bpy.context.scene.tt_tools_alist", asset_name)
     return bpy.context.scene.tt_tools_assetname
 
 def get_asset_dir(asset_name):
@@ -886,7 +905,7 @@ __all__ = ["tt_tools_messagebox","save_tt_file",
            "getMachineName","getCurrentUser",
            "getPipelineTmpFolder","get_asset_from_path",
            "update_base_settings","blender_version",
-           "set_asset_from_name"]
+           "set_asset_from_name","refreshAssetList"]
 
 #   REGISTER
 def register():

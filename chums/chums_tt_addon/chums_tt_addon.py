@@ -18,6 +18,7 @@ import subprocess
 import builtins
 from chums_tt_addon.chums_tt_utils import *
 from chums_tt_addon.chums_tt_utils import queryAssetList
+from chums_tt_addon.chums_tt_utils import refreshAssetList
 from chums_tt_addon.chums_tt_utils import set_camera
 
 
@@ -72,6 +73,7 @@ class BUTTON_OT_refresh(bpy.types.Operator):
             items=queryAssetList(),
             default = None
             )
+        refreshAssetList()
         return{'FINISHED'}
 
 class BUTTON_OT_exploreAsset(bpy.types.Operator):

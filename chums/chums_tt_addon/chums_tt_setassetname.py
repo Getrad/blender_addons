@@ -13,9 +13,10 @@ for i in addon_utils.modules():
 from chums_tt_addon.chums_tt_utils import set_asset_from_name
 
 if __name__ == "__main__":
+    print("\n\nRunning chums_tt_setassetname.py")
     argv = sys.argv
     argv = argv[argv.index("--") + 1:]
-    print("Setting assetname using (argv: ", (argv[0]))
+    print("Setting assetname using argv: ", (argv[0]))
     tt_asset_name = (argv[0])
     tt_version = (argv[1])
     tt_asset_root = (argv[2])
@@ -29,7 +30,5 @@ if __name__ == "__main__":
     except:
         print("error setting addon preferences version")
     bpy.context.scene.tt_tools_assetname = tt_asset_name
-    #print("bpy.context.scene.tt_tools_assetname = ", bpy.context.scene.tt_tools_assetname)
-    #set_asset_from_name(bpy.context.scene.tt_tools_assetname)
-    
-    
+    print("bpy.context.scene.tt_tools_assetname = ", bpy.context.scene.tt_tools_assetname)
+    set_asset_from_name(bpy.context.scene.tt_tools_assetname)

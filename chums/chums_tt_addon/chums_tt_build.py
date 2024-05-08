@@ -125,7 +125,7 @@ if __name__ == "__main__":
         bpy.context.scene.tt_tools_task = (argv[2])
         get_asset(bpy.context.scene.tt_tools_assetname)
         set_camera(thecam_name, thekeyframes_cam, thekeyframes_val)
-        #set_asset_from_name(bpy.context.scene.tt_tools_assetname)
+        set_asset_from_name(bpy.context.scene.tt_tools_assetname)
         bpy.context.scene.render.filepath = set_output_path(bpy.context.scene.tt_tools_assetname)
         save_temp_turntable()
         if (argv[4]) == "True":
