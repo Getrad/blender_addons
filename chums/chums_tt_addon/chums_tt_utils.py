@@ -43,6 +43,10 @@ frameRange = "1-123"
 
 
 # --------   FUNCTIONS   --------
+def print(*args, **kwargs):
+    kwargs['flush'] = True
+    builtins.print(*args, **kwargs)
+
 def update_base_settings(): #(chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version)
     print("update_base_settings")
     try:
@@ -739,7 +743,7 @@ def link_asset(asset_name):
     return 0
 
 def open_assetfile(asset_name):
-    print("\n\nCall update_base_settings from: open_assetfile")
+    print("\n\nCall update_base_settings from: open_assetfile", flush=True)
     chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_dir = get_asset_dir(asset_name)
     the_asset_path = find_latest_workfile(the_asset_dir)
@@ -748,7 +752,7 @@ def open_assetfile(asset_name):
     #the_assetname_script = ("set_asset_from_name(\"" + asset_name + "\")")
     this_file_path = os.path.dirname(os.path.realpath(__file__))
     the_assetname_script = os.path.join(this_file_path, "chums_tt_setassetname.py")
-    print("the_assetname_script: ", the_assetname_script)
+    print("the_assetname_script: ", the_assetname_script, flush=True)
     if os.path.exists(the_asset_dir):
         if os.path.exists(LAUNCHPAD_REPOSITORY_PATH) and not(chm_tt_version == "3.x"):
             use_lp_launch = True
@@ -756,22 +760,22 @@ def open_assetfile(asset_name):
             use_lp_launch = False
         if use_lp_launch:
             try:
-                print("opening asset in Blender from LAUNCHPAD function")
+                print("opening asset in Blender from LAUNCHPAD function", flush=True)
                 sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
                 from launchpad.helpers.launchers import launchBlenderDetached
                 newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
                 use_lp_launch = True
             except:
-                print("ERROR: trying with DIRECT LOCAL blender path - ie; the same as the one you're using to generate and see this message")
+                print("ERROR: trying with DIRECT LOCAL blender path - ie; the same as the one you're using to generate and see this message", flush=True)
                 tt_tools_messagebox("ERROR: trying with DIRECT LOCAL blender path - ie; the same as the one you're using to generate and see this message", "Missing Path")
                 use_lp_launch = False
         if not(use_lp_launch):
             mycmd = '\"'
             if os.path.exists(chm_blenderpath):
-                print("opening asset in Blender from DEFINED path")
+                print("opening asset in Blender from DEFINED path", flush=True)
                 mycmd += chm_blenderpath
             else:
-                print("opening asset in Blender from CURRENT SESSION path")
+                print("opening asset in Blender from CURRENT SESSION path", flush=True)
                 mycmd += bpy.app.binary_path
             mycmd += ('\" \"' + the_asset_path)
             mycmd += ('\" -P \"' + str(the_assetname_script) + '\"')
@@ -782,7 +786,7 @@ def open_assetfile(asset_name):
             mycmd += (' \"' + chm_tt_version + '\"')
             # path to asset root folder
             mycmd += (' \"' + chm_assetroot + '\"')
-            print("\nmycmd: ", mycmd)
+            print("\nmycmd: ", mycmd, flush=True)
             newsesh = os.popen(mycmd)
             use_lp_launch = False
     else:

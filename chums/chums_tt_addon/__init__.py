@@ -48,6 +48,10 @@ LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/lau
 
 
 # --------   FUNCTIONS   --------
+def print(*args, **kwargs):
+    kwargs['flush'] = True
+    builtins.print(*args, **kwargs)
+
 def set_version_override_paths(self, context):
     if self.tt_override_version:
         bpy.context.scene.tt_override_version = self.tt_override_version
