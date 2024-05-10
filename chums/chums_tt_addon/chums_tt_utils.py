@@ -43,9 +43,9 @@ frameRange = "1-123"
 
 
 # --------   FUNCTIONS   --------
-def print(*args, **kwargs):
-    kwargs['flush'] = True
-    builtins.print(*args, **kwargs)
+#def print(*args, **kwargs):
+#    kwargs['flush'] = True
+#    builtins.print(*args, **kwargs)
 
 def update_base_settings(): #(chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version)
     print("update_base_settings")
@@ -452,7 +452,7 @@ def get_assetroot():
     return tt_override_assetroot
 
 def build_turntable():
-    print("\n\nCall update_base_setting() from: build_turntable")
+    print("Call update_base_setting() from: build_turntable")
     if len(bpy.context.scene.tt_tools_assetname) < 1 or ((len(bpy.context.scene.tt_tools_alist) > 1) and (bpy.context.scene.tt_tools_assetname != bpy.context.scene.tt_tools_alist)):
         bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
     this_file_path = os.path.dirname(os.path.realpath(__file__))
@@ -603,7 +603,7 @@ def refreshAssetList():
     if bpy.context.scene.tt_tools_assetname is not None:
         print(bpy.context.scene.tt_tools_assetname)
         theitem = (bpy.context.scene.tt_tools_assetname,bpy.context.scene.tt_tools_assetname,'')
-        print(theitem in thelist)
+        print("Found", bpy.context.scene.tt_tools_assetname, " in the enum list returned by queryAssetList(): ", (theitem in thelist))
         if theitem in thelist:
             bpy.context.scene.tt_tools_alist = (bpy.context.scene.tt_tools_assetname)
     return 0
@@ -621,13 +621,13 @@ def set_asset_from_name(asset_name):
     return bpy.context.scene.tt_tools_assetname
 
 def get_asset_dir(asset_name):
-    print("\n\nCall update_base_settings from: get_asset_dir")
+    print("\n\nCall update_base_settings() from: get_asset_dir")
     chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
     asset_dir = ""
     if len(asset_name) < 1:
         asset_name = bpy.context.scene.tt_tools_assetname
-    print("get_asset_dir -     asset_name: ", asset_name)
-    print("get_asset_dir - chm_tt_version: ", chm_tt_version)
+    print("get_asset_dir       asset_name: ", asset_name)
+    print("get_asset_dir   chm_tt_version: ", chm_tt_version)
     # define asset path
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
@@ -655,8 +655,8 @@ def get_asset_dir(asset_name):
 
 def get_render_dir(asset_name, asset_version, chm_renderroot, chm_tt_stage, chm_tt_version):
     render_dir = ""
-    print("get_render_dir -     asset_name: ", asset_name)
-    print("get_render_dir - chm_tt_version: ", chm_tt_version)
+    print("get_render_dir       asset_name: ", asset_name)
+    print("get_render_dir   chm_tt_version: ", chm_tt_version)
     chm_assetprefix = {'chr':'characters', 
                        'env':'environments', 
                        'prp':'props', 
@@ -680,7 +680,7 @@ def get_render_dir(asset_name, asset_version, chm_renderroot, chm_tt_stage, chm_
     return render_dir
 
 def explore_asset(asset_name):
-    print("\n\nCall update_base_settings from: explore_asset")
+    print("Call update_base_settings() from: explore_asset")
     chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_dir = get_asset_dir(asset_name)
     if os.path.exists(the_asset_dir):
@@ -743,16 +743,13 @@ def link_asset(asset_name):
     return 0
 
 def open_assetfile(asset_name):
-    print("\n\nCall update_base_settings from: open_assetfile", flush=True)
+    print("Call update_base_settings() from: open_assetfile")
     chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_dir = get_asset_dir(asset_name)
     the_asset_path = find_latest_workfile(the_asset_dir)
-    #the_assetname_script = ("import bpy\nfrom chums_tt_addon.chums_tt_utils import *\nqueryAssetList()\nbpy.context.scene.tt_tools_alist = \"" + asset_name + "\"")
-    #the_assetname_script = ("bpy.context.scene.tt_tools_alist = \"" + asset_name + "\"")
-    #the_assetname_script = ("set_asset_from_name(\"" + asset_name + "\")")
     this_file_path = os.path.dirname(os.path.realpath(__file__))
     the_assetname_script = os.path.join(this_file_path, "chums_tt_setassetname.py")
-    print("the_assetname_script: ", the_assetname_script, flush=True)
+    print("the_assetname_script: ", the_assetname_script)
     if os.path.exists(the_asset_dir):
         if os.path.exists(LAUNCHPAD_REPOSITORY_PATH) and not(chm_tt_version == "3.x"):
             use_lp_launch = True
@@ -760,35 +757,41 @@ def open_assetfile(asset_name):
             use_lp_launch = False
         if use_lp_launch:
             try:
-                print("opening asset in Blender from LAUNCHPAD function", flush=True)
+                print("opening asset in Blender from LAUNCHPAD function")
                 sys.path.append(Path(LAUNCHPAD_REPOSITORY_PATH, 'api', 'python').as_posix())
-                from launchpad.helpers.launchers import launchBlenderDetached
-                newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
                 use_lp_launch = True
             except:
-                print("ERROR: trying with DIRECT LOCAL blender path - ie; the same as the one you're using to generate and see this message", flush=True)
+                print("ERROR: trying with DIRECT LOCAL blender path - ie; the same as the one you're using to generate and see this message")
                 tt_tools_messagebox("ERROR: trying with DIRECT LOCAL blender path - ie; the same as the one you're using to generate and see this message", "Missing Path")
                 use_lp_launch = False
         if not(use_lp_launch):
             mycmd = '\"'
             if os.path.exists(chm_blenderpath):
-                print("opening asset in Blender from DEFINED path", flush=True)
+                print("opening asset in Blender from DEFINED path")
                 mycmd += chm_blenderpath
             else:
-                print("opening asset in Blender from CURRENT SESSION path", flush=True)
+                print("opening asset in Blender from CURRENT SESSION path")
                 mycmd += bpy.app.binary_path
             mycmd += ('\" \"' + the_asset_path)
             mycmd += ('\" -P \"' + str(the_assetname_script) + '\"')
-            #mycmd += ('\" --python-expr \"' + str(the_assetname_script) + '\'')
             # asset name
             mycmd += (' -- \"' + asset_name + '\"')
             # addon version
             mycmd += (' \"' + chm_tt_version + '\"')
             # path to asset root folder
             mycmd += (' \"' + chm_assetroot + '\"')
-            print("\nmycmd: ", mycmd, flush=True)
+            print("\nmycmd: ", mycmd)
             newsesh = os.popen(mycmd)
             use_lp_launch = False
+        else:
+            from launchpad.helpers.launchers import launchBlenderDetached
+            myargs = ('-- \"' + asset_name + '\"')
+            # addon version
+            myargs += (' \"' + chm_tt_version + '\"')
+            # path to asset root folder
+            myargs += (' \"' + chm_assetroot + '\"')
+            #newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=the_assetname_script, background=False, args=sys.argv)
+            newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=the_assetname_script, background=False, args=myargs)
     else:
         tt_tools_messagebox(("Cannot find Path:    " + the_asset_dir), "Missing Path")
 

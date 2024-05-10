@@ -16,6 +16,7 @@
 import bpy
 import os
 from pathlib import Path
+import builtins
 
 from chums_tt_addon.chums_tt_utils import *
 from chums_tt_addon.chums_tt_addon import *

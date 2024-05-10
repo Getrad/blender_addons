@@ -24,7 +24,7 @@ from chums_tt_addon.chums_tt_utils import set_camera
 
 # --------   VARIABLES   --------
 # VERSION
-vsn = '0.5.2d'
+vsn = '0.5.2e'
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 # SET DEFAULT VERSION STRING
@@ -45,6 +45,7 @@ class BUTTON_OT_buildTT(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
+        print("\n\nPRESSED THE BUILD TURNTABLE BUTTON IN THE UI")
         build_this_file = build_turntable()
         print(build_this_file)
         return{'FINISHED'}
@@ -56,6 +57,7 @@ class BUTTON_OT_openAsset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
+        print("\n\nPRESSED THE OPEN FILE BUTTON IN THE UI")
         bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         open_this_file = open_assetfile(bpy.context.scene.tt_tools_assetname)
         return{'FINISHED'}
@@ -67,6 +69,7 @@ class BUTTON_OT_refresh(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
+        print("\n\nPRESSED THE REFRESH BUTTON IN THE UI")
         bpy.types.Scene.tt_tools_alist = bpy.props.EnumProperty(
             name="",
             description="Asset List",
@@ -83,9 +86,8 @@ class BUTTON_OT_exploreAsset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        print("call update_base_settings from: BUTTON_OT_exploreAsset")
+        print("\n\nPRESSED THE EXPLORE ASSET BUTTON IN THE UI")
         bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
-        #chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
         explore_asset(bpy.context.scene.tt_tools_assetname)
         return{'FINISHED'}
 
