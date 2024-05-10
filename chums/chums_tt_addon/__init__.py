@@ -9,6 +9,7 @@
 # 0.5.2 - BUGFIX - use preferences Frame Range to override the turntable timeline from 1-123 default to local frame range
 #       - FEATURE - ignore asset elements below the ground when framing camera
 #       - FEATURE - add blender version awareness to Build and Open processes
+#       - FEATURE - add option to skip LP launcher
 ## ToDo - Give Department a proper global list for convenience
 ## ToDo - AutoRestrict Department list to existing folders that contain files
 ## ToDo - add department "intelligence" to avoid errors
@@ -49,9 +50,9 @@ LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/lau
 
 
 # --------   FUNCTIONS   --------
-def print(*args, **kwargs):
-    kwargs['flush'] = True
-    builtins.print(*args, **kwargs)
+#def print(*args, **kwargs):
+#    kwargs['flush'] = True
+#    builtins.print(*args, **kwargs)
 
 def set_version_override_paths(self, context):
     if self.tt_override_version:
@@ -99,6 +100,15 @@ def update_prefs_subtree(self, context):
             print("self.tt_override_subtree:", self.tt_override_subtree)
     except:
         print("fail to update update_prefs_subtree")
+    
+    return None
+
+def update_prefs_override_LP(self, context):
+    print("Use Launchpad to Build Turntables and Open assets (if possible):", self.tt_override_LP)
+    try:
+        bpy.context.scene.tt_override_LP = self.tt_override_LP
+    except:
+        print("fail to update prefs")
     
     return None
 
@@ -233,6 +243,12 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         default = "blender",
     )
 
+    tt_override_LP: bpy.props.BoolProperty(
+        name="Use Launchpad to Build Turntables and Open assets (if possible)",
+        update = update_prefs_override_LP,
+        default=False,
+    )
+    
     tt_override_angle: bpy.props.FloatProperty(
         name="Default Camera Parent Z Rotation",
         default=22.5,
@@ -249,8 +265,10 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         default=60,
     )
 
+
     def draw(self, context):
         layout = self.layout
+        layout.prop(self, "tt_override_LP")
         layout.prop(self, "tt_override_version")
         layout.prop(self, "tt_override_assetroot")
         layout.prop(self, "tt_override_basefile")
@@ -279,6 +297,12 @@ class OBJECT_OT_tt_tools_preferences(bpy.types.Operator):
 #   PROPERTIES
 class tt_toolsProperties(bpy.types.PropertyGroup):
     # addon preference properties
+    bpy.types.Scene.tt_override_LP = bpy.props.BoolProperty \
+        (
+        name = "Use Launchpad Blender Launcher",
+        description = "Use Launchpad Blender Launcher to Build Turntables and/or Open Asset Files",
+        default = False
+        )
     bpy.types.Scene.tt_override_version = bpy.props.StringProperty \
         (
         name = "Version",

@@ -24,7 +24,7 @@ from chums_tt_addon.chums_tt_utils import set_camera
 
 # --------   VARIABLES   --------
 # VERSION
-vsn = '0.5.2e'
+vsn = '0.5.2f'
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 # SET DEFAULT VERSION STRING
@@ -124,7 +124,7 @@ class BUTTON_OT_append_asset(bpy.types.Operator):
     
     def execute(self, context):
         print("\n\nCall update_base_settings from: BUTTON_OT_append_asset")
-        #chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
+        #chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
         try:
             bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         except:
@@ -140,7 +140,7 @@ class BUTTON_OT_link_asset(bpy.types.Operator):
     
     def execute(self, context):
         print("\n\nCall update_base_settings from: BUTTON_OT_link_asset")
-        #chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
+        #chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
         try:
             bpy.context.scene.tt_tools_assetname = bpy.context.scene.tt_tools_alist
         except:
@@ -192,7 +192,7 @@ class BUTTON_OT_set_out_filepath(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        #chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
+        #chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
         theoutpath = set_output_path(bpy.context.scene.tt_tools_assetname)
         bpy.context.scene.render.filepath = theoutpath
         return{'FINISHED'}
@@ -217,7 +217,7 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        #chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
+        #chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
         thisfilepath = bpy.data.filepath
         thisfilename = os.path.basename(thisfilepath)
         thisoutputpath = bpy.context.scene.render.filepath

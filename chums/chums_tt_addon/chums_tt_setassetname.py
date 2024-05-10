@@ -15,17 +15,16 @@ from chums_tt_addon.chums_tt_utils import set_asset_from_name
 if __name__ == "__main__":
     print("\n\nRunning chums_tt_setassetname.py")
     argv = sys.argv
-    argv = argv[argv.index("--") + 1:]
-    print("Setting assetname using argv: ", (argv[0]))
-    tt_asset_name = (argv[0])
-    tt_version = (argv[1])
-    tt_asset_root = (argv[2])
+    print("Setting assetname using argv: ", (argv[-3]))
+    tt_asset_name = (argv[-3])
+    tt_version = (argv[-2])
+    tt_asset_root = (argv[-1])
     try:
         bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_version = tt_version
     except:
         print("error setting addon preferences version")
     try:
-        bpy.context.scene.tt_override_assetroot = argv[2]
+        bpy.context.scene.tt_override_assetroot = tt_asset_root
         bpy.context.preferences.addons["chums_tt_addon"].preferences.tt_override_assetroot = tt_asset_root
     except:
         print("error setting addon preferences version")
