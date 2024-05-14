@@ -62,6 +62,9 @@ def update_base_settings(): #(chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_
     try:
         pref_useLP = (str(bpy.context.scene.tt_override_LP))
         print("override_version:", pref_useLP)
+        #def print(*args, **kwargs):
+        #    kwargs['flush'] = True
+        #    builtins.print(*args, **kwargs)
         print("using PREFERENCES")
     except:
         pref_useLP = False
