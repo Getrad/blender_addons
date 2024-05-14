@@ -360,6 +360,19 @@ def xcodeH264():
     command = f'{deadlineBin} {jobInfoPath} {pluginInfoPath}'
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+def set_model_material():
+    if bpy.data.materials['Modeling_MTL']:
+        mdl_mtl = bpy.data.materials['Modeling_MTL']
+        if bpy.data.collections['asset_prod']:
+            for o in bpy.data.collections['asset_prod'].objects:
+                if o.data.materials:
+                    for mslt in o.material_slots:
+                        mslt.material = mdl_mtl
+                else:
+                    o.data.materials.append(mdl_mtl)
+    
+    return 0
+
 def get_selection_bounds(thesel):
     from mathutils import Vector
     themin = [0.0, 0.0, 0.0]
@@ -715,6 +728,8 @@ def get_asset(asset_name):
             for colobj in coll.all_objects:
                 if not(colobj.parent):
                     colobj.parent = bpy.data.objects['AnimGrp.asset']
+        if bpy.context.scene.tt_tools_task == '20_model':
+            set_model_material()
     else:
         if bpy.context.scene.tt_tools_task == '30_texture':
             mytask = "Texture"
@@ -758,7 +773,7 @@ def open_assetfile(asset_name):
     the_assetname_script = os.path.join(this_file_path, "chums_tt_setassetname.py")
     print("the_assetname_script: ", the_assetname_script)
     if os.path.exists(the_asset_dir):
-        if chm_useLP and os.path.exists(LAUNCHPAD_REPOSITORY_PATH) and not(chm_tt_version == "3.x"):
+        if chm_useLP == True and os.path.exists(LAUNCHPAD_REPOSITORY_PATH) and not(chm_tt_version == "3.x"):
             use_lp_launch = True
         else:
             use_lp_launch = False
@@ -771,7 +786,7 @@ def open_assetfile(asset_name):
                 print("ERROR: trying with DIRECT LOCAL blender path - ie; the same as the one you're using to generate and see this message")
                 tt_tools_messagebox("ERROR: trying with DIRECT LOCAL blender path - ie; the same as the one you're using to generate and see this message", "Missing Path")
                 use_lp_launch = False
-        if not(use_lp_launch):
+        if use_lp_launch == False:
             mycmd = '\"'
             if os.path.exists(chm_blenderpath):
                 print("opening asset in Blender from DEFINED path")
