@@ -37,6 +37,7 @@ chm_omitlist = (['archive', 'chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', '
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 # LAUNCHPAD
 LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/launchpadRepository"
+LAUNCHPAD_BLENDER_PATH = "C:/pipeline/chums_season2/launchpad/software/blender-4.1.0/blender.exe"
 # OUTPUT PARAMETERS
 frameRate = 23.976
 frameRange = "1-123"
@@ -115,7 +116,8 @@ def update_base_settings(): #(chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_
             bpy.context.scene.tt_override_stage = pref_tt_stage
         print("    pref_tt_stage:", pref_tt_stage)
 
-        v4_blenderpath = "C:/Program Files/Blender Foundation/Blender 4.1/blender.exe"
+        #v4_blenderpath = "C:/Program Files/Blender Foundation/Blender 4.1/blender.exe"
+        v4_blenderpath = LAUNCHPAD_BLENDER_PATH
         if os.path.exists(v4_blenderpath):
             print("os.path.exists is True, so blenderpath is: ", v4_blenderpath)
             pref_blenderpath = v4_blenderpath
@@ -133,7 +135,7 @@ def update_base_settings(): #(chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_
                 pref_assetssubtree = "projects/blender"
                 pref_tt_stage = 'workfiles'
             case '4.x':
-                pref_blenderpath = "C:/Program Files/Blender Foundation/Blender 4.1/blender.exe"
+                pref_blenderpath = "C:/pipeline/chums_season2/launchpad/software/blender-4.1.0/blender.exe"
                 pref_assetroot = "X:/projects/chums_season2/onsite/_prod/assets"
                 pref_tt_filepath = Path(str(pref_assetroot + "/helpers/turntable/publish/blender/turntable.blend"))
                 pref_basefile = 'X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish'
@@ -812,10 +814,7 @@ def open_assetfile(asset_name):
             myargs += (' \"' + chm_tt_version + '\"')
             # path to asset root folder
             myargs += (' \"' + chm_assetroot + '\"')
-            #newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=None, background=False, args=sys.argv)
-            #newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=the_assetname_script, background=False, args=sys.argv)
-            #newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=the_assetname_script, background=False, args=(asset_name, chm_tt_version, chm_assetroot))
-            newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=the_assetname_script, background=False, args=myargs)
+            newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=the_assetname_script, background=False, args=sys.argv)
     else:
         tt_tools_messagebox(("Cannot find Path:    " + the_asset_dir), "Missing Path")
 
