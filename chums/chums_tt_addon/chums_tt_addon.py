@@ -239,7 +239,7 @@ class BUTTON_OT_submit_tt(bpy.types.Operator):
 class VIEW3D_PT_tt_tools_panel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_label = ("Turntable Utils "+vsn)
+    bl_label = ("Turntable Tools "+vsn)
     bl_context = "objectmode"
     bl_category = 'Chums'
     bl_options = {'DEFAULT_CLOSED'}
