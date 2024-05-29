@@ -1,5 +1,5 @@
 # ----------------------- NOTES -----------------------
-# 0.5.2
+# 0.5.3
 
 import bpy
 from pathlib import Path
@@ -37,7 +37,7 @@ chm_omitlist = (['archive', 'chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', '
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 # LAUNCHPAD
 LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/launchpadRepository"
-LAUNCHPAD_BLENDER_PATH = "C:/pipeline/chums_season2/launchpad/software/blender-4.1.0/blender.exe"
+LAUNCHPAD_BLENDER_PATH = "C:/pipeline/chums_season2/launchpad/software/blender-4.1.0/blender_launcher.exe"
 # OUTPUT PARAMETERS
 frameRate = 23.976
 frameRange = "1-123"

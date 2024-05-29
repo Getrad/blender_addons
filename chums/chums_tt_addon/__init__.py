@@ -6,10 +6,13 @@
 #       - FEATURE - added AUTOLOAD and AUTORENDERTT features
 #       - FEATURE - BUILD COMMAND
 #       - DOCS - https://docs.google.com/document/d/1YmDjLhnPXZqVWtPw6iCsjxK71WYtTzOzTl3x9pywwZY/edit?usp=sharing
-# 0.5.2 - BUGFIX - use preferences Frame Range to override the turntable timeline from 1-123 default to local frame range
-#       - FEATURE - ignore asset elements below the ground when framing camera
-#       - FEATURE - add blender version awareness to Build and Open processes
-#       - FEATURE - add option to skip LP launcher
+# 0.5.2 - BUGFIX - c - use preferences Frame Range to override the turntable timeline from 1-123 default to local frame range
+#       - FEATURE - d - ignore asset elements below the ground when framing camera
+#       - FEATURE - e - add blender version awareness to Build and Open processes
+#       - FEATURE - f,g - added material replace for 'model' turntables
+#       - FEATURE - h - added option to skip LP launcher
+#       - BUGFIX - i - WIP at sustainable print statements thru multiple sessions/subprocs
+# 0.5.2 - BUGFIX - change blender.exe to use blender_launcher.exe
 ## ToDo - Give Department a proper global list for convenience
 ## ToDo - AutoRestrict Department list to existing folders that contain files
 ## ToDo - add department "intelligence" to avoid errors
@@ -25,7 +28,7 @@ from chums_tt_addon.chums_tt_addon import *
 bl_info = {
     "name": "Turntable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 5, 2),
+    "version": (0, 5, 3),
     "blender": (4, 1, 0),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
