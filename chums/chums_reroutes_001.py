@@ -14,8 +14,13 @@ bl_info = {
     "warning": "",
     "wiki_url": "",
     "tracker_url": "",
-    "category": "Node",
+    "category": "Chums",
     }
+
+
+# --------   VARIABLES   --------
+# VERSION
+vsn = '0.0.1'
 
 
 # --------   FUNCTIONS   --------
@@ -49,7 +54,7 @@ class NODE_OT_MakeOuputs(bpy.types.Operator):
         return {'FINISHED'}
 
 class NODE_PT_ChumsPanel(bpy.types.Panel):
-    bl_label       = "Convenence Tools"
+    bl_label       = ("Convenience Tools " + vsn) 
     bl_idname      = "NODE_PT_ChumsPanel"
     bl_space_type  = 'NODE_EDITOR'
     bl_region_type = 'UI'
