@@ -775,6 +775,15 @@ def open_assetfile(asset_name):
     the_asset_dir = get_asset_dir(asset_name)
     the_asset_path = find_latest_workfile(the_asset_dir)
     this_file_path = os.path.dirname(os.path.realpath(__file__))
+    split_asset_version = this_file_path.split("_")
+    the_asset_version = "unknown"
+    for i in split_asset_version:
+        if i[0] == 'v' and len(i) == 4:
+            the_asset_version = str(i[1:])
+    if bpy.context.scene.userCtx:
+        the_username = bpy.context.scene.userCtx
+    else:
+        the_username = "unknown"
     the_assetname_script = os.path.join(this_file_path, "chums_tt_setassetname.py")
     print("the_assetname_script: ", the_assetname_script)
     if os.path.exists(the_asset_dir):
@@ -807,16 +816,26 @@ def open_assetfile(asset_name):
             mycmd += (' \"' + chm_tt_version + '\"')
             # path to asset root folder
             mycmd += (' \"' + chm_assetroot + '\"')
+            # user name
+            mycmd += (' \"' + the_username + '\"')
+            # asset version
+            mycmd += (' \"' + the_asset_version + '\"')
             print("\nmycmd: ", mycmd)
             newsesh = os.popen(mycmd)
             use_lp_launch = False
         else:
             from launchpad.helpers.launchers import launchBlenderDetached
+            # asset name
             myargs = (' \"' + asset_name + '\"')
             # addon version
             myargs += (' \"' + chm_tt_version + '\"')
             # path to asset root folder
             myargs += (' \"' + chm_assetroot + '\"')
+            # user name
+            myargs += (' \"' + the_username + '\"')
+            # asset version
+            myargs += (' \"' + the_asset_version + '\"')
+            print("\myargs: ", myargs)
             newsesh = launchBlenderDetached(scenePath=the_asset_path, scriptPath=the_assetname_script, background=False, args=sys.argv)
     else:
         tt_tools_messagebox(("Cannot find Path:    " + the_asset_dir), "Missing Path")
