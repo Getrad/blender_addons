@@ -728,7 +728,7 @@ def get_asset(asset_name):
         with bpy.data.libraries.load(the_asset_path, link=False) as (data_src, data_dst):
             data_dst.collections = data_src.collections
         for coll in data_dst.collections:
-            if coll.name == "asset_prod":
+            if coll.name[-10:] == "asset_prod":
                 bpy.context.scene.collection.children.link(coll)
             for colobj in coll.all_objects:
                 if not(colobj.parent):

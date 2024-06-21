@@ -13,6 +13,7 @@
 #       - FEATURE - h - added option to skip LP launcher
 #       - BUGFIX - i - WIP at sustainable print statements thru multiple sessions/subprocs
 # 0.5.2 - BUGFIX - change blender.exe to use blender_launcher.exe
+# 0.5.3b- FEATURE - 'asset_prod' collection namespace handling
 ## ToDo - Give Department a proper global list for convenience
 ## ToDo - AutoRestrict Department list to existing folders that contain files
 ## ToDo - add department "intelligence" to avoid errors
