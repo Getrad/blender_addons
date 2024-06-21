@@ -427,7 +427,7 @@ def get_selection_bounds(thesel):
 def get_local_asset_objects():
     object_list = []
     for col in bpy.data.collections:
-        if col.name == "asset_prod":
+        if col.name[-10:] == "asset_prod":
             #print("FOUND: ", col.name)
             asset_col = col
             for obj in asset_col.all_objects:
@@ -724,11 +724,12 @@ def get_asset(asset_name):
     the_asset_dir = bpy.context.scene.tt_tools_assetpath
     print("the_asset_dir: ", the_asset_dir)
     the_asset_path = find_latest_workfile(the_asset_dir)
+    the_asset_coll = (asset_name + ":asset_prod")
     if os.path.exists(the_asset_path):
         with bpy.data.libraries.load(the_asset_path, link=False) as (data_src, data_dst):
             data_dst.collections = data_src.collections
         for coll in data_dst.collections:
-            if coll.name[-10:] == "asset_prod":
+            if (coll.name == the_asset_coll or coll.name == "asset_prod"):
                 bpy.context.scene.collection.children.link(coll)
             for colobj in coll.all_objects:
                 if not(colobj.parent):
@@ -746,12 +747,14 @@ def get_asset(asset_name):
 def append_asset(asset_name):
     the_asset_dir = get_asset_dir(asset_name)
     the_asset_path = find_latest_workfile(the_asset_dir)
+    the_asset_coll = (asset_name + ":asset_prod")
     if os.path.exists(the_asset_path):
         with bpy.data.libraries.load(the_asset_path, link=False) as (data_src, data_dst):
             data_dst.collections = data_src.collections
         for coll in data_dst.collections:
-            if "asset_prod" in coll.name:
-                coll.name = (asset_name + "_asset_prod_appended")
+            #if "asset_prod" in coll.name:
+            if (coll.name == the_asset_coll or coll.name == "asset_prod"):
+                coll.name = (asset_name + ":asset_prod_appended")
                 bpy.context.scene.collection.children.link(coll)
     return 0
 
@@ -760,12 +763,13 @@ def link_asset(asset_name):
     chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_dir = get_asset_dir(asset_name)
     the_asset_path = find_latest_workfile(the_asset_dir)
+    the_asset_coll = (asset_name + ":asset_prod")
     if os.path.exists(the_asset_path):
         with bpy.data.libraries.load(the_asset_path, link=True) as (data_src, data_dst):
             data_dst.collections = data_src.collections
         for coll in data_dst.collections:
-            if "asset_prod" in coll.name:
-                #coll.name = (asset_name + "_asset_prod_appended")
+            #if "asset_prod" in coll.name:
+            if (coll.name == the_asset_coll or coll.name == "asset_prod"):
                 bpy.context.scene.collection.children.link(coll)
     return 0
 
