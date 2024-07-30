@@ -20,10 +20,15 @@ import bpy
 import os
 import shutil
 import subprocess
+import builtins
 from pathlib import Path
 
+def print(*args, **kwargs):
+    kwargs['flush'] = True
+    builtins.print(*args, **kwargs)
+
 ####    GLOBAL VARIABLES    ####
-vsn='5.8'
+vsn='5.8b'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png', 'lsTex']
 nodeignorelist = ['Render Result', 'Viewer Node', 'lsTex']
 grpignorelist = ['ZenUV_Override']
