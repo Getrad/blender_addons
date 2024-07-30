@@ -3,7 +3,7 @@
 bl_info = {
     "name": "Animation Bake",
     "author": "conrad dueck",
-    "version": (0,2,4),
+    "version": (0,2,5),
     "blender": (3, 30, 1),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Bake multiple objects at once.",
@@ -17,7 +17,7 @@ from mathutils import Matrix
 
 
 ####    GLOBAL VARIABLES    ####
-vsn='2.4b'
+vsn='2.5'
 
 
 ####    FUNCTIONS    ####
@@ -477,16 +477,18 @@ class BUTTON_OT_animbakebake(bpy.types.Operator):
                                 else:
                                     newlist[prt].matrix_world = prt_loc_mat @ prt_rot_mat @ prt_scale_mat
                                 
-                                newlist[prt].keyframe_insert('location', frame=(frm+sub))
-                                newlist[prt].keyframe_insert('rotation_euler', frame=(frm+sub))
-                                newlist[prt].keyframe_insert('scale', frame=(frm+sub))
-                                
                                 if not(prtsys.particles[prt].alive_state in thelive):
                                     newlist[prt].hide_render = True
+                                    newlist[prt].scale = [0,0,0]
                                     #newlist[prt].hide_viewport = True
                                 else:
                                     newlist[prt].hide_render = False
+                                    newlist[prt].scale = [1,1,1]
                                     newlist[prt].hide_viewport = False
+                                
+                                newlist[prt].keyframe_insert('location', frame=(frm+sub))
+                                newlist[prt].keyframe_insert('rotation_euler', frame=(frm+sub))
+                                newlist[prt].keyframe_insert('scale', frame=(frm+sub))
                                 
                                 newlist[prt].keyframe_insert('hide_viewport', frame=(frm+sub))
                                 newlist[prt].keyframe_insert('hide_render', frame=(frm+sub))
