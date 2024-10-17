@@ -1,7 +1,7 @@
 import bpy
 import os
 
-src_nodegrp = "X:/projects/chums_season2/onsite/_prod/assets/fx/node_groups/204_03_080_vinesWall_vines_scatter.blend"
+src_nodegrp = "X:/projects/chums_season2/onsite/_prod/assets/fx/node_groups/vinesWall_vines_scatter.blend"
 src_vines = "X:/projects/chums_season2/onsite/_prod/assets/props/prp_vinesWall_01/30_texture/publish/blender/prp_vinesWall_01_v008.blend"
 
 tgt_vines = [o for o in bpy.data.objects if ('prp_vinesWall_01:vine') in o.name]

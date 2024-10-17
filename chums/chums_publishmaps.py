@@ -28,7 +28,7 @@ def print(*args, **kwargs):
     builtins.print(*args, **kwargs)
 
 ####    GLOBAL VARIABLES    ####
-vsn='5.8b'
+vsn='5.9'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png', 'lsTex']
 nodeignorelist = ['Render Result', 'Viewer Node', 'lsTex']
 grpignorelist = ['ZenUV_Override']
@@ -203,7 +203,7 @@ def collect_materials(objlist):
     my_mtls = []
     for ob in objlist:
         for mtl in ob.material_slots:
-            if mtl.material.use_nodes:
+            if (mtl.material is not None) and (mtl.material.use_nodes):
                 if not(mtl.material.name in my_mtls):
                     #   build list of unique materials
                     my_mtls.append(mtl.name)
@@ -378,7 +378,7 @@ def headless_publish(pmap_selected,pmap_path,pmap_convert,pmap_rename,pmap_skiph
         os.mkdir(thepath)
     #   objects (oblist)
     if pmap_selected:
-        oblist = [o for o in bpy.data.collections['asset_prod'].objects if o.type == 'MESH']
+        oblist = [o for o in bpy.context.selected_objects if o.type == 'MESH']
     else:
         oblist = [o for o in bpy.data.objects if o.type == 'MESH']
     #   mtls: get the unique materials
