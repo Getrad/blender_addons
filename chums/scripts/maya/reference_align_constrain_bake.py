@@ -1,5 +1,3 @@
-# from ChatGPT
-
 import maya.cmds as cmds
 
 def reference_align_constrain_bake(reference_path, target_namespace, target_object_name):
@@ -133,29 +131,5 @@ def set_object_scale(object_name=None, scale_values=(1, 1, 1)):
 # Or set the scale of a specific object by name (e.g., 'pCube1') to (3, 3, 3)
 # set_object_scale('pCube1', scale_values=(3, 3, 3))
 
-
-def remove_reference_by_name(reference_node_name):
-    # Check if the reference node exists
-    if not cmds.objExists(reference_node_name):
-        cmds.error(f"Reference node '{reference_node_name}' does not exist.")
-        return
-
-    # Check if the node is a valid reference
-    if not cmds.referenceQuery(reference_node_name, isNodeReferenced=True):
-        cmds.error(f"'{reference_node_name}' is not a valid reference node.")
-        return
-
-    # Get the reference file path
-    reference_path = cmds.referenceQuery(reference_node_name, filename=True)
-    print(f"Removing reference: {reference_path}")
-
-    # Remove the reference
-    try:
-        cmds.file(reference_path, removeReference=True)
-        print(f"Successfully removed reference: {reference_node_name}")
-    except Exception as e:
-        cmds.error(f"Failed to remove reference: {str(e)}")
-# Example usage:
-# remove_reference_by_name('yourReferenceNodeName')
 
 reference_align_constrain_bake("X:/projects/chums_season2/anim/_prod/_shotgrid/chums_season2/assets/Prop/prp_salt_01/RIG/publish/maya/scene.v004.ma", 'prp_salt_01_scene_ma', 'CNT_GROUND')
