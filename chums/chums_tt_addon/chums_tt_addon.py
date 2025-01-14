@@ -24,11 +24,11 @@ from chums_tt_addon.chums_tt_utils import set_camera
 
 # --------   VARIABLES   --------
 # VERSION
-vsn = '0.5.3d'
+vsn = '0.6.0'
 # GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 # SET DEFAULT VERSION STRING
-blender_version_str = (str(blender_version[0]) + ".x")
+blender_version_str = (str(blender_version[0]) + str(blender_version[1]) + ".x")
 # SET THE CAMERA OBJECT NAME
 thecam_name = "cam.ttCamera"
 # OUTPUT PARAMETERS

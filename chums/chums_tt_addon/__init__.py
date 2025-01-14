@@ -17,6 +17,7 @@
 ## ToDo - Give Department a proper global list for convenience
 ## ToDo - AutoRestrict Department list to existing folders that contain files
 ## ToDo - add department "intelligence" to avoid errors
+# 0.6.0 - Blender 4.2.3
 
 import bpy
 import os
@@ -29,8 +30,8 @@ from chums_tt_addon.chums_tt_addon import *
 bl_info = {
     "name": "Turntable Tools",
     "author": "Conrad Dueck, Darren Place",
-    "version": (0, 5, 3),
-    "blender": (4, 1, 0),
+    "version": (0, 6, 0),
+    "blender": (4, 2, 3),
     "location": "View3D > Tool Shelf > Chums",
     "description": "Turntable Convenience Tools",
     "warning": "",
@@ -38,19 +39,18 @@ bl_info = {
     "tracker_url": "",
     "category": "Chums"}
 
-
 # --------   VARIABLES   --------
 #   GET BLENDER MAIN VERSION
 blender_version = bpy.app.version
 #   SET DEFAULT VERSION STRING
-blender_version_str = (str(blender_version[0]) + ".x")
+blender_version_str = (str(blender_version[0]) + "." + str(blender_version[1]) + ".x")
 #   GET USER
 current_user = os.getlogin()
 user_path = os.path.join("C:\\users",current_user)
 #   BASEFILE SPECIFIC 
 thecam_name = "cam.ttCamera"
 #   LAUNCHPAD
-LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/launchpadRepository"
+LAUNCHPAD_REPOSITORY_PATH = ("X:/projects/chums_season2/onsite/pipeline/repos/launchpadRepository")
 
 
 # --------   FUNCTIONS   --------
@@ -61,23 +61,41 @@ LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/lau
 def set_version_override_paths(self, context):
     if self.tt_override_version:
         bpy.context.scene.tt_override_version = self.tt_override_version
-        match self.tt_override_version:
-            case '3.x':
-                self.tt_override_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
-                self.tt_override_filepath = "Y:/projects/CHUMS_Onsite/_prod/assets/helpers/turntable/projects/blender/turntable.blend"
-                self.tt_override_basefile = "Y:/projects/CHUMS_Onsite/_prod/shots/chm_ep000"
-                self.tt_override_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
-                self.tt_override_range = "1-123"
+        #   GET ROOT
+        match bpy.context.scene.tt_override_version:
+        #match blender_version_str:
+            case '3.3.x':
+                theroot = "Y:/projects/CHUMS_Onsite"
                 self.tt_override_subtree = "projects/blender"
                 self.tt_override_stage = 'workfiles'
-            case '4.x':
-                self.tt_override_assetroot = "X:/projects/chums_season2/onsite/_prod/assets/"
-                self.tt_override_filepath = "X:/projects/chums_season2/onsite/_prod/assets/helpers/turntable/publish/blender/turntable.blend"
-                self.tt_override_basefile = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish/"
-                self.tt_override_renderroot = "X:/projects/chums_season2/onsite/renders/_prod/assets"
-                self.tt_override_range = "1-123"
+            case '4.1.x':
+                theroot = "X:/projects/chums_season2"
                 self.tt_override_subtree = "blender"
                 self.tt_override_stage = 'work'
+            case '4.2.x':
+                theroot = "X:/projects/chums_season3"
+                self.tt_override_subtree = "blender"
+                self.tt_override_stage = 'work'
+            case _:
+                theroot = "X:/projects/chums_season2"
+                self.tt_override_subtree = "blender"
+                self.tt_override_stage = 'work'
+        match self.tt_override_version:
+            case '3.3.x':
+                self.tt_override_assetroot = (theroot + "/_prod/assets/")
+                self.tt_override_filepath = (theroot + "/_prod/assets/helpers/turntable/projects/blender/turntable.blend")
+                self.tt_override_basefile = (theroot + "/_prod/shots/chm_ep000")
+                self.tt_override_renderroot = (theroot + "/renders/_prod/assets/")
+            case '4.1.x':
+                self.tt_override_assetroot = (theroot + "/onsite/_prod/assets/")
+                self.tt_override_filepath = (theroot + "/onsite/_prod/assets/helpers/turntable/publish/blender/turntable.blend")
+                self.tt_override_basefile = (theroot + "/onsite/_prod/assets/helpers/basefiles/publish/")
+                self.tt_override_renderroot = (theroot + "/onsite/renders/_prod/assets")
+            case '4.2.x':
+                self.tt_override_assetroot = (theroot + "/onsite/_prod/assets/")
+                self.tt_override_filepath = (theroot + "/onsite/_prod/assets/helpers/turntable/publish/blender/turntable.blend")
+                self.tt_override_basefile = (theroot + "/onsite/_prod/assets/helpers/basefiles/publish/")
+                self.tt_override_renderroot = (theroot + "/onsite/renders/_prod/assets")
             case "Custom":
                 self.tt_override_assetroot = bpy.context.scene.tt_override_assetroot
                 self.tt_override_filepath = bpy.context.scene.tt_override_filepath
@@ -87,13 +105,10 @@ def set_version_override_paths(self, context):
                 self.tt_override_subtree = bpy.context.scene.tt_override_subtree
                 self.tt_override_stage = bpy.context.scene.tt_override_stage
             case _:
-                self.tt_override_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
-                self.tt_override_filepath = "X:/projects/chums_season2/onsite/_prod/assets/helpers/turntable/publish/blender/turntable.blend"
-                self.tt_override_basefile = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish"
-                self.tt_override_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
-                self.tt_override_range = "1-123"
-                self.tt_override_subtree = "projects/blender"
-                self.tt_override_stage = 'workfiles'
+                self.tt_override_assetroot = (theroot + "/onsite/_prod/assets/")
+                self.tt_override_filepath = (theroot + "/onsite/_prod/assets/helpers/turntable/publish/blender/turntable.blend")
+                self.tt_override_basefile = (theroot + "/onsite/_prod/assets/helpers/basefiles/publish/")
+                self.tt_override_renderroot = (theroot + "/onsite/renders/_prod/assets")
     return None
 
 def update_prefs_subtree(self, context):
@@ -207,7 +222,7 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
     tt_override_version: bpy.props.EnumProperty(
         name="Override Version",
         description="Override version defaults",
-        items=[('3.x','3.x',''),('4.x','4.x',''),('Custom','Custom','')],
+        items=[('3.3.x','3.3.x',''),('4.1.x','4.1.x',''),('4.2.x','4.2.x',''),('Custom','Custom','')],
         update = set_version_override_paths,
         default = blender_version_str,
     )
@@ -216,7 +231,7 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         name = "Base File Directory",
         subtype = 'DIR_PATH',
         update = update_prefs_basefile,
-        default = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish",
+        default = "X:/projects/chums_season3/onsite/_prod/assets/helpers/basefiles/publish",
     )
 
     tt_override_assetroot: bpy.props.StringProperty(
@@ -230,7 +245,7 @@ class tt_toolsPreferences(bpy.types.AddonPreferences):
         name = "Turntable File",
         subtype = 'FILE_PATH',
         update = update_prefs_filepath,
-        default = 'X:/projects/chums_season2/onsite/_prod/assets/helpers/turntable/publish/blender/turntable.blend',
+        default = 'X:/projects/chums_season3/onsite/_prod/assets/helpers/turntable/publish/blender/turntable.blend',
     )
 
     tt_override_renderroot: bpy.props.StringProperty(
@@ -311,7 +326,7 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         (
         name = "Version",
         description = "Version",
-        #default = "4.x"
+        #default = "4.1.x"
         default = blender_version_str
         )
     bpy.types.Scene.tt_override_assetroot = bpy.props.StringProperty \
@@ -325,14 +340,14 @@ class tt_toolsProperties(bpy.types.PropertyGroup):
         (
         name = "Base File Directory",
         description = "Project Base File Directory",
-        default = "X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish/"
+        default = "X:/projects/chums_season3/onsite/_prod/assets/helpers/basefiles/publish/"
         #default = "Directory"
         )
     bpy.types.Scene.tt_override_filepath = bpy.props.StringProperty \
         (
         name = "Turntable Base File",
         description = "Turntable Base File",
-        default = "X:/projects/chums_season2/onsite/_prod/assets/helpers/turntable/publish/blender/turntable.blend"
+        default = "X:/projects/chums_season3/onsite/_prod/assets/helpers/turntable/publish/blender/turntable.blend"
         #default = "File"
         )
     bpy.types.Scene.tt_override_renderroot = bpy.props.StringProperty \

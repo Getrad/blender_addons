@@ -36,7 +36,7 @@ chm_omitlist = (['archive', 'chr_AAAtemplate', 'chr_ants', 'chr_barry - Copy', '
 # DEADLINE COMMAND
 deadlineBin = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 # LAUNCHPAD
-LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season2/onsite/pipeline/repos/launchpadRepository"
+LAUNCHPAD_REPOSITORY_PATH = "X:/projects/chums_season3/onsite/pipeline/repos/launchpadRepository"
 LAUNCHPAD_BLENDER_PATH = "C:/pipeline/chums_season2/launchpad/software/blender-4.1.0/blender_launcher.exe"
 # OUTPUT PARAMETERS
 frameRate = 23.976
@@ -129,7 +129,7 @@ def update_base_settings(): #(chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_
             pref_blenderpath = bpy.app.binary_path
     else:
         match override_version:
-            case '3.x':
+            case '3.3.x':
                 pref_blenderpath = "C:/Program Files/Blender Foundation/Blender 3.3/blender.exe"
                 pref_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
                 pref_tt_filepath = Path(str(pref_assetroot + "helpers/turntable/projects/blender/turntable.blend"))
@@ -137,7 +137,7 @@ def update_base_settings(): #(chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_
                 pref_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
                 pref_assetssubtree = "projects/blender"
                 pref_tt_stage = 'workfiles'
-            case '4.x':
+            case '4.1.x':
                 pref_blenderpath = "C:/pipeline/chums_season2/launchpad/software/blender-4.1.0/blender.exe"
                 pref_assetroot = "X:/projects/chums_season2/onsite/_prod/assets"
                 pref_tt_filepath = Path(str(pref_assetroot + "/helpers/turntable/publish/blender/turntable.blend"))
@@ -145,14 +145,22 @@ def update_base_settings(): #(chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_
                 pref_renderroot = "X:/projects/chums_season2/onsite/renders/_prod/assets"
                 pref_assetssubtree = "blender"
                 pref_tt_stage = "work"
+            case '4.2.x':
+                pref_blenderpath = "C:/pipeline/chums_season3/launchpad/software/blender-4.2.3/blender.exe"
+                pref_assetroot = "X:/projects/chums_season3/onsite/_prod/assets"
+                pref_tt_filepath = Path(str(pref_assetroot + "/helpers/turntable/publish/blender/turntable.blend"))
+                pref_basefile = 'X:/projects/chums_season3/onsite/_prod/assets/helpers/basefiles/publish'
+                pref_renderroot = "X:/projects/chums_season3/onsite/renders/_prod/assets"
+                pref_assetssubtree = "blender"
+                pref_tt_stage = "work"
             case _:
-                pref_blenderpath = "C:/Program Files/Blender Foundation/Blender 4.1/blender.exe"
-                pref_assetroot = "Y:/projects/CHUMS_Onsite/_prod/assets/"
-                pref_tt_filepath = Path(str(pref_assetroot + "helpers/turntable/projects/blender/turntable.blend"))
+                pref_blenderpath = "C:/pipeline/chums_season2/launchpad/software/blender-4.1.0/blender.exe"
+                pref_assetroot = "X:/projects/chums_season2/onsite/_prod/assets"
+                pref_tt_filepath = Path(str(pref_assetroot + "/helpers/turntable/publish/blender/turntable.blend"))
                 pref_basefile = 'X:/projects/chums_season2/onsite/_prod/assets/helpers/basefiles/publish'
-                pref_renderroot = "Y:/projects/CHUMS_Onsite/renders/_prod/assets/"
-                pref_assetssubtree = "projects/blender"
-                pref_tt_stage = 'workfiles'
+                pref_renderroot = "X:/projects/chums_season2/onsite/renders/_prod/assets"
+                pref_assetssubtree = "blender"
+                pref_tt_stage = "work"
     pref_override_version = override_version
     
     return(pref_useLP, pref_blenderpath, pref_assetroot, pref_basefile, pref_tt_filepath, pref_renderroot, pref_assetssubtree, pref_tt_stage, pref_override_version)
@@ -193,10 +201,10 @@ def sendDeadlineCmd():
     asset_type = chm_assetprefix[asset_name[:3]]
     print("\nCall update_base_settings from: sendDeadlineCmd")
     chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
-    if chm_tt_version == "4.x":
+    if chm_tt_version in ["4.1.x","4.2.x"]:
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_tt_stage,chm_assetssubtree).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,chm_tt_stage).replace("/","\\")
-        the_comment = "4.x Turntable"
+        the_comment = [chm_tt_version + " Turntable"]
     elif chm_tt_version == "Custom":
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,chm_tt_stage).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name).replace("/","\\")
@@ -294,10 +302,10 @@ def xcodeH264():
     asset_type = chm_assetprefix[asset_name[:3]]
     print("\nCall update_base_setting() from: xcodeH264")
     chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
-    if chm_tt_version == "4.x":
+    if chm_tt_version in ["4.1.x","4.2.x"]:
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_tt_stage,chm_assetssubtree).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name,asset_task,chm_tt_stage).replace("/","\\")
-        the_comment = "4.x Turntable"
+        the_comment = [chm_tt_version + " Turntable"]
     elif chm_tt_version == "Custom":
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,chm_tt_stage).replace("/","\\")
         the_outpath_base = os.path.join(chm_renderroot,asset_type,asset_name).replace("/","\\")
@@ -551,12 +559,15 @@ def check_departments(asset_name):
         if len(asset_name) > 1:
             the_asset_type = chm_assetprefix[asset_name[:3]]
             match chm_tt_version:
-                case '3.x':
+                case '3.3.x':
                     asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_assetssubtree,the_dept)
-                    print('3.x asset_dir:', asset_dir)
-                case '4.x':
+                    print('3.3.x asset_dir:', asset_dir)
+                case '4.1.x':
                     asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,the_dept,chm_assetssubtree)
-                    print("4.x asset_dir:", asset_dir)
+                    print("4.1.x asset_dir:", asset_dir)
+                case '4.2.x':
+                    asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,the_dept,chm_assetssubtree)
+                    print("4.2.x asset_dir:", asset_dir)
                 case 'Custom':
                     asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_assetssubtree,the_dept)
                     print("Custom asset_dir:", asset_dir)
@@ -662,12 +673,15 @@ def get_asset_dir(asset_name):
     if len(asset_name) > 1:
         the_asset_type = chm_assetprefix[asset_name[:3]]
         match chm_tt_version:
-            case '3.x':
+            case '3.3.x':
                 asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_assetssubtree,chm_tt_stage)
-                print('3.x asset_dir:', asset_dir)
-            case '4.x':
+                print('3.3.x asset_dir:', asset_dir)
+            case '4.1.x':
                 asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_tt_stage,chm_assetssubtree)
-                print("4.x asset_dir:", asset_dir)
+                print("4.1.x asset_dir:", asset_dir)
+            case '4.2.x':
+                asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_tt_stage,chm_assetssubtree)
+                print("4.2.x asset_dir:", asset_dir)
             case 'Custom':
                 asset_dir = os.path.join(chm_assetroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_assetssubtree,chm_tt_stage)
                 print("Custom asset_dir:", asset_dir)
@@ -689,12 +703,15 @@ def get_render_dir(asset_name, asset_version, chm_renderroot, chm_tt_stage, chm_
                        'sky':'skies'}
     the_asset_type = chm_assetprefix[asset_name[:3]]
     match chm_tt_version:
-        case '3.x':
+        case '3.3.x':
             render_dir = os.path.join(chm_renderroot,the_asset_type,asset_name,asset_version)
-            print('3.x render_dir:', render_dir)
-        case '4.x':
+            print('3.3.x render_dir:', render_dir)
+        case '4.1.x':
             render_dir = os.path.join(chm_renderroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_tt_stage,asset_version)
-            print("4.x render_dir:", render_dir)
+            print("4.1.x render_dir:", render_dir)
+        case '4.2.x':
+            render_dir = os.path.join(chm_renderroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_tt_stage,asset_version)
+            print("4.2.x render_dir:", render_dir)
         case 'Custom':
             render_dir = os.path.join(chm_renderroot,the_asset_type,asset_name,bpy.context.scene.tt_tools_task,chm_tt_stage,asset_version)
             print("Custom render_dir:", render_dir)
@@ -919,7 +936,7 @@ def save_tt_file(asset_name, asset_task):
     print("\nCall update_base_settings from: save_tt_file")
     chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
     asset_type = chm_assetprefix[asset_name[:3]]
-    if chm_tt_version == "4.x":
+    if chm_tt_version in ["4.1.x","4.2.x"]:
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_tt_stage,chm_assetssubtree).replace("/","\\")
     else:
         the_workpath = os.path.join(chm_assetroot,asset_type,asset_name,asset_task,chm_assetssubtree,chm_tt_stage).replace("/","\\")
