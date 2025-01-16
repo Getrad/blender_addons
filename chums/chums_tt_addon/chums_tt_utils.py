@@ -873,6 +873,7 @@ def set_output_path(asset_name):
     chm_useLP, chm_blenderpath, chm_assetroot, chm_tt_basedir, chm_tt_filepath, chm_renderroot, chm_assetssubtree, chm_tt_stage, chm_tt_version = update_base_settings()
     the_asset_dir = get_asset_dir(asset_name)
     latest_asset_workfile = find_latest_workfile(the_asset_dir)
+    print("latest_asset_workfile: ", latest_asset_workfile)
     latest_asset_version = latest_asset_workfile.split(".")[-2][-4:]
     latest_asset_filename = os.path.basename(latest_asset_workfile)
     the_outpath_base = get_render_dir(asset_name, latest_asset_version, chm_renderroot, chm_tt_stage, chm_tt_version)
