@@ -21,7 +21,6 @@ ft = ft.append(ob)
 
 
 for o in famTree:
-    print(o.name)
     wld = o.matrix_world
     bpy.context.view_layer.objects.active = o
     bpy.ops.object.transform_apply(location = True, scale = True, rotation = True)
