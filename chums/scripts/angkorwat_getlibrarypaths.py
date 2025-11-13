@@ -4,7 +4,7 @@ print("\n\nRunning Library Check\n\n")
 
 libdict = {}
 cursel = bpy.context.selected_objects
-listobjects = 0
+listobjects = 1
 
 for o in cursel:
     if o.instance_collection is not None:
@@ -12,7 +12,7 @@ for o in cursel:
             libdict[o.instance_collection.library.filepath] = []
         if o.instance_collection.library.filepath in libdict.keys():
             if listobjects:
-                for ob in o.instance_collection.objects:
+                for ob in o.instance_collection.all_objects:
                     if not ob.name in libdict[o.instance_collection.library.filepath]:
                         libdict[o.instance_collection.library.filepath].append(ob.name)
             else:
