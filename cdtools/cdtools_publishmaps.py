@@ -3,11 +3,12 @@
 # v5.5
 # need to properly handle all scene images when only selected is not enabled
 # need to test functionality of skipping images when the image node can't find a shader connection
+# v6.1 - debugging
 
 bl_info = {
     "name": "Publish Maps",
     "author": "conrad dueck",
-    "version": (0,6,0),
+    "version": (0,6,1),
     "blender": (5, 2, 0),
     "location": "View3D > Tool Shelf > CDTools",
     "description": "Collect image maps to publish directory and back up any maps that already exist there.",
@@ -28,7 +29,7 @@ def print(*args, **kwargs):
     builtins.print(*args, **kwargs)
 
 ####    GLOBAL VARIABLES    ####
-vsn='6.0'
+vsn='6.1'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png', 'lsTex']
 nodeignorelist = ['Render Result', 'Viewer Node', 'lsTex']
 grpignorelist = ['ZenUV_Override']
@@ -124,18 +125,19 @@ def cleanup_string(my_string):
     return my_string
 
 def get_imgs_from_mtl(my_mtl, my_imglist):
+    #print("fn get_imgs_from_mtl (my_mtl): ", my_mtl)
     for node in my_mtl.node_tree.nodes:
         if node.name in nodeignorelist:
             print("SKIPPING ignore list node: ", node.name)
         else:
-            if node.type == 'TEX_IMAGE' and node.image.source in ['SEQUENCE', 'FILE']:
+            if node.type == 'TEX_IMAGE' and node.image and node.image.source in ['SEQUENCE', 'FILE']:
                 img = node.image
                 if img.packed_file:
                     unpack_image(img)
                 if not(img in my_imglist):
                     my_imglist.append(img)
             elif node.type == 'GROUP' and not (node.name in grpignorelist):
-                get_imgs_from_mtl(my_mtl,my_imglist)
+                get_imgs_from_mtl(node,my_imglist)
     #print("fn get_imgs_from_mtl (my_imglist): ", my_imglist)
     return (my_imglist)
 
@@ -382,7 +384,10 @@ def headless_publish(pmap_selected,pmap_path,pmap_convert,pmap_rename,pmap_skiph
     else:
         oblist = [o for o in bpy.data.objects if o.type == 'MESH']
     #   mtls: get the unique materials
-    mtls = collect_materials(oblist)
+    if pmap_selected:
+        mtls = collect_materials(oblist)
+    else:
+        mtls = [m.name for m in bpy.data.materials]
     #   mtl_imgs : get the unique images for each material (first mtl array)
     mtl_imgs = build_image_dict(mtls)
     #   mtl_imgs : get the sockets used by each unique image (second socket array)
