@@ -4,6 +4,7 @@
 # need to properly handle all scene images when only selected is not enabled
 # need to test functionality of skipping images when the image node can't find a shader connection
 # v6.1 - debugging
+# v6.2 - skips all missing maps (just skips - no report; no repair)
 
 bl_info = {
     "name": "Publish Maps",
@@ -29,7 +30,7 @@ def print(*args, **kwargs):
     builtins.print(*args, **kwargs)
 
 ####    GLOBAL VARIABLES    ####
-vsn='6.1'
+vsn='6.2'
 imgignorelist = ['Render Result', 'Viewer Node', 'vignette.png', 'lsTex']
 nodeignorelist = ['Render Result', 'Viewer Node', 'lsTex']
 grpignorelist = ['ZenUV_Override']
@@ -327,7 +328,7 @@ def publish_images_from_dict(my_dict,target_path,map_convert,map_rename,map_skip
         print('      src: ', srcfile)
         print('      tgt: ', tgtfile)
         print('      new: ', need_new)
-        if (need_new == True):
+        if os.path.exists(srcfile) and (need_new == True):
             if srcscope == 'SEQUENCE':
                 #   publish SEQUENCE
                 theframecount = 0
